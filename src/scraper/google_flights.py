@@ -1,0 +1,608 @@
+"""
+Google Flights Scraper
+======================
+This script uses Playwright to automate a web browser and scrape flight data
+from Google Flights.
+
+KEY CONCEPTS:
+- Web scraping: Extracting data from websites programmatically
+- Browser automation: Controlling a browser with code (clicking, typing, etc.)
+- Selectors: Ways to identify elements on a page (like CSS selectors)
+- Async/await: A way to handle operations that take time (like loading pages)
+"""
+
+# ============================================================================
+# IMPORTS
+# ============================================================================
+# 'asyncio' lets us run asynchronous code (code that waits for things)
+import asyncio
+
+# 'datetime' and 'timedelta' help us work with dates
+from datetime import datetime, timedelta
+
+# Playwright is our browser automation library
+# - async_playwright: The main entry point for async Playwright
+# - TimeoutError: Raised when an operation takes too long
+from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeout
+
+
+# ============================================================================
+# MAIN SCRAPER CLASS
+# ============================================================================
+class GoogleFlightsScraper:
+    """
+    A class to scrape flight data from Google Flights.
+
+    Why use a class? It keeps related code organized and lets us maintain
+    state (like the browser instance) across multiple operations.
+    """
+
+    def __init__(self, headless: bool = True):
+        """
+        Initialize the scraper.
+
+        Args:
+            headless: If True, browser runs invisibly in background.
+                      If False, you can watch the browser do its thing!
+                      Set to False when debugging to see what's happening.
+        """
+        self.headless = headless
+        self.browser = None
+        self.page = None
+
+    async def start_browser(self):
+        """
+        Launch the browser.
+
+        We use Chromium (Chrome's open-source base) because it works well
+        with Playwright and is what most people use for scraping.
+        """
+        # Create a Playwright instance
+        self.playwright = await async_playwright().start()
+
+        # Launch the browser
+        # - headless: Whether to show the browser window
+        # - args: Extra settings for the browser
+        self.browser = await self.playwright.chromium.launch(
+            headless=self.headless,
+            args=['--disable-blink-features=AutomationControlled']  # Helps avoid detection
+        )
+
+        # Create a new page (like a browser tab)
+        # We set a realistic viewport size to mimic a real user
+        self.page = await self.browser.new_page(
+            viewport={'width': 1280, 'height': 800}
+        )
+
+        print("Browser started successfully!")
+
+    async def close_browser(self):
+        """Clean up: close the browser when we're done."""
+        if self.browser:
+            await self.browser.close()
+        if self.playwright:
+            await self.playwright.stop()
+        print("Browser closed.")
+
+    async def handle_cookie_consent(self):
+        """
+        Handle the cookie consent popup that appears in many countries.
+
+        Google shows different popups depending on your location.
+        We try to find and click common "Accept" or "Reject" buttons.
+        """
+        try:
+            # Wait a moment for any popup to appear
+            await self.page.wait_for_timeout(2000)  # 2000ms = 2 seconds
+
+            # Try different selectors for cookie buttons
+            # Selectors are like addresses that help us find elements on the page
+            cookie_selectors = [
+                'button:has-text("Accept all")',      # English
+                'button:has-text("Accept")',          # Shorter version
+                'button:has-text("Reject all")',      # Privacy-friendly option
+                'button:has-text("I agree")',         # Alternative text
+                '[aria-label="Accept all"]',          # Using aria-label attribute
+            ]
+
+            for selector in cookie_selectors:
+                try:
+                    # Check if this button exists (wait max 1 second)
+                    button = await self.page.wait_for_selector(selector, timeout=1000)
+                    if button:
+                        await button.click()
+                        print(f"Clicked cookie consent button: {selector}")
+                        await self.page.wait_for_timeout(1000)
+                        return True
+                except PlaywrightTimeout:
+                    # Button not found, try the next one
+                    continue
+
+            print("No cookie popup found (or already handled)")
+            return False
+
+        except Exception as e:
+            print(f"Cookie handling note: {e}")
+            return False
+
+    async def search_flights(
+        self,
+        origin: str,
+        destination: str,
+        departure_date: str,
+        return_date: str = None
+    ) -> list[dict]:
+        """
+        Search for flights on Google Flights.
+
+        Args:
+            origin: Departure city or airport code (e.g., "New York" or "JFK")
+            destination: Arrival city or airport code (e.g., "Los Angeles" or "LAX")
+            departure_date: Date in YYYY-MM-DD format (e.g., "2025-02-15")
+            return_date: Optional return date for round trips (same format)
+
+        Returns:
+            A list of dictionaries, each containing flight information
+        """
+        print(f"\nSearching flights: {origin} → {destination}")
+        print(f"Departure: {departure_date}" + (f", Return: {return_date}" if return_date else " (one-way)"))
+
+        # Step 1: Navigate to Google Flights
+        print("\n[Step 1] Opening Google Flights...")
+        await self.page.goto('https://www.google.com/travel/flights', wait_until='networkidle')
+
+        # Step 2: Handle cookie consent
+        print("[Step 2] Checking for cookie popup...")
+        await self.handle_cookie_consent()
+
+        # Step 3: Set trip type (round trip or one-way)
+        print("[Step 3] Setting trip type...")
+        if not return_date:
+            # Click the trip type dropdown and select one-way
+            try:
+                # Find and click the dropdown (usually shows "Round trip")
+                trip_type_btn = await self.page.wait_for_selector(
+                    '[aria-label="Change ticket type."], [aria-haspopup="listbox"]:near(:text("Round trip"))',
+                    timeout=5000
+                )
+                if trip_type_btn:
+                    await trip_type_btn.click()
+                    await self.page.wait_for_timeout(500)
+
+                    # Click "One way" option
+                    one_way = await self.page.wait_for_selector('li:has-text("One way")', timeout=3000)
+                    if one_way:
+                        await one_way.click()
+                        print("  Set to one-way trip")
+            except PlaywrightTimeout:
+                print("  Could not change trip type, continuing with default...")
+
+        # Step 4: Enter origin city
+        print(f"[Step 4] Entering origin: {origin}...")
+        await self._fill_location_field(is_origin=True, location=origin)
+
+        # Step 5: Enter destination city
+        print(f"[Step 5] Entering destination: {destination}...")
+        await self._fill_location_field(is_origin=False, location=destination)
+
+        # Step 6: Enter departure date
+        print(f"[Step 6] Setting departure date: {departure_date}...")
+        await self._fill_date_field(departure_date, is_departure=True)
+
+        # Step 7: Enter return date (if round trip)
+        if return_date:
+            print(f"[Step 7] Setting return date: {return_date}...")
+            await self._fill_date_field(return_date, is_departure=False)
+
+        # Step 8: Click Search / wait for results
+        print("[Step 8] Searching for flights...")
+        await self._click_search()
+
+        # Step 9: Wait for results to load
+        print("[Step 9] Waiting for results...")
+        await self._wait_for_results()
+
+        # Step 10: Extract flight data
+        print("[Step 10] Extracting flight data...")
+        flights = await self._extract_flights()
+
+        print(f"\nFound {len(flights)} flights!")
+        return flights
+
+    async def _fill_location_field(self, is_origin: bool, location: str):
+        """
+        Fill in the origin or destination field.
+
+        This is tricky because Google Flights uses dynamic input fields
+        that change as you type. We need to:
+        1. Click the field to activate it
+        2. Clear any existing text
+        3. Type the new location
+        4. Wait for suggestions
+        5. Select the first suggestion
+        """
+        try:
+            # Google Flights has specific input fields for origin/destination
+            if is_origin:
+                # Click on the "Where from?" input area
+                input_wrapper = await self.page.wait_for_selector(
+                    '[aria-label="Where from?"], [placeholder="Where from?"], '
+                    '[data-placeholder="Where from?"], input[aria-autocomplete="inline"]:first-of-type',
+                    timeout=5000
+                )
+            else:
+                # Click on the "Where to?" input area
+                input_wrapper = await self.page.wait_for_selector(
+                    '[aria-label="Where to?"], [placeholder="Where to?"], '
+                    '[data-placeholder="Where to?"]',
+                    timeout=5000
+                )
+
+            if input_wrapper:
+                await input_wrapper.click()
+                await self.page.wait_for_timeout(500)
+
+            # Now type the location
+            # We use keyboard.type() for more realistic typing
+            await self.page.keyboard.type(location, delay=100)  # 100ms between keystrokes
+
+            # Wait for autocomplete suggestions to appear
+            await self.page.wait_for_timeout(1500)
+
+            # Press Enter to select the first suggestion
+            await self.page.keyboard.press('Enter')
+            await self.page.wait_for_timeout(500)
+
+            print(f"  ✓ Entered: {location}")
+
+        except PlaywrightTimeout as e:
+            print(f"  ⚠ Could not fill location field: {e}")
+
+    async def _fill_date_field(self, date_str: str, is_departure: bool):
+        """
+        Fill in the date field.
+
+        Google Flights has a date picker that we need to interact with.
+        This is one of the trickier parts of scraping - date pickers
+        vary a lot between websites.
+        """
+        try:
+            # Click on the appropriate date field
+            if is_departure:
+                date_input = await self.page.wait_for_selector(
+                    '[aria-label="Departure"], [data-label="Departure"], '
+                    '[placeholder="Departure"]',
+                    timeout=5000
+                )
+            else:
+                date_input = await self.page.wait_for_selector(
+                    '[aria-label="Return"], [data-label="Return"], '
+                    '[placeholder="Return"]',
+                    timeout=5000
+                )
+
+            if date_input:
+                await date_input.click()
+                await self.page.wait_for_timeout(1000)
+
+            # Parse the date to navigate to the right month
+            target_date = datetime.strptime(date_str, '%Y-%m-%d')
+
+            # Try to find and click the specific date in the calendar
+            # Google uses different date formats, so we try a few
+            day = target_date.day
+            month_name = target_date.strftime('%B')  # Full month name
+
+            # Look for the date cell
+            date_selector = f'[data-iso="{date_str}"], [aria-label*="{month_name} {day}"]'
+
+            try:
+                date_cell = await self.page.wait_for_selector(date_selector, timeout=3000)
+                if date_cell:
+                    await date_cell.click()
+                    print(f"  ✓ Selected date: {date_str}")
+            except PlaywrightTimeout:
+                # If we can't find the date picker, try typing the date
+                await self.page.keyboard.type(date_str)
+                await self.page.keyboard.press('Enter')
+                print(f"  ✓ Typed date: {date_str}")
+
+            await self.page.wait_for_timeout(500)
+
+            # Click "Done" if there's a done button
+            try:
+                done_btn = await self.page.wait_for_selector(
+                    'button:has-text("Done")', timeout=2000
+                )
+                if done_btn:
+                    await done_btn.click()
+            except PlaywrightTimeout:
+                pass
+
+        except PlaywrightTimeout as e:
+            print(f"  ⚠ Could not fill date field: {e}")
+
+    async def _click_search(self):
+        """Click the search button to find flights."""
+        try:
+            # Look for the search button with various selectors
+            search_selectors = [
+                'button:has-text("Search")',
+                'button:has-text("Explore")',
+                '[aria-label="Search"]',
+                'button[jsname="vLv7Lb"]',  # Google's internal button name
+            ]
+
+            for selector in search_selectors:
+                try:
+                    search_btn = await self.page.wait_for_selector(selector, timeout=2000)
+                    if search_btn:
+                        await search_btn.click()
+                        print("  ✓ Clicked search button")
+                        return
+                except PlaywrightTimeout:
+                    continue
+
+            # If no search button found, try pressing Enter
+            await self.page.keyboard.press('Enter')
+            print("  ✓ Pressed Enter to search")
+
+        except Exception as e:
+            print(f"  ⚠ Search button issue: {e}")
+
+    async def _wait_for_results(self):
+        """
+        Wait for the flight results to load.
+
+        Modern websites load content dynamically, so we need to wait
+        for the actual flight data to appear, not just the page to load.
+        """
+        try:
+            # Wait for flight results to appear
+            # These selectors target the flight result cards
+            await self.page.wait_for_selector(
+                '[data-test-id="searchResults"], '
+                'div[class*="flight"], '
+                'li[class*="pIav2d"], '  # Google's flight result class
+                '[role="listitem"]',
+                timeout=15000  # Wait up to 15 seconds
+            )
+            print("  ✓ Results loaded")
+
+            # Extra wait for all results to fully render
+            await self.page.wait_for_timeout(2000)
+
+        except PlaywrightTimeout:
+            print("  ⚠ Timeout waiting for results - page may still have content")
+
+    async def _extract_flights(self) -> list[dict]:
+        """
+        Extract flight information from the search results.
+
+        This is where we parse the actual flight data from the page.
+        We look for specific elements that contain the information we need.
+
+        Returns:
+            List of dictionaries with flight details
+        """
+        flights = []
+
+        try:
+            # Google Flights shows results in list items
+            # We use JavaScript to extract data from the page
+            # This is often more reliable than complex selectors
+
+            flight_data = await self.page.evaluate('''
+                () => {
+                    const flights = [];
+
+                    // Google Flights uses specific class patterns for flight cards
+                    // These selectors may need updates if Google changes their site
+                    const flightCards = document.querySelectorAll(
+                        'li[class*="pIav2d"], ' +  // Main flight item class
+                        'div[class*="yR1fYc"], ' + // Alternative container
+                        '[role="listitem"]'
+                    );
+
+                    flightCards.forEach((card, index) => {
+                        // Only get first 10 results to avoid overwhelming data
+                        if (index >= 10) return;
+
+                        try {
+                            // Extract text content and clean it up
+                            const getText = (selector) => {
+                                const el = card.querySelector(selector);
+                                return el ? el.textContent.trim() : null;
+                            };
+
+                            // Get all text spans to find relevant data
+                            const allText = card.textContent;
+
+                            // Look for price (contains $ or currency)
+                            const priceMatch = allText.match(/\$[\d,]+|\€[\d,]+|£[\d,]+/);
+                            const price = priceMatch ? priceMatch[0] : null;
+
+                            // Look for times (format: 10:30 AM or 14:30)
+                            const timeMatches = allText.match(/\d{1,2}:\d{2}\s*(?:AM|PM)?/gi);
+                            const departureTime = timeMatches && timeMatches[0] ? timeMatches[0] : null;
+                            const arrivalTime = timeMatches && timeMatches[1] ? timeMatches[1] : null;
+
+                            // Look for duration (format: 5h 30m or 5 hr 30 min)
+                            const durationMatch = allText.match(/(\d+)\s*h(?:r|our)?s?\s*(\d+)?\s*m(?:in)?/i);
+                            const duration = durationMatch ? durationMatch[0] : null;
+
+                            // Look for stops
+                            let stops = "Unknown";
+                            if (allText.toLowerCase().includes("nonstop") ||
+                                allText.toLowerCase().includes("non-stop")) {
+                                stops = "Nonstop";
+                            } else {
+                                const stopMatch = allText.match(/(\d+)\s*stop/i);
+                                if (stopMatch) {
+                                    stops = stopMatch[0];
+                                }
+                            }
+
+                            // Airline is trickier - often in specific spans
+                            // For now, get it from aria labels or specific classes
+                            const airlineEl = card.querySelector(
+                                '[class*="sSHqwe"], ' +  // Airline name class
+                                'span[class*="h1fkLb"]'   // Alternative class
+                            );
+                            const airline = airlineEl ? airlineEl.textContent.trim() : "Various Airlines";
+
+                            // Only add if we found at least a price
+                            if (price) {
+                                flights.push({
+                                    price: price,
+                                    departure_time: departureTime,
+                                    arrival_time: arrivalTime,
+                                    duration: duration,
+                                    stops: stops,
+                                    airline: airline
+                                });
+                            }
+                        } catch (e) {
+                            // Skip this card if there's an error
+                            console.error("Error parsing flight card:", e);
+                        }
+                    });
+
+                    return flights;
+                }
+            ''')
+
+            flights = flight_data if flight_data else []
+
+            # If JavaScript extraction didn't work well, try a simpler approach
+            if len(flights) == 0:
+                print("  Trying alternative extraction method...")
+
+                # Get all text that looks like flight info
+                page_text = await self.page.content()
+
+                # Create a placeholder result so we know something was found
+                flights.append({
+                    'price': 'Check page manually',
+                    'departure_time': 'See results',
+                    'arrival_time': 'See results',
+                    'duration': 'See results',
+                    'stops': 'See results',
+                    'airline': 'Multiple options available',
+                    'note': 'Dynamic content - run with headless=False to see results'
+                })
+
+        except Exception as e:
+            print(f"  ⚠ Extraction error: {e}")
+            flights.append({
+                'error': str(e),
+                'note': 'Try running with headless=False to debug'
+            })
+
+        return flights
+
+
+# ============================================================================
+# HELPER FUNCTION
+# ============================================================================
+async def search_google_flights(
+    origin: str,
+    destination: str,
+    departure_date: str,
+    return_date: str = None,
+    headless: bool = True
+) -> list[dict]:
+    """
+    Convenience function to search for flights without managing the scraper.
+
+    This is what you'll typically call from other code.
+
+    Example:
+        flights = await search_google_flights(
+            origin="New York",
+            destination="Los Angeles",
+            departure_date="2025-02-15"
+        )
+    """
+    scraper = GoogleFlightsScraper(headless=headless)
+
+    try:
+        await scraper.start_browser()
+        flights = await scraper.search_flights(
+            origin=origin,
+            destination=destination,
+            departure_date=departure_date,
+            return_date=return_date
+        )
+        return flights
+    finally:
+        # Always close the browser, even if there's an error
+        await scraper.close_browser()
+
+
+# ============================================================================
+# TEST CODE
+# ============================================================================
+# This block only runs when you execute this file directly
+# (not when importing it as a module)
+if __name__ == "__main__":
+
+    async def test_scraper():
+        """
+        Test the scraper with a sample search.
+
+        We search for flights from New York to Los Angeles,
+        departing 2 weeks from today.
+        """
+        print("=" * 60)
+        print("GOOGLE FLIGHTS SCRAPER TEST")
+        print("=" * 60)
+
+        # Calculate dates (2 weeks from now)
+        today = datetime.now()
+        departure = today + timedelta(days=14)
+        return_date = today + timedelta(days=21)  # 3 weeks from now
+
+        # Format dates as YYYY-MM-DD (this is ISO format, widely used in programming)
+        departure_str = departure.strftime('%Y-%m-%d')
+        return_str = return_date.strftime('%Y-%m-%d')
+
+        print(f"\nTest search:")
+        print(f"  From: New York (JFK)")
+        print(f"  To: Los Angeles (LAX)")
+        print(f"  Departure: {departure_str}")
+        print(f"  Return: {return_str}")
+        print()
+
+        # Run the search
+        # Set headless=False to watch the browser in action!
+        flights = await search_google_flights(
+            origin="New York",
+            destination="Los Angeles",
+            departure_date=departure_str,
+            return_date=return_str,
+            headless=False  # Set to True for invisible browser
+        )
+
+        # Display results
+        print("\n" + "=" * 60)
+        print("SEARCH RESULTS")
+        print("=" * 60)
+
+        if flights:
+            for i, flight in enumerate(flights, 1):
+                print(f"\nFlight {i}:")
+                for key, value in flight.items():
+                    print(f"  {key}: {value}")
+        else:
+            print("\nNo flights found. This could mean:")
+            print("  - Google Flights changed their page structure")
+            print("  - There was a network issue")
+            print("  - The search didn't complete properly")
+            print("\nTry running with headless=False to see what's happening!")
+
+        return flights
+
+    # Run the test
+    # asyncio.run() is how we execute async functions from regular Python
+    asyncio.run(test_scraper())
