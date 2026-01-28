@@ -737,9 +737,24 @@ class GoogleFlightsScraper:
                                 if (seen.has(key)) continue;
                                 seen.add(key);
 
-                                // Extract times (e.g., "6:00 AM – 9:28 AM" or "14:00 – 17:30")
-                                const timePattern = /(\d{1,2}:\d{2}\s*(?:AM|PM)?)\s*[–\-−]+\s*(\d{1,2}:\d{2}\s*(?:AM|PM)?)/i;
-                                const timeMatch = containerText.match(timePattern);
+                                // Extract times (e.g., "6:00 AM – 9:28 AM" or "6:00 AM9:28 AM")
+                                // Google Flights shows departure and arrival times, sometimes with various separators
+                                let departureTime = null;
+                                let arrivalTime = null;
+
+                                // Try pattern with separator first (–, -, −, or whitespace)
+                                const timeWithSep = containerText.match(/(\d{1,2}:\d{2}\s*(?:AM|PM)?)\s*[–\-−\s]+(\d{1,2}:\d{2}\s*(?:AM|PM)?)/i);
+                                if (timeWithSep) {
+                                    departureTime = timeWithSep[1].trim();
+                                    arrivalTime = timeWithSep[2].trim();
+                                } else {
+                                    // Try to find two separate time patterns
+                                    const allTimes = containerText.match(/\d{1,2}:\d{2}\s*(?:AM|PM)?/gi);
+                                    if (allTimes && allTimes.length >= 2) {
+                                        departureTime = allTimes[0].trim();
+                                        arrivalTime = allTimes[1].trim();
+                                    }
+                                }
 
                                 // Extract duration (e.g., "5 hr 28 min", "5h 28m", "5 hr")
                                 const durationPattern = /(\d+)\s*(?:hr|h)\s*(?:(\d+)\s*(?:min|m))?/i;
@@ -780,8 +795,8 @@ class GoogleFlightsScraper:
                                 }
 
                                 flights.push({
-                                    departure_time: timeMatch ? timeMatch[1].trim() : null,
-                                    arrival_time: timeMatch ? timeMatch[2].trim() : null,
+                                    departure_time: departureTime,
+                                    arrival_time: arrivalTime,
                                     duration: duration,
                                     stops: stops,
                                     airline: airline,
@@ -829,7 +844,7 @@ class GoogleFlightsScraper:
                         return priceA - priceB;
                     });
 
-                    return flights.slice(0, 10);
+                    return flights.slice(0, 30);
                 }
             ''')
 
