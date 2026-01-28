@@ -49,10 +49,11 @@ class GoogleFlightsScraper:
         self.headless = headless
         self.browser = None
         self.page = None
+        self.context = None
 
     async def start_browser(self):
         """
-        Launch the browser.
+        Launch the browser with video recording enabled.
 
         We use Chromium (Chrome's open-source base) because it works well
         with Playwright and is what most people use for scraping.
@@ -68,21 +69,45 @@ class GoogleFlightsScraper:
             args=['--disable-blink-features=AutomationControlled']  # Helps avoid detection
         )
 
-        # Create a new page (like a browser tab)
-        # We set a realistic viewport size to mimic a real user
-        self.page = await self.browser.new_page(
-            viewport={'width': 1280, 'height': 800}
+        # Create a browser context with video recording enabled
+        # Videos are saved to the 'videos' directory
+        self.context = await self.browser.new_context(
+            viewport={'width': 1280, 'height': 800},
+            record_video_dir='videos/',  # Directory to save videos
+            record_video_size={'width': 1280, 'height': 800}
         )
 
-        print("Browser started successfully!")
+        # Create a new page (like a browser tab)
+        self.page = await self.context.new_page()
+
+        print("Browser started successfully! (Video recording enabled)")
 
     async def close_browser(self):
-        """Clean up: close the browser when we're done."""
+        """Clean up: close the browser and save the video."""
+        video_path = None
+
+        # Get the video path before closing
+        if self.page:
+            try:
+                video = self.page.video
+                if video:
+                    video_path = await video.path()
+            except:
+                pass
+
+        # Close context first to ensure video is saved
+        if self.context:
+            await self.context.close()
+
         if self.browser:
             await self.browser.close()
         if self.playwright:
             await self.playwright.stop()
-        print("Browser closed.")
+
+        if video_path:
+            print(f"Browser closed. Video saved to: {video_path}")
+        else:
+            print("Browser closed.")
 
     async def handle_cookie_consent(self):
         """
