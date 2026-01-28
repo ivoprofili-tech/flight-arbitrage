@@ -156,120 +156,88 @@ class GoogleFlightsScraper:
         print("[Step 2] Checking for cookie popup...")
         await self.handle_cookie_consent()
 
-        # Take initial screenshot
         await self.page.screenshot(path='debug_step1.png')
         print("  Screenshot: debug_step1.png")
 
-        # Step 3: Set origin (Google may have auto-filled a different city)
-        print(f"[Step 3] Setting origin: {origin}...")
+        # Step 3: Click on origin and set it
+        print(f"[Step 3] Setting origin to {origin}...")
         try:
-            # Find all combobox inputs - first one is origin, second is destination
-            inputs = await self.page.query_selector_all('input[type="text"], input[role="combobox"]')
-            print(f"  Found {len(inputs)} input fields")
-
-            # Method: Click on origin area (first input area) and change it
-            # The origin is in a div that we can click
-            origin_div = await self.page.query_selector('div[data-placeholder="Where from?"], input[placeholder="Where from?"]')
-            if origin_div:
-                await origin_div.click()
-                await self.page.wait_for_timeout(500)
-                # Select all and replace
-                await self.page.keyboard.press('Control+a')
-                await self.page.keyboard.type(origin, delay=80)
-                await self.page.wait_for_timeout(1500)
-                await self.page.keyboard.press('Enter')
-                print(f"  ✓ Set origin to: {origin}")
-                await self.page.wait_for_timeout(1000)
+            # Click on the origin text (e.g., "San Francisco")
+            # The origin shows in a div we can click
+            origin_area = await self.page.query_selector('div.e5F5td, input[aria-label*="Where from"]')
+            if origin_area:
+                await origin_area.click()
             else:
-                print("  Origin field not found, using default")
+                # Click on the text showing the current origin city
+                await self.page.click('div[role="combobox"] >> nth=0')
 
+            await self.page.wait_for_timeout(500)
+            await self.page.keyboard.press('Control+a')
+            await self.page.keyboard.type(origin, delay=50)
+            await self.page.wait_for_timeout(1000)
+            await self.page.keyboard.press('Enter')
+            await self.page.wait_for_timeout(1000)
+            print(f"  ✓ Origin set to: {origin}")
         except Exception as e:
-            print(f"  ⚠ Origin error: {e}")
+            print(f"  ⚠ Origin setting failed: {e}")
 
         await self.page.screenshot(path='debug_step3.png')
 
-        # Step 4: Set destination
-        print(f"[Step 4] Setting destination: {destination}...")
+        # Step 4: Click Explore to go to the Explore page
+        print("[Step 4] Clicking Explore...")
         try:
-            # Click on destination area
-            dest_div = await self.page.query_selector('div[data-placeholder="Where to?"], input[placeholder="Where to?"]')
-            if dest_div:
-                await dest_div.click()
-                await self.page.wait_for_timeout(500)
-                await self.page.keyboard.type(destination, delay=80)
-                print(f"  Typed: {destination}")
-                await self.page.wait_for_timeout(1500)
-
-                await self.page.screenshot(path='debug_step4_typed.png')
-                print("  Screenshot: debug_step4_typed.png")
-
-                # Select first suggestion
-                await self.page.keyboard.press('Enter')
-                print(f"  ✓ Set destination to: {destination}")
-                await self.page.wait_for_timeout(1000)
+            explore_btn = await self.page.query_selector('button:has-text("Explore")')
+            if explore_btn:
+                await explore_btn.click()
+                print("  ✓ Clicked Explore button")
+                await self.page.wait_for_timeout(3000)
             else:
-                # Alternative: try clicking text "Where to?"
-                print("  Trying alternative selector...")
-                await self.page.click('text="Where to?"')
-                await self.page.wait_for_timeout(500)
-                await self.page.keyboard.type(destination, delay=80)
-                await self.page.wait_for_timeout(1500)
+                print("  Explore button not found, pressing Enter")
                 await self.page.keyboard.press('Enter')
-                print(f"  ✓ Set destination to: {destination}")
-
+                await self.page.wait_for_timeout(3000)
         except Exception as e:
-            print(f"  ⚠ Destination error: {e}")
+            print(f"  ⚠ Explore click failed: {e}")
 
-        await self.page.screenshot(path='debug_step4.png')
-        print("  Screenshot: debug_step4.png")
+        await self.page.screenshot(path='debug_step4_explore.png')
+        print("  Screenshot: debug_step4_explore.png")
 
-        # Step 5: Handle date picker if it appears
-        print("[Step 5] Handling date picker...")
-        await self.page.wait_for_timeout(1500)
-
+        # Step 5: On Explore page, find and click the destination card
+        print(f"[Step 5] Looking for {destination} on Explore page...")
         try:
-            # Check if calendar is open and click Done
-            done_button = await self.page.query_selector('button:has-text("Done")')
-            if done_button and await done_button.is_visible():
-                await done_button.click()
-                print("  ✓ Clicked Done")
-                await self.page.wait_for_timeout(1000)
+            # Wait for destination cards to appear
+            await self.page.wait_for_timeout(2000)
+
+            # Try to find the destination card (e.g., "Los Angeles")
+            # The cards have the city name as text
+            dest_card = await self.page.query_selector(f'text="{destination}"')
+            if dest_card:
+                await dest_card.click()
+                print(f"  ✓ Clicked on {destination} card")
+                await self.page.wait_for_timeout(3000)
+            else:
+                # Try clicking on a link or div with the destination name
+                await self.page.click(f'a:has-text("{destination}"), div:has-text("{destination}") >> nth=0')
+                print(f"  ✓ Clicked on {destination}")
+                await self.page.wait_for_timeout(3000)
+
         except Exception as e:
-            print(f"  No date picker: {e}")
+            print(f"  ⚠ Could not find {destination} card: {e}")
+            print("  Will try to extract from current page...")
 
         await self.page.screenshot(path='debug_step5.png')
         print("  Screenshot: debug_step5.png")
 
-        # Step 6: Click Explore/Search button
-        print("[Step 6] Clicking search button...")
-        try:
-            # Look for Explore or Search button
-            search_btn = await self.page.query_selector('button:has-text("Explore"), button:has-text("Search")')
-            if search_btn:
-                await search_btn.click()
-                print("  ✓ Clicked Explore/Search")
-            else:
-                # Try pressing Enter
-                await self.page.keyboard.press('Enter')
-                print("  ✓ Pressed Enter")
-        except Exception as e:
-            print(f"  ⚠ Search error: {e}")
-
-        # Wait for navigation
-        await self.page.wait_for_timeout(5000)
-        await self.page.screenshot(path='debug_step6.png')
-        print("  Screenshot: debug_step6.png")
-
-        # Check URL
+        # Check current URL
         current_url = self.page.url
         print(f"  Current URL: {current_url[:80]}...")
 
-        # Step 7: Wait for flight results
-        print("[Step 7] Waiting for flight results...")
+        # Step 6: Wait for flight results
+        print("[Step 6] Waiting for flight results...")
         await self._wait_for_results()
 
-        # Step 8: Extract flight data
-        print("[Step 8] Extracting flight data...")
+        # Step 7: Extract flight data
+        print("[Step 7] Extracting flight data...")
+        await self.page.screenshot(path='debug_screenshot.png')
         flights = await self._extract_flights()
 
         print(f"\nFound {len(flights)} flights!")
