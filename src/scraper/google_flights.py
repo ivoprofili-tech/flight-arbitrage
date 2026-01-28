@@ -160,78 +160,116 @@ class GoogleFlightsScraper:
         await self.page.screenshot(path='debug_step1.png')
         print("  Screenshot: debug_step1.png")
 
-        # Step 3: Click on "Where to?" and enter destination
-        print(f"[Step 3] Entering destination: {destination}...")
-
-        # Click directly on the text "Where to?"
+        # Step 3: Set origin (Google may have auto-filled a different city)
+        print(f"[Step 3] Setting origin: {origin}...")
         try:
-            where_to = await self.page.locator('text="Where to?"').first
-            await where_to.click()
-            print("  Clicked 'Where to?'")
-            await self.page.wait_for_timeout(1000)
+            # Find all combobox inputs - first one is origin, second is destination
+            inputs = await self.page.query_selector_all('input[type="text"], input[role="combobox"]')
+            print(f"  Found {len(inputs)} input fields")
 
-            # Type the destination
-            await self.page.keyboard.type(destination, delay=100)
-            print(f"  Typed: {destination}")
-            await self.page.wait_for_timeout(2000)
-
-            # Screenshot after typing
-            await self.page.screenshot(path='debug_step3_typed.png')
-
-            # Click the first suggestion or press Enter
-            try:
-                # Look for suggestion list items
-                first_suggestion = await self.page.locator('ul[role="listbox"] li').first
-                await first_suggestion.click()
-                print("  ✓ Clicked first suggestion")
-            except:
-                # Press down arrow and enter to select
-                await self.page.keyboard.press('ArrowDown')
-                await self.page.wait_for_timeout(300)
+            # Method: Click on origin area (first input area) and change it
+            # The origin is in a div that we can click
+            origin_div = await self.page.query_selector('div[data-placeholder="Where from?"], input[placeholder="Where from?"]')
+            if origin_div:
+                await origin_div.click()
+                await self.page.wait_for_timeout(500)
+                # Select all and replace
+                await self.page.keyboard.press('Control+a')
+                await self.page.keyboard.type(origin, delay=80)
+                await self.page.wait_for_timeout(1500)
                 await self.page.keyboard.press('Enter')
-                print("  ✓ Selected with keyboard")
-
-            await self.page.wait_for_timeout(2000)
+                print(f"  ✓ Set origin to: {origin}")
+                await self.page.wait_for_timeout(1000)
+            else:
+                print("  Origin field not found, using default")
 
         except Exception as e:
-            print(f"  ⚠ Error entering destination: {e}")
+            print(f"  ⚠ Origin error: {e}")
 
-        # Screenshot after destination
-        await self.page.screenshot(path='debug_step3_done.png')
-        print("  Screenshot: debug_step3_done.png")
+        await self.page.screenshot(path='debug_step3.png')
 
-        # Step 4: Handle date selection if calendar appears
-        print(f"[Step 4] Checking for date selection...")
-        await self.page.wait_for_timeout(1000)
-
-        # Check if a date picker is visible and click Done
+        # Step 4: Set destination
+        print(f"[Step 4] Setting destination: {destination}...")
         try:
-            done_btn = await self.page.locator('button:has-text("Done")').first
-            if await done_btn.is_visible():
-                await done_btn.click()
-                print("  ✓ Clicked Done on date picker")
+            # Click on destination area
+            dest_div = await self.page.query_selector('div[data-placeholder="Where to?"], input[placeholder="Where to?"]')
+            if dest_div:
+                await dest_div.click()
+                await self.page.wait_for_timeout(500)
+                await self.page.keyboard.type(destination, delay=80)
+                print(f"  Typed: {destination}")
+                await self.page.wait_for_timeout(1500)
+
+                await self.page.screenshot(path='debug_step4_typed.png')
+                print("  Screenshot: debug_step4_typed.png")
+
+                # Select first suggestion
+                await self.page.keyboard.press('Enter')
+                print(f"  ✓ Set destination to: {destination}")
                 await self.page.wait_for_timeout(1000)
-        except:
-            pass
+            else:
+                # Alternative: try clicking text "Where to?"
+                print("  Trying alternative selector...")
+                await self.page.click('text="Where to?"')
+                await self.page.wait_for_timeout(500)
+                await self.page.keyboard.type(destination, delay=80)
+                await self.page.wait_for_timeout(1500)
+                await self.page.keyboard.press('Enter')
+                print(f"  ✓ Set destination to: {destination}")
 
-        # Step 5: Wait for the page to load flight results
-        print("[Step 5] Waiting for results page...")
-        await self.page.wait_for_timeout(3000)
+        except Exception as e:
+            print(f"  ⚠ Destination error: {e}")
 
-        # Screenshot before extraction
+        await self.page.screenshot(path='debug_step4.png')
+        print("  Screenshot: debug_step4.png")
+
+        # Step 5: Handle date picker if it appears
+        print("[Step 5] Handling date picker...")
+        await self.page.wait_for_timeout(1500)
+
+        try:
+            # Check if calendar is open and click Done
+            done_button = await self.page.query_selector('button:has-text("Done")')
+            if done_button and await done_button.is_visible():
+                await done_button.click()
+                print("  ✓ Clicked Done")
+                await self.page.wait_for_timeout(1000)
+        except Exception as e:
+            print(f"  No date picker: {e}")
+
         await self.page.screenshot(path='debug_step5.png')
         print("  Screenshot: debug_step5.png")
 
-        # Check current URL to see if we're on results page
+        # Step 6: Click Explore/Search button
+        print("[Step 6] Clicking search button...")
+        try:
+            # Look for Explore or Search button
+            search_btn = await self.page.query_selector('button:has-text("Explore"), button:has-text("Search")')
+            if search_btn:
+                await search_btn.click()
+                print("  ✓ Clicked Explore/Search")
+            else:
+                # Try pressing Enter
+                await self.page.keyboard.press('Enter')
+                print("  ✓ Pressed Enter")
+        except Exception as e:
+            print(f"  ⚠ Search error: {e}")
+
+        # Wait for navigation
+        await self.page.wait_for_timeout(5000)
+        await self.page.screenshot(path='debug_step6.png')
+        print("  Screenshot: debug_step6.png")
+
+        # Check URL
         current_url = self.page.url
         print(f"  Current URL: {current_url[:80]}...")
 
-        # Step 6: Wait for flight results
-        print("[Step 6] Waiting for flight results...")
+        # Step 7: Wait for flight results
+        print("[Step 7] Waiting for flight results...")
         await self._wait_for_results()
 
-        # Step 7: Extract flight data
-        print("[Step 7] Extracting flight data...")
+        # Step 8: Extract flight data
+        print("[Step 8] Extracting flight data...")
         flights = await self._extract_flights()
 
         print(f"\nFound {len(flights)} flights!")
