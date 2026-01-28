@@ -186,53 +186,53 @@ class GoogleFlightsScraper:
         if not return_date:
             print("[Step 2] Setting trip type to one-way...")
             try:
-                # Click on the trip type dropdown (shows "Round trip" by default)
-                trip_selectors = [
-                    'div[aria-label*="trip"] button',
-                    'button:has-text("Round trip")',
-                    '[role="button"]:has-text("Round trip")',
-                    '//button[contains(., "Round trip")]',
-                    '//div[contains(@aria-label, "trip")]//button',
-                ]
+                # Use locator to find and click "Round trip" text directly
+                # This is more reliable than complex CSS selectors
+                round_trip_locator = self.page.locator('text="Round trip"').first
+                await round_trip_locator.click(timeout=3000)
+                print("  ✓ Clicked Round trip dropdown")
 
-                trip_clicked = False
-                for selector in trip_selectors:
-                    try:
-                        if selector.startswith('//'):
-                            trip_dropdown = await self.page.wait_for_selector(f'xpath={selector}', timeout=1500)
-                        else:
-                            trip_dropdown = await self.page.wait_for_selector(selector, timeout=1500)
-                        if trip_dropdown:
-                            await trip_dropdown.click()
-                            trip_clicked = True
-                            print(f"  ✓ Clicked trip type dropdown")
-                            break
-                    except:
-                        continue
+                await self.page.wait_for_timeout(500)
 
-                if trip_clicked:
-                    await self.page.wait_for_timeout(500)
-                    # Select "One way" from dropdown
-                    one_way_selectors = [
-                        'li:has-text("One way")',
-                        '[role="option"]:has-text("One way")',
-                        '//li[contains(., "One way")]',
-                    ]
-                    for selector in one_way_selectors:
-                        try:
-                            if selector.startswith('//'):
-                                one_way = await self.page.wait_for_selector(f'xpath={selector}', timeout=1500)
-                            else:
-                                one_way = await self.page.wait_for_selector(selector, timeout=1500)
-                            if one_way:
-                                await one_way.click()
-                                print("  ✓ Set to one-way")
-                                break
-                        except:
-                            continue
-                    await self.page.wait_for_timeout(500)
+                # Now click "One way" from the dropdown menu
+                one_way_locator = self.page.locator('text="One way"').first
+                await one_way_locator.click(timeout=3000)
+                print("  ✓ Selected One way")
+
+                await self.page.wait_for_timeout(500)
             except Exception as e:
-                print(f"  ⚠ Could not set one-way: {e}")
+                print(f"  ⚠ Could not set one-way via locator: {e}")
+                # Fallback: try JavaScript
+                try:
+                    await self.page.evaluate('''
+                        () => {
+                            // Find and click "Round trip" text
+                            const elements = document.querySelectorAll('*');
+                            for (const el of elements) {
+                                if (el.textContent === 'Round trip' && el.offsetParent !== null) {
+                                    el.click();
+                                    return true;
+                                }
+                            }
+                            return false;
+                        }
+                    ''')
+                    await self.page.wait_for_timeout(500)
+                    await self.page.evaluate('''
+                        () => {
+                            const elements = document.querySelectorAll('li, [role="option"]');
+                            for (const el of elements) {
+                                if (el.textContent.includes('One way')) {
+                                    el.click();
+                                    return true;
+                                }
+                            }
+                            return false;
+                        }
+                    ''')
+                    print("  ✓ Set one-way via JavaScript")
+                except Exception as e2:
+                    print(f"  ⚠ JavaScript fallback also failed: {e2}")
 
             await self.page.screenshot(path='debug_step2_oneway.png')
 
@@ -342,47 +342,66 @@ class GoogleFlightsScraper:
                     continue
 
             await self.page.wait_for_timeout(500)
+            await self.page.screenshot(path='debug_step5_before_done.png')
 
-            # Click Done button - try multiple approaches
+            # Click Done button - use locator with force click
             done_clicked = False
-            done_selectors = [
-                'button[aria-label="Done"]',
-                'button:has-text("Done")',
-                'span:has-text("Done")',
-                '[aria-label="Done"]',
-                'button.VfPpkd-LgbsSe:has-text("Done")',  # Material Design button
-                '//button[.//span[text()="Done"]]',  # XPath for button containing span with Done
-                '//span[text()="Done"]/ancestor::button',  # XPath: find span, go up to button
-            ]
+            try:
+                # Use locator to find Done button - it handles scrolling automatically
+                done_locator = self.page.locator('button:has-text("Done")').first
+                await done_locator.scroll_into_view_if_needed()
+                await self.page.wait_for_timeout(300)
+                await done_locator.click(timeout=3000)
+                done_clicked = True
+                print("  ✓ Clicked Done button via locator")
+            except Exception as e:
+                print(f"  ⚠ Locator approach failed: {e}")
 
-            for selector in done_selectors:
-                try:
-                    if selector.startswith('//'):
-                        # Use XPath
-                        done_btn = await self.page.wait_for_selector(f'xpath={selector}', timeout=1500)
-                    else:
-                        done_btn = await self.page.wait_for_selector(selector, timeout=1500)
-
-                    if done_btn:
-                        # Make sure button is visible and clickable
-                        await done_btn.scroll_into_view_if_needed()
-                        await self.page.wait_for_timeout(200)
-                        await done_btn.click()
-                        done_clicked = True
-                        print(f"  ✓ Clicked Done button with: {selector}")
-                        break
-                except Exception:
-                    continue
-
-            # If no Done button found, try pressing Escape or clicking outside
+            # Fallback: use JavaScript to find and click Done button
             if not done_clicked:
-                print("  ⚠ Done button not found, trying alternatives...")
                 try:
-                    # Try pressing Escape to close the date picker
-                    await self.page.keyboard.press('Escape')
-                    print("  ✓ Pressed Escape to close date picker")
-                except:
-                    pass
+                    result = await self.page.evaluate('''
+                        () => {
+                            // Find all buttons and spans with "Done" text
+                            const buttons = document.querySelectorAll('button');
+                            for (const btn of buttons) {
+                                if (btn.textContent.trim() === 'Done' ||
+                                    btn.innerText.trim() === 'Done' ||
+                                    btn.querySelector('span')?.textContent?.trim() === 'Done') {
+                                    // Scroll into view
+                                    btn.scrollIntoView({ behavior: 'instant', block: 'center' });
+                                    // Click it
+                                    btn.click();
+                                    return 'clicked_button';
+                                }
+                            }
+                            // Try finding span with Done and clicking its parent
+                            const spans = document.querySelectorAll('span');
+                            for (const span of spans) {
+                                if (span.textContent.trim() === 'Done') {
+                                    const btn = span.closest('button');
+                                    if (btn) {
+                                        btn.scrollIntoView({ behavior: 'instant', block: 'center' });
+                                        btn.click();
+                                        return 'clicked_span_parent';
+                                    }
+                                }
+                            }
+                            return 'not_found';
+                        }
+                    ''')
+                    if result != 'not_found':
+                        done_clicked = True
+                        print(f"  ✓ Clicked Done button via JavaScript ({result})")
+                    else:
+                        print("  ⚠ JavaScript couldn't find Done button")
+                except Exception as e2:
+                    print(f"  ⚠ JavaScript fallback failed: {e2}")
+
+            # Last resort: press Escape to close the date picker
+            if not done_clicked:
+                print("  ⚠ Done button not found, pressing Escape...")
+                await self.page.keyboard.press('Escape')
 
             await self.page.wait_for_timeout(1000)
         except Exception as e:
