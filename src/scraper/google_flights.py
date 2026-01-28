@@ -219,43 +219,87 @@ class GoogleFlightsScraper:
         2. Clear any existing text
         3. Type the new location
         4. Wait for suggestions
-        5. Select the first suggestion
+        5. Click on the first suggestion
         """
         try:
-            # Google Flights has specific input fields for origin/destination
+            # Google Flights has input fields we need to click first
             if is_origin:
-                # Click on the "Where from?" input area
-                input_wrapper = await self.page.wait_for_selector(
-                    '[aria-label="Where from?"], [placeholder="Where from?"], '
-                    '[data-placeholder="Where from?"], input[aria-autocomplete="inline"]:first-of-type',
-                    timeout=5000
-                )
+                # For origin, click on the first input area
+                selectors = [
+                    'div[data-placeholder="Where from?"]',
+                    'input[placeholder="Where from?"]',
+                    'input[aria-label="Where from?"]',
+                    '[aria-label="Where from?"]',
+                ]
             else:
-                # Click on the "Where to?" input area
-                input_wrapper = await self.page.wait_for_selector(
-                    '[aria-label="Where to?"], [placeholder="Where to?"], '
-                    '[data-placeholder="Where to?"]',
-                    timeout=5000
-                )
+                # For destination, click on the "Where to?" area
+                selectors = [
+                    'div[data-placeholder="Where to?"]',
+                    'input[placeholder="Where to?"]',
+                    'input[aria-label="Where to?"]',
+                    '[aria-label="Where to?"]',
+                    'div[class*="destination"]',
+                ]
 
-            if input_wrapper:
-                await input_wrapper.click()
-                await self.page.wait_for_timeout(500)
+            clicked = False
+            for selector in selectors:
+                try:
+                    element = await self.page.wait_for_selector(selector, timeout=3000)
+                    if element:
+                        await element.click()
+                        clicked = True
+                        print(f"  Clicked: {selector}")
+                        break
+                except PlaywrightTimeout:
+                    continue
 
-            # Now type the location
-            # We use keyboard.type() for more realistic typing
-            await self.page.keyboard.type(location, delay=100)  # 100ms between keystrokes
+            if not clicked:
+                print(f"  ⚠ Could not find {'origin' if is_origin else 'destination'} field, trying Tab key")
+                # Try tabbing to the field
+                if not is_origin:
+                    await self.page.keyboard.press('Tab')
 
-            # Wait for autocomplete suggestions to appear
-            await self.page.wait_for_timeout(1500)
-
-            # Press Enter to select the first suggestion
-            await self.page.keyboard.press('Enter')
             await self.page.wait_for_timeout(500)
 
-            print(f"  ✓ Entered: {location}")
+            # Clear any existing text
+            await self.page.keyboard.press('Control+a')
+            await self.page.wait_for_timeout(100)
 
-        except PlaywrightTimeout as e:
+            # Type the location slowly for autocomplete to work
+            await self.page.keyboard.type(location, delay=150)
+            print(f"  Typed: {location}")
+
+            # Wait for autocomplete suggestions to appear
+            await self.page.wait_for_timeout(2000)
+
+            # Try to click on the first suggestion in the dropdown
+            suggestion_selectors = [
+                'ul[role="listbox"] li:first-child',
+                'li[data-ved]:first-child',
+                '[role="option"]:first-child',
+                'div[class*="suggestion"]:first-child',
+            ]
+
+            suggestion_clicked = False
+            for selector in suggestion_selectors:
+                try:
+                    suggestion = await self.page.wait_for_selector(selector, timeout=2000)
+                    if suggestion:
+                        await suggestion.click()
+                        suggestion_clicked = True
+                        print(f"  ✓ Selected suggestion for: {location}")
+                        break
+                except PlaywrightTimeout:
+                    continue
+
+            # If no suggestion clicked, press Enter
+            if not suggestion_clicked:
+                await self.page.keyboard.press('Enter')
+                print(f"  ✓ Pressed Enter for: {location}")
+
+            await self.page.wait_for_timeout(1000)
+
+        except Exception as e:
             print(f"  ⚠ Could not fill location field: {e}")
 
     async def _fill_date_field(self, date_str: str, is_departure: bool):
@@ -267,69 +311,101 @@ class GoogleFlightsScraper:
         vary a lot between websites.
         """
         try:
-            # Click on the appropriate date field
-            if is_departure:
-                date_input = await self.page.wait_for_selector(
-                    '[aria-label="Departure"], [data-label="Departure"], '
-                    '[placeholder="Departure"]',
-                    timeout=5000
-                )
-            else:
-                date_input = await self.page.wait_for_selector(
-                    '[aria-label="Return"], [data-label="Return"], '
-                    '[placeholder="Return"]',
-                    timeout=5000
-                )
+            # Click on the date field area
+            date_selectors = [
+                '[data-placeholder="Departure"]' if is_departure else '[data-placeholder="Return"]',
+                '[aria-label="Departure"]' if is_departure else '[aria-label="Return"]',
+                'input[placeholder="Departure"]' if is_departure else 'input[placeholder="Return"]',
+                '[class*="date"]',
+            ]
 
-            if date_input:
-                await date_input.click()
-                await self.page.wait_for_timeout(1000)
+            clicked = False
+            for selector in date_selectors:
+                try:
+                    date_input = await self.page.wait_for_selector(selector, timeout=2000)
+                    if date_input:
+                        await date_input.click()
+                        clicked = True
+                        print(f"  Clicked date field: {selector}")
+                        break
+                except PlaywrightTimeout:
+                    continue
 
-            # Parse the date to navigate to the right month
+            if not clicked:
+                print("  ⚠ Could not find date field")
+                return
+
+            await self.page.wait_for_timeout(1000)
+
+            # Parse the target date
             target_date = datetime.strptime(date_str, '%Y-%m-%d')
-
-            # Try to find and click the specific date in the calendar
-            # Google uses different date formats, so we try a few
             day = target_date.day
-            month_name = target_date.strftime('%B')  # Full month name
+            month_name = target_date.strftime('%B')  # Full month name (e.g., "March")
+            month_short = target_date.strftime('%b')  # Short month (e.g., "Mar")
 
-            # Look for the date cell
-            date_selector = f'[data-iso="{date_str}"], [aria-label*="{month_name} {day}"]'
+            # Try multiple selector patterns for the date cell
+            date_cell_selectors = [
+                f'[data-iso="{date_str}"]',
+                f'[aria-label*="{month_name} {day}"]',
+                f'[aria-label*="{month_short} {day}"]',
+                f'[aria-label*="{day}"][aria-label*="{month_name}"]',
+            ]
 
-            try:
-                date_cell = await self.page.wait_for_selector(date_selector, timeout=3000)
-                if date_cell:
-                    await date_cell.click()
-                    print(f"  ✓ Selected date: {date_str}")
-            except PlaywrightTimeout:
-                # If we can't find the date picker, try typing the date
-                await self.page.keyboard.type(date_str)
-                await self.page.keyboard.press('Enter')
-                print(f"  ✓ Typed date: {date_str}")
+            date_selected = False
+            for selector in date_cell_selectors:
+                try:
+                    date_cell = await self.page.wait_for_selector(selector, timeout=2000)
+                    if date_cell:
+                        await date_cell.click()
+                        date_selected = True
+                        print(f"  ✓ Selected date: {date_str}")
+                        break
+                except PlaywrightTimeout:
+                    continue
+
+            if not date_selected:
+                print(f"  ⚠ Could not find date {date_str} in calendar")
 
             await self.page.wait_for_timeout(500)
 
-            # Click "Done" if there's a done button
-            try:
-                done_btn = await self.page.wait_for_selector(
-                    'button:has-text("Done")', timeout=2000
-                )
-                if done_btn:
-                    await done_btn.click()
-            except PlaywrightTimeout:
-                pass
+            # Click "Done" button if present
+            done_selectors = [
+                'button:has-text("Done")',
+                'button:has-text("OK")',
+                'button:has-text("Apply")',
+                '[aria-label="Done"]',
+            ]
 
-        except PlaywrightTimeout as e:
+            for selector in done_selectors:
+                try:
+                    done_btn = await self.page.wait_for_selector(selector, timeout=1500)
+                    if done_btn:
+                        await done_btn.click()
+                        print("  ✓ Clicked Done button")
+                        break
+                except PlaywrightTimeout:
+                    continue
+
+            await self.page.wait_for_timeout(500)
+
+        except Exception as e:
             print(f"  ⚠ Could not fill date field: {e}")
 
     async def _click_search(self):
         """Click the search button to find flights."""
         try:
+            # Save a debug screenshot before searching
+            await self.page.screenshot(path='debug_before_search.png')
+            print("  Screenshot saved: debug_before_search.png")
+
             # Look for the search button with various selectors
             search_selectors = [
                 'button:has-text("Search")',
                 'button:has-text("Explore")',
+                'button:has-text("Buscar")',  # Spanish
+                'button:has-text("Pesquisar")',  # Portuguese
                 '[aria-label="Search"]',
+                '[aria-label*="Search"]',
                 'button[jsname="vLv7Lb"]',  # Google's internal button name
             ]
 
@@ -338,7 +414,7 @@ class GoogleFlightsScraper:
                     search_btn = await self.page.wait_for_selector(selector, timeout=2000)
                     if search_btn:
                         await search_btn.click()
-                        print("  ✓ Clicked search button")
+                        print(f"  ✓ Clicked search button: {selector}")
                         return
                 except PlaywrightTimeout:
                     continue
