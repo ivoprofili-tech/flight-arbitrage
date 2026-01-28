@@ -150,60 +150,88 @@ class GoogleFlightsScraper:
         # Step 1: Navigate to Google Flights
         print("\n[Step 1] Opening Google Flights...")
         await self.page.goto('https://www.google.com/travel/flights', wait_until='networkidle')
+        await self.page.wait_for_timeout(2000)
 
         # Step 2: Handle cookie consent
         print("[Step 2] Checking for cookie popup...")
         await self.handle_cookie_consent()
 
-        # Step 3: Set trip type (round trip or one-way)
-        print("[Step 3] Setting trip type...")
-        if not return_date:
-            # Click the trip type dropdown and select one-way
+        # Take initial screenshot
+        await self.page.screenshot(path='debug_step1.png')
+        print("  Screenshot: debug_step1.png")
+
+        # Step 3: Click on "Where to?" and enter destination
+        print(f"[Step 3] Entering destination: {destination}...")
+
+        # Click directly on the text "Where to?"
+        try:
+            where_to = await self.page.locator('text="Where to?"').first
+            await where_to.click()
+            print("  Clicked 'Where to?'")
+            await self.page.wait_for_timeout(1000)
+
+            # Type the destination
+            await self.page.keyboard.type(destination, delay=100)
+            print(f"  Typed: {destination}")
+            await self.page.wait_for_timeout(2000)
+
+            # Screenshot after typing
+            await self.page.screenshot(path='debug_step3_typed.png')
+
+            # Click the first suggestion or press Enter
             try:
-                # Find and click the dropdown (usually shows "Round trip")
-                trip_type_btn = await self.page.wait_for_selector(
-                    '[aria-label="Change ticket type."], [aria-haspopup="listbox"]:near(:text("Round trip"))',
-                    timeout=5000
-                )
-                if trip_type_btn:
-                    await trip_type_btn.click()
-                    await self.page.wait_for_timeout(500)
+                # Look for suggestion list items
+                first_suggestion = await self.page.locator('ul[role="listbox"] li').first
+                await first_suggestion.click()
+                print("  ✓ Clicked first suggestion")
+            except:
+                # Press down arrow and enter to select
+                await self.page.keyboard.press('ArrowDown')
+                await self.page.wait_for_timeout(300)
+                await self.page.keyboard.press('Enter')
+                print("  ✓ Selected with keyboard")
 
-                    # Click "One way" option
-                    one_way = await self.page.wait_for_selector('li:has-text("One way")', timeout=3000)
-                    if one_way:
-                        await one_way.click()
-                        print("  Set to one-way trip")
-            except PlaywrightTimeout:
-                print("  Could not change trip type, continuing with default...")
+            await self.page.wait_for_timeout(2000)
 
-        # Step 4: Enter origin city
-        print(f"[Step 4] Entering origin: {origin}...")
-        await self._fill_location_field(is_origin=True, location=origin)
+        except Exception as e:
+            print(f"  ⚠ Error entering destination: {e}")
 
-        # Step 5: Enter destination city
-        print(f"[Step 5] Entering destination: {destination}...")
-        await self._fill_location_field(is_origin=False, location=destination)
+        # Screenshot after destination
+        await self.page.screenshot(path='debug_step3_done.png')
+        print("  Screenshot: debug_step3_done.png")
 
-        # Step 6: Enter departure date
-        print(f"[Step 6] Setting departure date: {departure_date}...")
-        await self._fill_date_field(departure_date, is_departure=True)
+        # Step 4: Handle date selection if calendar appears
+        print(f"[Step 4] Checking for date selection...")
+        await self.page.wait_for_timeout(1000)
 
-        # Step 7: Enter return date (if round trip)
-        if return_date:
-            print(f"[Step 7] Setting return date: {return_date}...")
-            await self._fill_date_field(return_date, is_departure=False)
+        # Check if a date picker is visible and click Done
+        try:
+            done_btn = await self.page.locator('button:has-text("Done")').first
+            if await done_btn.is_visible():
+                await done_btn.click()
+                print("  ✓ Clicked Done on date picker")
+                await self.page.wait_for_timeout(1000)
+        except:
+            pass
 
-        # Step 8: Click Search / wait for results
-        print("[Step 8] Searching for flights...")
-        await self._click_search()
+        # Step 5: Wait for the page to load flight results
+        print("[Step 5] Waiting for results page...")
+        await self.page.wait_for_timeout(3000)
 
-        # Step 9: Wait for results to load
-        print("[Step 9] Waiting for results...")
+        # Screenshot before extraction
+        await self.page.screenshot(path='debug_step5.png')
+        print("  Screenshot: debug_step5.png")
+
+        # Check current URL to see if we're on results page
+        current_url = self.page.url
+        print(f"  Current URL: {current_url[:80]}...")
+
+        # Step 6: Wait for flight results
+        print("[Step 6] Waiting for flight results...")
         await self._wait_for_results()
 
-        # Step 10: Extract flight data
-        print("[Step 10] Extracting flight data...")
+        # Step 7: Extract flight data
+        print("[Step 7] Extracting flight data...")
         flights = await self._extract_flights()
 
         print(f"\nFound {len(flights)} flights!")
