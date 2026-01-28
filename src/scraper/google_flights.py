@@ -541,6 +541,103 @@ async def search_google_flights(
 
 
 # ============================================================================
+# SAVE RESULTS TO FILE
+# ============================================================================
+def save_results_to_file(
+    flights: list[dict],
+    origin: str,
+    destination: str,
+    departure_date: str,
+    return_date: str = None,
+    filename: str = None
+) -> str:
+    """
+    Save flight search results to a text file.
+
+    FILE I/O CONCEPTS:
+    - 'open()' opens a file for reading or writing
+    - 'w' mode means "write" (creates new file or overwrites existing)
+    - 'with' statement ensures the file is properly closed when done
+    - 'f.write()' writes text to the file
+
+    Args:
+        flights: List of flight dictionaries from the search
+        origin: Where the flight departs from
+        destination: Where the flight goes to
+        departure_date: Departure date (YYYY-MM-DD)
+        return_date: Optional return date
+        filename: Custom filename (optional, auto-generates if not provided)
+
+    Returns:
+        The path to the saved file
+    """
+    # Generate a filename if none provided
+    # We include the route and date to make it easy to find later
+    if filename is None:
+        # Clean up city names for filename (remove spaces, special chars)
+        origin_clean = origin.replace(" ", "_").replace(",", "")
+        dest_clean = destination.replace(" ", "_").replace(",", "")
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f"flights_{origin_clean}_to_{dest_clean}_{timestamp}.txt"
+
+    # Build the content string
+    # We use a list and join() - more efficient than string concatenation
+    lines = []
+
+    # Header section
+    lines.append("=" * 60)
+    lines.append("FLIGHT SEARCH RESULTS")
+    lines.append("=" * 60)
+    lines.append("")
+    lines.append(f"Search performed: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    lines.append(f"Route: {origin} → {destination}")
+    lines.append(f"Departure: {departure_date}")
+    if return_date:
+        lines.append(f"Return: {return_date}")
+    else:
+        lines.append("Trip type: One-way")
+    lines.append("")
+    lines.append("-" * 60)
+    lines.append(f"Found {len(flights)} flight(s)")
+    lines.append("-" * 60)
+    lines.append("")
+
+    # Flight details
+    if flights:
+        for i, flight in enumerate(flights, 1):
+            lines.append(f"FLIGHT {i}")
+            lines.append("-" * 30)
+
+            # Write each field nicely formatted
+            for key, value in flight.items():
+                # Capitalize the key and replace underscores with spaces
+                nice_key = key.replace("_", " ").title()
+                lines.append(f"  {nice_key}: {value}")
+
+            lines.append("")  # Blank line between flights
+    else:
+        lines.append("No flights found.")
+        lines.append("")
+
+    # Footer
+    lines.append("=" * 60)
+    lines.append("End of results")
+    lines.append("=" * 60)
+
+    # Join all lines with newline character
+    content = "\n".join(lines)
+
+    # Write to file
+    # 'with' is a context manager - it automatically closes the file
+    # even if an error occurs
+    with open(filename, 'w', encoding='utf-8') as f:
+        f.write(content)
+
+    print(f"\n✓ Results saved to: {filename}")
+    return filename
+
+
+# ============================================================================
 # TEST CODE
 # ============================================================================
 # This block only runs when you execute this file directly
@@ -594,6 +691,16 @@ if __name__ == "__main__":
                 print(f"\nFlight {i}:")
                 for key, value in flight.items():
                     print(f"  {key}: {value}")
+
+            # Save results to a text file
+            saved_file = save_results_to_file(
+                flights=flights,
+                origin="New York",
+                destination="Los Angeles",
+                departure_date=departure_str,
+                return_date=return_str
+            )
+            print(f"\nResults have been saved! You can open '{saved_file}' to see them.")
         else:
             print("\nNo flights found. This could mean:")
             print("  - Google Flights changed their page structure")
