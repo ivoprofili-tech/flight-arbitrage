@@ -135,108 +135,201 @@ class GoogleFlightsScraper:
         """
         Search for flights on Google Flights.
 
-        Args:
-            origin: Departure city or airport code (e.g., "New York" or "JFK")
-            destination: Arrival city or airport code (e.g., "Los Angeles" or "LAX")
-            departure_date: Date in YYYY-MM-DD format (e.g., "2025-02-15")
-            return_date: Optional return date for round trips (same format)
-
-        Returns:
-            A list of dictionaries, each containing flight information
+        Steps:
+        1. Open Google Flights
+        2. Click the "from" field and type origin
+        3. Click the "to" field and type destination
+        4. Click date field, select date, click Done
+        5. Set one-way if no return date
+        6. Click Search
         """
         print(f"\nSearching flights: {origin} → {destination}")
         print(f"Departure: {departure_date}" + (f", Return: {return_date}" if return_date else " (one-way)"))
 
-        # Step 1: Navigate to Google Flights
+        # Step 1: Open Google Flights
         print("\n[Step 1] Opening Google Flights...")
         await self.page.goto('https://www.google.com/travel/flights', wait_until='networkidle')
         await self.page.wait_for_timeout(2000)
 
-        # Step 2: Handle cookie consent
-        print("[Step 2] Checking for cookie popup...")
+        # Handle cookie consent if needed
         await self.handle_cookie_consent()
-
         await self.page.screenshot(path='debug_step1.png')
-        print("  Screenshot: debug_step1.png")
 
-        # Step 3: Click on origin and set it
-        print(f"[Step 3] Setting origin to {origin}...")
+        # Step 2: Click the "from" field and enter origin
+        print(f"[Step 2] Clicking 'from' field and entering {origin}...")
         try:
-            # Click on the origin text (e.g., "San Francisco")
-            # The origin shows in a div we can click
-            origin_area = await self.page.query_selector('div.e5F5td, input[aria-label*="Where from"]')
-            if origin_area:
-                await origin_area.click()
+            # The origin field shows the auto-detected city (e.g., "San Francisco")
+            # We need to click on it - it's the first input/combobox area
+            from_field = await self.page.query_selector('input[aria-label*="Where from"], input[placeholder*="Where from"]')
+            if from_field:
+                await from_field.click()
             else:
-                # Click on the text showing the current origin city
-                await self.page.click('div[role="combobox"] >> nth=0')
+                # Try clicking on the displayed city text in the first combobox
+                await self.page.click('div[role="combobox"]:first-of-type')
 
             await self.page.wait_for_timeout(500)
+
+            # Clear existing text and type new origin
             await self.page.keyboard.press('Control+a')
-            await self.page.keyboard.type(origin, delay=50)
+            await self.page.keyboard.type(origin, delay=100)
+            await self.page.wait_for_timeout(1500)
+
+            await self.page.screenshot(path='debug_step2_typed.png')
+
+            # Select from dropdown - click first suggestion or press Enter
+            try:
+                suggestion = await self.page.wait_for_selector('ul[role="listbox"] li:first-child', timeout=2000)
+                if suggestion:
+                    await suggestion.click()
+                    print(f"  ✓ Selected {origin} from dropdown")
+            except:
+                await self.page.keyboard.press('Enter')
+                print(f"  ✓ Pressed Enter for {origin}")
+
             await self.page.wait_for_timeout(1000)
-            await self.page.keyboard.press('Enter')
-            await self.page.wait_for_timeout(1000)
-            print(f"  ✓ Origin set to: {origin}")
         except Exception as e:
-            print(f"  ⚠ Origin setting failed: {e}")
+            print(f"  ⚠ Error setting origin: {e}")
+
+        await self.page.screenshot(path='debug_step2.png')
+
+        # Step 3: Click the "to" field and enter destination
+        print(f"[Step 3] Clicking 'to' field and entering {destination}...")
+        try:
+            # The destination field shows "Where to?"
+            to_field = await self.page.query_selector('input[aria-label*="Where to"], input[placeholder*="Where to"]')
+            if to_field:
+                await to_field.click()
+            else:
+                # Try clicking on "Where to?" text
+                await self.page.click('text="Where to?"')
+
+            await self.page.wait_for_timeout(500)
+
+            # Type destination
+            await self.page.keyboard.type(destination, delay=100)
+            await self.page.wait_for_timeout(1500)
+
+            await self.page.screenshot(path='debug_step3_typed.png')
+
+            # Select from dropdown
+            try:
+                suggestion = await self.page.wait_for_selector('ul[role="listbox"] li:first-child', timeout=2000)
+                if suggestion:
+                    await suggestion.click()
+                    print(f"  ✓ Selected {destination} from dropdown")
+            except:
+                await self.page.keyboard.press('Enter')
+                print(f"  ✓ Pressed Enter for {destination}")
+
+            await self.page.wait_for_timeout(1000)
+        except Exception as e:
+            print(f"  ⚠ Error setting destination: {e}")
 
         await self.page.screenshot(path='debug_step3.png')
 
-        # Step 4: Click Explore to go to the Explore page
-        print("[Step 4] Clicking Explore...")
+        # Step 4: Click date field, select date, click Done
+        print(f"[Step 4] Setting departure date: {departure_date}...")
         try:
-            explore_btn = await self.page.query_selector('button:has-text("Explore")')
-            if explore_btn:
-                await explore_btn.click()
-                print("  ✓ Clicked Explore button")
-                await self.page.wait_for_timeout(3000)
+            # Click on the departure date field
+            date_field = await self.page.query_selector('input[aria-label*="Departure"], div[data-placeholder="Departure"]')
+            if date_field:
+                await date_field.click()
             else:
-                print("  Explore button not found, pressing Enter")
-                await self.page.keyboard.press('Enter')
-                await self.page.wait_for_timeout(3000)
+                await self.page.click('text="Departure"')
+
+            await self.page.wait_for_timeout(1000)
+
+            # Parse date and find the right cell
+            target_date = datetime.strptime(departure_date, '%Y-%m-%d')
+            day = target_date.day
+            month_name = target_date.strftime('%B')
+
+            # Try to click the specific date
+            date_selectors = [
+                f'[aria-label*="{month_name} {day}"]',
+                f'[data-iso="{departure_date}"]',
+            ]
+
+            for selector in date_selectors:
+                try:
+                    date_cell = await self.page.wait_for_selector(selector, timeout=2000)
+                    if date_cell:
+                        await date_cell.click()
+                        print(f"  ✓ Selected date: {departure_date}")
+                        break
+                except:
+                    continue
+
+            await self.page.wait_for_timeout(500)
+
+            # Click Done button
+            try:
+                done_btn = await self.page.wait_for_selector('button:has-text("Done")', timeout=2000)
+                if done_btn:
+                    await done_btn.click()
+                    print("  ✓ Clicked Done")
+            except:
+                pass
+
+            await self.page.wait_for_timeout(1000)
         except Exception as e:
-            print(f"  ⚠ Explore click failed: {e}")
+            print(f"  ⚠ Error setting date: {e}")
 
-        await self.page.screenshot(path='debug_step4_explore.png')
-        print("  Screenshot: debug_step4_explore.png")
+        await self.page.screenshot(path='debug_step4.png')
 
-        # Step 5: On Explore page, find and click the destination card
-        print(f"[Step 5] Looking for {destination} on Explore page...")
-        try:
-            # Wait for destination cards to appear
-            await self.page.wait_for_timeout(2000)
+        # Step 5: Set one-way if no return date
+        if not return_date:
+            print("[Step 5] Setting trip type to one-way...")
+            try:
+                # Click on the trip type dropdown (shows "Round trip" by default)
+                trip_dropdown = await self.page.query_selector('button:has-text("Round trip"), div:has-text("Round trip")[role="button"]')
+                if trip_dropdown:
+                    await trip_dropdown.click()
+                    await self.page.wait_for_timeout(500)
 
-            # Try to find the destination card (e.g., "Los Angeles")
-            # The cards have the city name as text
-            dest_card = await self.page.query_selector(f'text="{destination}"')
-            if dest_card:
-                await dest_card.click()
-                print(f"  ✓ Clicked on {destination} card")
-                await self.page.wait_for_timeout(3000)
-            else:
-                # Try clicking on a link or div with the destination name
-                await self.page.click(f'a:has-text("{destination}"), div:has-text("{destination}") >> nth=0')
-                print(f"  ✓ Clicked on {destination}")
-                await self.page.wait_for_timeout(3000)
-
-        except Exception as e:
-            print(f"  ⚠ Could not find {destination} card: {e}")
-            print("  Will try to extract from current page...")
+                    # Select "One way"
+                    one_way = await self.page.wait_for_selector('li:has-text("One way")', timeout=2000)
+                    if one_way:
+                        await one_way.click()
+                        print("  ✓ Set to one-way")
+                        await self.page.wait_for_timeout(500)
+            except Exception as e:
+                print(f"  ⚠ Could not set one-way: {e}")
 
         await self.page.screenshot(path='debug_step5.png')
-        print("  Screenshot: debug_step5.png")
 
-        # Check current URL
+        # Step 6: Click Search
+        print("[Step 6] Clicking Search...")
+        try:
+            search_btn = await self.page.query_selector('button:has-text("Search")')
+            if search_btn:
+                await search_btn.click()
+                print("  ✓ Clicked Search button")
+            else:
+                # Try Explore button as fallback
+                explore_btn = await self.page.query_selector('button:has-text("Explore")')
+                if explore_btn:
+                    await explore_btn.click()
+                    print("  ✓ Clicked Explore button")
+                else:
+                    await self.page.keyboard.press('Enter')
+                    print("  ✓ Pressed Enter")
+        except Exception as e:
+            print(f"  ⚠ Error clicking search: {e}")
+
+        # Wait for results to load
+        print("[Step 7] Waiting for results...")
+        await self.page.wait_for_timeout(5000)
+        await self.page.screenshot(path='debug_step6_results.png')
+
         current_url = self.page.url
         print(f"  Current URL: {current_url[:80]}...")
 
-        # Step 6: Wait for flight results
-        print("[Step 6] Waiting for flight results...")
+        # Wait for flight results
         await self._wait_for_results()
 
-        # Step 7: Extract flight data
-        print("[Step 7] Extracting flight data...")
+        # Extract flight data
+        print("[Step 8] Extracting flight data...")
         await self.page.screenshot(path='debug_screenshot.png')
         flights = await self._extract_flights()
 
