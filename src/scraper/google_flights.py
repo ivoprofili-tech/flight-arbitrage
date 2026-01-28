@@ -702,130 +702,170 @@ class GoogleFlightsScraper:
         flights = []
 
         try:
-            # Save a screenshot for debugging (optional)
+            # Save a screenshot for debugging
             await self.page.screenshot(path='debug_screenshot.png')
             print("  Screenshot saved to debug_screenshot.png")
 
-            # Google Flights shows results in list items with specific structure
-            # Each flight row contains: times, airline, duration, stops, price
+            # First, let's debug what's on the page
+            page_text = await self.page.evaluate('() => document.body.innerText')
+            print(f"  Page text length: {len(page_text)} characters")
+
+            # Save page text for debugging
+            with open('debug_page_text.txt', 'w', encoding='utf-8') as f:
+                f.write(page_text)
+            print("  Page text saved to debug_page_text.txt")
+
+            # Google Flights results are in divs, not ul/li
+            # Try multiple extraction strategies
             flight_data = await self.page.evaluate('''
                 () => {
                     const flights = [];
+                    const seen = new Set();
 
-                    // Find all flight result rows - they're in a list structure
-                    // Look for elements that contain flight info patterns
-                    const allLists = document.querySelectorAll('ul');
+                    // Strategy 1: Look for elements with price patterns
+                    // Google Flights shows prices in specific elements
+                    const allElements = document.querySelectorAll('*');
 
-                    allLists.forEach(list => {
-                        const items = list.querySelectorAll('li');
+                    // Find all price elements first
+                    const priceElements = [];
+                    for (const el of allElements) {
+                        const text = el.textContent || '';
+                        // Match prices like $99, $1,234, US$99, etc.
+                        if (/^\s*(?:US\s*)?\$\s*[\d,]+\s*$/.test(text) && text.length < 20) {
+                            priceElements.push(el);
+                        }
+                    }
 
-                        items.forEach(item => {
-                            const text = item.textContent || '';
+                    // For each price, find the parent flight row and extract data
+                    for (const priceEl of priceElements) {
+                        // Go up to find the flight row container (usually 3-5 levels up)
+                        let container = priceEl;
+                        for (let i = 0; i < 8; i++) {
+                            if (container.parentElement) {
+                                container = container.parentElement;
+                            }
+                            // Check if this container has flight-like content
+                            const containerText = container.textContent || '';
+                            const hasTime = /\d{1,2}:\d{2}\s*(AM|PM)?/i.test(containerText);
+                            const hasDuration = /\d+\s*hr|\d+\s*h\s*\d+/i.test(containerText);
 
-                            // A valid flight row should have:
-                            // - A time pattern (e.g., "09:10" or "6:00")
-                            // - A price pattern (e.g., "US$ 95" or "$95" or "R$ 500")
-                            // - Duration pattern (e.g., "6h 28" or "6 h 28 min")
+                            if (hasTime && hasDuration && containerText.length > 30 && containerText.length < 1000) {
+                                const price = priceEl.textContent.trim();
 
-                            const hasTime = /\d{1,2}:\d{2}/.test(text);
-                            const hasPrice = /(?:US\$|R\$|\$|€|£)\s*\d+/.test(text);
-                            const hasDuration = /\d+\s*h\s*\d*\s*m?i?n?/.test(text);
+                                // Skip if we've seen this price+container combo
+                                const key = price + containerText.substring(0, 50);
+                                if (seen.has(key)) continue;
+                                seen.add(key);
 
-                            // Must have at least time and price to be a flight row
-                            if (hasTime && hasPrice && text.length < 500) {
+                                // Extract times (e.g., "6:00 AM – 9:28 AM" or "14:00 – 17:30")
+                                const timePattern = /(\d{1,2}:\d{2}\s*(?:AM|PM)?)\s*[–\-−]+\s*(\d{1,2}:\d{2}\s*(?:AM|PM)?)/i;
+                                const timeMatch = containerText.match(timePattern);
 
-                                // Extract times (format: 09:10 – 12:38 or 09:10 - 12:38)
-                                const timePattern = /(\d{1,2}:\d{2})\s*[–\-−]\s*(\d{1,2}:\d{2})/;
-                                const timeMatch = text.match(timePattern);
-                                const departureTime = timeMatch ? timeMatch[1] : null;
-                                const arrivalTime = timeMatch ? timeMatch[2] : null;
+                                // Extract duration (e.g., "5 hr 28 min", "5h 28m", "5 hr")
+                                const durationPattern = /(\d+)\s*(?:hr|h)\s*(?:(\d+)\s*(?:min|m))?/i;
+                                const durationMatch = containerText.match(durationPattern);
+                                let duration = null;
+                                if (durationMatch) {
+                                    const hours = durationMatch[1];
+                                    const mins = durationMatch[2] || '0';
+                                    duration = `${hours}h ${mins}m`;
+                                }
 
-                                // Extract price (handles US$ 95, $95, R$ 500, €100, £80)
-                                const pricePattern = /(?:US\$|R\$|\$|€|£)\s*([\d,\.]+)/;
-                                const priceMatch = text.match(pricePattern);
-                                const price = priceMatch ? priceMatch[0].trim() : null;
-
-                                // Extract duration (6h 28 min, 6h 28m, 6 h 28 min)
-                                const durationPattern = /(\d+)\s*h\s*(\d+)?\s*m?i?n?/i;
-                                const durationMatch = text.match(durationPattern);
-                                const duration = durationMatch ? durationMatch[0].trim() : null;
-
-                                // Extract stops - handle multiple languages
+                                // Extract stops
                                 let stops = "Unknown";
-                                const textLower = text.toLowerCase();
-                                if (textLower.includes("nonstop") ||
-                                    textLower.includes("non-stop") ||
-                                    textLower.includes("sem escalas") ||
-                                    textLower.includes("direto")) {
+                                const textLower = containerText.toLowerCase();
+                                if (textLower.includes("nonstop") || textLower.includes("non-stop")) {
                                     stops = "Nonstop";
                                 } else {
-                                    // Match "1 stop", "2 stops", "1 parada", "2 paradas", "1 escala"
-                                    const stopMatch = text.match(/(\d+)\s*(?:stop|parada|escala)/i);
+                                    const stopMatch = containerText.match(/(\d+)\s*stop/i);
                                     if (stopMatch) {
-                                        stops = stopMatch[1] + " stop(s)";
+                                        stops = stopMatch[1] === "1" ? "1 stop" : stopMatch[1] + " stops";
                                     }
                                 }
 
-                                // Extract airline - usually at the start or in specific spans
+                                // Extract airline
                                 const airlineNames = [
                                     'Spirit', 'United', 'Delta', 'American', 'JetBlue',
                                     'Southwest', 'Frontier', 'Alaska', 'LATAM', 'Avianca',
                                     'Copa', 'Aeromexico', 'Air France', 'British Airways',
-                                    'Lufthansa', 'Emirates', 'Qatar', 'TAP', 'Iberia', 'Azul', 'GOL'
+                                    'Lufthansa', 'Emirates', 'Qatar', 'TAP', 'Iberia', 'Azul', 'GOL',
+                                    'Sun Country', 'Hawaiian', 'Allegiant', 'Breeze'
                                 ];
                                 let airline = "Various";
                                 for (const name of airlineNames) {
-                                    if (text.includes(name)) {
+                                    if (containerText.includes(name)) {
                                         airline = name;
                                         break;
                                     }
                                 }
 
-                                // Only add if we have valid price (avoid duplicates)
-                                if (price && !flights.some(f =>
-                                    f.price === price &&
-                                    f.departure_time === departureTime)) {
-                                    flights.push({
-                                        departure_time: departureTime,
-                                        arrival_time: arrivalTime,
-                                        duration: duration,
-                                        stops: stops,
-                                        airline: airline,
-                                        price: price
-                                    });
-                                }
-                            }
-                        });
-                    });
+                                flights.push({
+                                    departure_time: timeMatch ? timeMatch[1].trim() : null,
+                                    arrival_time: timeMatch ? timeMatch[2].trim() : null,
+                                    duration: duration,
+                                    stops: stops,
+                                    airline: airline,
+                                    price: price
+                                });
 
-                    // Sort by price (extract number for comparison)
+                                break; // Found the container, move to next price
+                            }
+                        }
+                    }
+
+                    // Strategy 2: If Strategy 1 didn't work, try looking at the whole page
+                    if (flights.length === 0) {
+                        // Get all text and try regex extraction
+                        const bodyText = document.body.innerText;
+
+                        // Look for flight-like patterns in chunks
+                        const lines = bodyText.split('\\n');
+                        let currentFlight = {};
+
+                        for (const line of lines) {
+                            const trimmed = line.trim();
+
+                            // Check for time pattern
+                            const timeMatch = trimmed.match(/(\d{1,2}:\d{2}\s*(?:AM|PM)?)\s*[–\-−]+\s*(\d{1,2}:\d{2}\s*(?:AM|PM)?)/i);
+                            if (timeMatch) {
+                                currentFlight.departure_time = timeMatch[1];
+                                currentFlight.arrival_time = timeMatch[2];
+                            }
+
+                            // Check for price
+                            const priceMatch = trimmed.match(/^\s*(?:US\s*)?\$\s*([\d,]+)\s*$/);
+                            if (priceMatch && currentFlight.departure_time) {
+                                currentFlight.price = trimmed;
+                                flights.push({...currentFlight, airline: 'See details', stops: 'See details', duration: 'See details'});
+                                currentFlight = {};
+                            }
+                        }
+                    }
+
+                    // Sort by price
                     flights.sort((a, b) => {
-                        const priceA = parseInt((a.price || '0').replace(/[^\d]/g, ''));
-                        const priceB = parseInt((b.price || '0').replace(/[^\d]/g, ''));
+                        const priceA = parseInt((a.price || '0').replace(/[^\d]/g, '')) || 999999;
+                        const priceB = parseInt((b.price || '0').replace(/[^\d]/g, '')) || 999999;
                         return priceA - priceB;
                     });
 
-                    // Return top 10 results
                     return flights.slice(0, 10);
                 }
             ''')
 
             flights = flight_data if flight_data else []
+            print(f"  Extracted {len(flights)} flights")
 
-            # If no flights found, try an alternative method
+            # If still no flights found, provide debug info
             if len(flights) == 0:
-                print("  Trying alternative extraction method...")
-
-                # Get page content and try regex extraction
-                content = await self.page.content()
-
+                print("  ⚠ No flights extracted - check debug_page_text.txt and debug_screenshot.png")
                 flights.append({
-                    'price': 'Could not extract - check debug_screenshot.png',
-                    'departure_time': 'See screenshot',
-                    'arrival_time': 'See screenshot',
-                    'duration': 'See screenshot',
-                    'stops': 'See screenshot',
-                    'airline': 'See screenshot',
+                    'price': 'Could not extract - check debug files',
+                    'departure_time': 'See debug_screenshot.png',
+                    'arrival_time': 'See debug_page_text.txt',
+                    'duration': 'N/A',
+                    'stops': 'N/A',
+                    'airline': 'N/A',
                     'note': 'Extraction failed - Google may have changed their page structure'
                 })
 
