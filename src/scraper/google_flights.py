@@ -162,10 +162,10 @@ class GoogleFlightsScraper:
 
         Steps:
         1. Open Google Flights
-        2. Click the "from" field and type origin
-        3. Click the "to" field and type destination
-        4. Click date field, select date, click Done
-        5. Set one-way if no return date
+        2. Set one-way if no return date (MUST be before date selection!)
+        3. Click the "from" field and type origin
+        4. Click the "to" field and type destination
+        5. Click date field, select date, click Done
         6. Click Search
         """
         print(f"\nSearching flights: {origin} → {destination}")
@@ -180,8 +180,64 @@ class GoogleFlightsScraper:
         await self.handle_cookie_consent()
         await self.page.screenshot(path='debug_step1.png')
 
-        # Step 2: Click the "from" field and enter origin
-        print(f"[Step 2] Clicking 'from' field and entering {origin}...")
+        # Step 2: Set one-way if no return date
+        # IMPORTANT: Must set trip type BEFORE selecting dates!
+        # Round trip mode expects 2 dates before showing "Done" button
+        if not return_date:
+            print("[Step 2] Setting trip type to one-way...")
+            try:
+                # Click on the trip type dropdown (shows "Round trip" by default)
+                trip_selectors = [
+                    'div[aria-label*="trip"] button',
+                    'button:has-text("Round trip")',
+                    '[role="button"]:has-text("Round trip")',
+                    '//button[contains(., "Round trip")]',
+                    '//div[contains(@aria-label, "trip")]//button',
+                ]
+
+                trip_clicked = False
+                for selector in trip_selectors:
+                    try:
+                        if selector.startswith('//'):
+                            trip_dropdown = await self.page.wait_for_selector(f'xpath={selector}', timeout=1500)
+                        else:
+                            trip_dropdown = await self.page.wait_for_selector(selector, timeout=1500)
+                        if trip_dropdown:
+                            await trip_dropdown.click()
+                            trip_clicked = True
+                            print(f"  ✓ Clicked trip type dropdown")
+                            break
+                    except:
+                        continue
+
+                if trip_clicked:
+                    await self.page.wait_for_timeout(500)
+                    # Select "One way" from dropdown
+                    one_way_selectors = [
+                        'li:has-text("One way")',
+                        '[role="option"]:has-text("One way")',
+                        '//li[contains(., "One way")]',
+                    ]
+                    for selector in one_way_selectors:
+                        try:
+                            if selector.startswith('//'):
+                                one_way = await self.page.wait_for_selector(f'xpath={selector}', timeout=1500)
+                            else:
+                                one_way = await self.page.wait_for_selector(selector, timeout=1500)
+                            if one_way:
+                                await one_way.click()
+                                print("  ✓ Set to one-way")
+                                break
+                        except:
+                            continue
+                    await self.page.wait_for_timeout(500)
+            except Exception as e:
+                print(f"  ⚠ Could not set one-way: {e}")
+
+            await self.page.screenshot(path='debug_step2_oneway.png')
+
+        # Step 3: Click the "from" field and enter origin
+        print(f"[Step 3] Clicking 'from' field and entering {origin}...")
         try:
             # The origin field shows the auto-detected city (e.g., "San Francisco")
             # We need to click on it - it's the first input/combobox area
@@ -199,7 +255,7 @@ class GoogleFlightsScraper:
             await self.page.keyboard.type(origin, delay=100)
             await self.page.wait_for_timeout(1500)
 
-            await self.page.screenshot(path='debug_step2_typed.png')
+            await self.page.screenshot(path='debug_step3_typed.png')
 
             # Select from dropdown - click first suggestion or press Enter
             try:
@@ -215,10 +271,10 @@ class GoogleFlightsScraper:
         except Exception as e:
             print(f"  ⚠ Error setting origin: {e}")
 
-        await self.page.screenshot(path='debug_step2.png')
+        await self.page.screenshot(path='debug_step3.png')
 
-        # Step 3: Click the "to" field and enter destination
-        print(f"[Step 3] Clicking 'to' field and entering {destination}...")
+        # Step 4: Click the "to" field and enter destination
+        print(f"[Step 4] Clicking 'to' field and entering {destination}...")
         try:
             # The destination field shows "Where to?"
             to_field = await self.page.query_selector('input[aria-label*="Where to"], input[placeholder*="Where to"]')
@@ -234,7 +290,7 @@ class GoogleFlightsScraper:
             await self.page.keyboard.type(destination, delay=100)
             await self.page.wait_for_timeout(1500)
 
-            await self.page.screenshot(path='debug_step3_typed.png')
+            await self.page.screenshot(path='debug_step4_typed.png')
 
             # Select from dropdown
             try:
@@ -250,10 +306,10 @@ class GoogleFlightsScraper:
         except Exception as e:
             print(f"  ⚠ Error setting destination: {e}")
 
-        await self.page.screenshot(path='debug_step3.png')
+        await self.page.screenshot(path='debug_step4.png')
 
-        # Step 4: Click date field, select date, click Done
-        print(f"[Step 4] Setting departure date: {departure_date}...")
+        # Step 5: Click date field, select date, click Done
+        print(f"[Step 5] Setting departure date: {departure_date}...")
         try:
             # Click on the departure date field
             date_field = await self.page.query_selector('input[aria-label*="Departure"], div[data-placeholder="Departure"]')
@@ -287,39 +343,50 @@ class GoogleFlightsScraper:
 
             await self.page.wait_for_timeout(500)
 
-            # Click Done button
-            try:
-                done_btn = await self.page.wait_for_selector('button:has-text("Done")', timeout=2000)
-                if done_btn:
-                    await done_btn.click()
-                    print("  ✓ Clicked Done")
-            except:
-                pass
+            # Click Done button - try multiple approaches
+            done_clicked = False
+            done_selectors = [
+                'button[aria-label="Done"]',
+                'button:has-text("Done")',
+                'span:has-text("Done")',
+                '[aria-label="Done"]',
+                'button.VfPpkd-LgbsSe:has-text("Done")',  # Material Design button
+                '//button[.//span[text()="Done"]]',  # XPath for button containing span with Done
+                '//span[text()="Done"]/ancestor::button',  # XPath: find span, go up to button
+            ]
+
+            for selector in done_selectors:
+                try:
+                    if selector.startswith('//'):
+                        # Use XPath
+                        done_btn = await self.page.wait_for_selector(f'xpath={selector}', timeout=1500)
+                    else:
+                        done_btn = await self.page.wait_for_selector(selector, timeout=1500)
+
+                    if done_btn:
+                        # Make sure button is visible and clickable
+                        await done_btn.scroll_into_view_if_needed()
+                        await self.page.wait_for_timeout(200)
+                        await done_btn.click()
+                        done_clicked = True
+                        print(f"  ✓ Clicked Done button with: {selector}")
+                        break
+                except Exception:
+                    continue
+
+            # If no Done button found, try pressing Escape or clicking outside
+            if not done_clicked:
+                print("  ⚠ Done button not found, trying alternatives...")
+                try:
+                    # Try pressing Escape to close the date picker
+                    await self.page.keyboard.press('Escape')
+                    print("  ✓ Pressed Escape to close date picker")
+                except:
+                    pass
 
             await self.page.wait_for_timeout(1000)
         except Exception as e:
             print(f"  ⚠ Error setting date: {e}")
-
-        await self.page.screenshot(path='debug_step4.png')
-
-        # Step 5: Set one-way if no return date
-        if not return_date:
-            print("[Step 5] Setting trip type to one-way...")
-            try:
-                # Click on the trip type dropdown (shows "Round trip" by default)
-                trip_dropdown = await self.page.query_selector('button:has-text("Round trip"), div:has-text("Round trip")[role="button"]')
-                if trip_dropdown:
-                    await trip_dropdown.click()
-                    await self.page.wait_for_timeout(500)
-
-                    # Select "One way"
-                    one_way = await self.page.wait_for_selector('li:has-text("One way")', timeout=2000)
-                    if one_way:
-                        await one_way.click()
-                        print("  ✓ Set to one-way")
-                        await self.page.wait_for_timeout(500)
-            except Exception as e:
-                print(f"  ⚠ Could not set one-way: {e}")
 
         await self.page.screenshot(path='debug_step5.png')
 
@@ -345,7 +412,7 @@ class GoogleFlightsScraper:
         # Wait for results to load
         print("[Step 7] Waiting for results...")
         await self.page.wait_for_timeout(5000)
-        await self.page.screenshot(path='debug_step6_results.png')
+        await self.page.screenshot(path='debug_step7_results.png')
 
         current_url = self.page.url
         print(f"  Current URL: {current_url[:80]}...")
