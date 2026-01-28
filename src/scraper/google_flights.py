@@ -117,11 +117,7 @@ class GoogleFlightsScraper:
         We try to find and click common "Accept" or "Reject" buttons.
         """
         try:
-            # Wait a moment for any popup to appear
-            await self.page.wait_for_timeout(2000)  # 2000ms = 2 seconds
-
-            # Try different selectors for cookie buttons
-            # Selectors are like addresses that help us find elements on the page
+            # Try different selectors for cookie buttons (no initial wait needed)
             cookie_selectors = [
                 'button:has-text("Accept all")',      # English
                 'button:has-text("Accept")',          # Shorter version
@@ -132,22 +128,20 @@ class GoogleFlightsScraper:
 
             for selector in cookie_selectors:
                 try:
-                    # Check if this button exists (wait max 1 second)
-                    button = await self.page.wait_for_selector(selector, timeout=1000)
+                    # Check if this button exists (wait max 500ms)
+                    button = await self.page.wait_for_selector(selector, timeout=500)
                     if button:
                         await button.click()
-                        print(f"Clicked cookie consent button: {selector}")
-                        await self.page.wait_for_timeout(1000)
+                        print(f"Clicked cookie consent button")
+                        await self.page.wait_for_timeout(300)
                         return True
                 except PlaywrightTimeout:
                     # Button not found, try the next one
                     continue
 
-            print("No cookie popup found (or already handled)")
             return False
 
         except Exception as e:
-            print(f"Cookie handling note: {e}")
             return False
 
     async def search_flights(
@@ -174,11 +168,10 @@ class GoogleFlightsScraper:
         # Step 1: Open Google Flights
         print("\n[Step 1] Opening Google Flights...")
         await self.page.goto('https://www.google.com/travel/flights', wait_until='networkidle')
-        await self.page.wait_for_timeout(2000)
+        await self.page.wait_for_timeout(1000)
 
         # Handle cookie consent if needed
         await self.handle_cookie_consent()
-        await self.page.screenshot(path='debug_step1.png')
 
         # Step 2: Set one-way if no return date
         # IMPORTANT: Must set trip type BEFORE selecting dates!
@@ -189,17 +182,17 @@ class GoogleFlightsScraper:
                 # Use locator to find and click "Round trip" text directly
                 # This is more reliable than complex CSS selectors
                 round_trip_locator = self.page.locator('text="Round trip"').first
-                await round_trip_locator.click(timeout=3000)
+                await round_trip_locator.click(timeout=2000)
                 print("  ✓ Clicked Round trip dropdown")
 
-                await self.page.wait_for_timeout(500)
+                await self.page.wait_for_timeout(200)
 
                 # Now click "One way" from the dropdown menu
                 one_way_locator = self.page.locator('text="One way"').first
-                await one_way_locator.click(timeout=3000)
+                await one_way_locator.click(timeout=2000)
                 print("  ✓ Selected One way")
 
-                await self.page.wait_for_timeout(500)
+                await self.page.wait_for_timeout(200)
             except Exception as e:
                 print(f"  ⚠ Could not set one-way via locator: {e}")
                 # Fallback: try JavaScript
@@ -217,7 +210,7 @@ class GoogleFlightsScraper:
                             return false;
                         }
                     ''')
-                    await self.page.wait_for_timeout(500)
+                    await self.page.wait_for_timeout(200)
                     await self.page.evaluate('''
                         () => {
                             const elements = document.querySelectorAll('li, [role="option"]');
@@ -234,8 +227,6 @@ class GoogleFlightsScraper:
                 except Exception as e2:
                     print(f"  ⚠ JavaScript fallback also failed: {e2}")
 
-            await self.page.screenshot(path='debug_step2_oneway.png')
-
         # Step 3: Click the "from" field and enter origin
         print(f"[Step 3] Clicking 'from' field and entering {origin}...")
         try:
@@ -248,18 +239,16 @@ class GoogleFlightsScraper:
                 # Try clicking on the displayed city text in the first combobox
                 await self.page.click('div[role="combobox"]:first-of-type')
 
-            await self.page.wait_for_timeout(500)
+            await self.page.wait_for_timeout(200)
 
             # Clear existing text and type new origin
             await self.page.keyboard.press('Control+a')
-            await self.page.keyboard.type(origin, delay=100)
-            await self.page.wait_for_timeout(1500)
-
-            await self.page.screenshot(path='debug_step3_typed.png')
+            await self.page.keyboard.type(origin, delay=50)
+            await self.page.wait_for_timeout(800)
 
             # Select from dropdown - click first suggestion or press Enter
             try:
-                suggestion = await self.page.wait_for_selector('ul[role="listbox"] li:first-child', timeout=2000)
+                suggestion = await self.page.wait_for_selector('ul[role="listbox"] li:first-child', timeout=1500)
                 if suggestion:
                     await suggestion.click()
                     print(f"  ✓ Selected {origin} from dropdown")
@@ -267,11 +256,9 @@ class GoogleFlightsScraper:
                 await self.page.keyboard.press('Enter')
                 print(f"  ✓ Pressed Enter for {origin}")
 
-            await self.page.wait_for_timeout(1000)
+            await self.page.wait_for_timeout(300)
         except Exception as e:
             print(f"  ⚠ Error setting origin: {e}")
-
-        await self.page.screenshot(path='debug_step3.png')
 
         # Step 4: Click the "to" field and enter destination
         print(f"[Step 4] Clicking 'to' field and entering {destination}...")
@@ -284,17 +271,15 @@ class GoogleFlightsScraper:
                 # Try clicking on "Where to?" text
                 await self.page.click('text="Where to?"')
 
-            await self.page.wait_for_timeout(500)
+            await self.page.wait_for_timeout(200)
 
             # Type destination
-            await self.page.keyboard.type(destination, delay=100)
-            await self.page.wait_for_timeout(1500)
-
-            await self.page.screenshot(path='debug_step4_typed.png')
+            await self.page.keyboard.type(destination, delay=50)
+            await self.page.wait_for_timeout(800)
 
             # Select from dropdown
             try:
-                suggestion = await self.page.wait_for_selector('ul[role="listbox"] li:first-child', timeout=2000)
+                suggestion = await self.page.wait_for_selector('ul[role="listbox"] li:first-child', timeout=1500)
                 if suggestion:
                     await suggestion.click()
                     print(f"  ✓ Selected {destination} from dropdown")
@@ -302,11 +287,9 @@ class GoogleFlightsScraper:
                 await self.page.keyboard.press('Enter')
                 print(f"  ✓ Pressed Enter for {destination}")
 
-            await self.page.wait_for_timeout(1000)
+            await self.page.wait_for_timeout(300)
         except Exception as e:
             print(f"  ⚠ Error setting destination: {e}")
-
-        await self.page.screenshot(path='debug_step4.png')
 
         # Step 5: Click date field, select date, click Done
         print(f"[Step 5] Setting departure date: {departure_date}...")
@@ -318,7 +301,7 @@ class GoogleFlightsScraper:
             else:
                 await self.page.click('text="Departure"')
 
-            await self.page.wait_for_timeout(1000)
+            await self.page.wait_for_timeout(500)
 
             # Parse date and find the right cell
             target_date = datetime.strptime(departure_date, '%Y-%m-%d')
@@ -333,7 +316,7 @@ class GoogleFlightsScraper:
 
             for selector in date_selectors:
                 try:
-                    date_cell = await self.page.wait_for_selector(selector, timeout=2000)
+                    date_cell = await self.page.wait_for_selector(selector, timeout=1500)
                     if date_cell:
                         await date_cell.click()
                         print(f"  ✓ Selected date: {departure_date}")
@@ -341,8 +324,7 @@ class GoogleFlightsScraper:
                 except:
                     continue
 
-            await self.page.wait_for_timeout(500)
-            await self.page.screenshot(path='debug_step5_before_done.png')
+            await self.page.wait_for_timeout(300)
 
             # Click Done button - use locator with force click
             done_clicked = False
@@ -350,8 +332,8 @@ class GoogleFlightsScraper:
                 # Use locator to find Done button - it handles scrolling automatically
                 done_locator = self.page.locator('button:has-text("Done")').first
                 await done_locator.scroll_into_view_if_needed()
-                await self.page.wait_for_timeout(300)
-                await done_locator.click(timeout=3000)
+                await self.page.wait_for_timeout(150)
+                await done_locator.click(timeout=2000)
                 done_clicked = True
                 print("  ✓ Clicked Done button via locator")
             except Exception as e:
@@ -403,11 +385,9 @@ class GoogleFlightsScraper:
                 print("  ⚠ Done button not found, pressing Escape...")
                 await self.page.keyboard.press('Escape')
 
-            await self.page.wait_for_timeout(1000)
+            await self.page.wait_for_timeout(300)
         except Exception as e:
             print(f"  ⚠ Error setting date: {e}")
-
-        await self.page.screenshot(path='debug_step5.png')
 
         # Step 6: Click Search
         print("[Step 6] Clicking Search...")
@@ -430,7 +410,7 @@ class GoogleFlightsScraper:
 
         # Wait for results to load
         print("[Step 7] Waiting for results...")
-        await self.page.wait_for_timeout(5000)
+        await self.page.wait_for_timeout(3000)
         await self.page.screenshot(path='debug_step7_results.png')
 
         current_url = self.page.url
@@ -683,8 +663,8 @@ class GoogleFlightsScraper:
             )
             print("  ✓ Results loaded")
 
-            # Extra wait for all results to fully render
-            await self.page.wait_for_timeout(2000)
+            # Small extra wait for all results to fully render
+            await self.page.wait_for_timeout(1000)
 
         except PlaywrightTimeout:
             print("  ⚠ Timeout waiting for results - page may still have content")
