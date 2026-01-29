@@ -742,17 +742,23 @@ class GoogleFlightsScraper:
                                 let departureTime = null;
                                 let arrivalTime = null;
 
-                                // Try pattern with separator first (–, -, −, or whitespace)
-                                const timeWithSep = containerText.match(/(\d{1,2}:\d{2}\s*(?:AM|PM)?)\s*[–\-−\s]+(\d{1,2}:\d{2}\s*(?:AM|PM)?)/i);
+                                // Try pattern with separator first (–, -, −)
+                                const timeWithSep = containerText.match(/(\d{1,2}:\d{2}\s*(?:AM|PM)?)\s*[–\-−]\s*(\d{1,2}:\d{2}\s*(?:AM|PM)?)/i);
                                 if (timeWithSep) {
                                     departureTime = timeWithSep[1].trim();
                                     arrivalTime = timeWithSep[2].trim();
                                 } else {
-                                    // Try to find two separate time patterns
+                                    // Try to find two DIFFERENT time patterns
                                     const allTimes = containerText.match(/\d{1,2}:\d{2}\s*(?:AM|PM)?/gi);
                                     if (allTimes && allTimes.length >= 2) {
-                                        departureTime = allTimes[0].trim();
-                                        arrivalTime = allTimes[1].trim();
+                                        // Get unique times only
+                                        const uniqueTimes = [...new Set(allTimes.map(t => t.trim()))];
+                                        if (uniqueTimes.length >= 2) {
+                                            departureTime = uniqueTimes[0];
+                                            arrivalTime = uniqueTimes[1];
+                                        } else {
+                                            departureTime = allTimes[0].trim();
+                                        }
                                     }
                                 }
 
