@@ -282,65 +282,86 @@ class SkiplaggedScraper:
             with open('debug_skiplagged_text.txt', 'w', encoding='utf-8') as f:
                 f.write(page_text)
 
-            # Use JavaScript to find flight rows - look for divs with specific size
-            # that contain both time and price patterns
+            # Skiplagged shows flights in rows with this structure:
+            # "7h nonstop | JetBlue | 7:00am JFK | 10:32am LAX | $164"
+            # Find elements that are flight row containers
             flight_data = await self.page.evaluate('''
                 () => {
                     const flights = [];
                     const seen = new Set();
+                    const airlines = ["JetBlue", "Delta", "American", "United", "Spirit", "Frontier", "Alaska", "Southwest"];
 
-                    // Get all divs and look for ones that look like flight rows
-                    const divs = document.querySelectorAll('div');
+                    // Strategy: Find airline name elements, then get parent row data
+                    const allElements = document.querySelectorAll("*");
 
-                    for (const div of divs) {
-                        const text = div.innerText || "";
+                    for (const el of allElements) {
+                        // Look for small elements that contain just an airline name
+                        const text = (el.innerText || "").trim();
 
-                        // Flight rows are typically 50-300 chars
-                        if (text.length < 30 || text.length > 400) continue;
-
-                        // Must have a price ($164 or US$164)
-                        const priceMatch = text.match(/\$(\d+)/);
-                        if (!priceMatch) continue;
-
-                        // Must have times with am/pm (7:00am, 10:32am)
-                        const times = text.match(/(\d{1,2}:\d{2}(?:am|pm)?)/gi);
-                        if (!times || times.length < 2) continue;
-
-                        // Must have duration (7h or 10h)
-                        const durMatch = text.match(/(\d+)h/);
-                        if (!durMatch) continue;
-
-                        // Create unique key to avoid duplicates
-                        const key = priceMatch[0] + times[0] + times[1];
-                        if (seen.has(key)) continue;
-                        seen.add(key);
-
-                        // Extract airline
-                        const airlines = ["JetBlue", "Delta", "American", "United", "Spirit", "Frontier", "Alaska", "Southwest"];
-                        let airline = "Various";
+                        // Check if this element contains exactly an airline name
+                        let foundAirline = null;
                         for (const a of airlines) {
-                            if (text.includes(a)) {
-                                airline = a;
+                            if (text === a || text.startsWith(a + "\\n") || text.endsWith("\\n" + a)) {
+                                foundAirline = a;
                                 break;
                             }
                         }
 
+                        if (!foundAirline) continue;
+
+                        // Found an airline element, now look at parent for full row data
+                        let parent = el.parentElement;
+                        let rowText = "";
+
+                        // Go up to find a container with price and times
+                        for (let i = 0; i < 5 && parent; i++) {
+                            rowText = parent.innerText || "";
+
+                            // Check if this parent has price and times
+                            const hasPrice = /\$\d+/.test(rowText);
+                            const hasTimes = /\d{1,2}:\d{2}(?:am|pm)/i.test(rowText);
+
+                            if (hasPrice && hasTimes && rowText.length < 500) {
+                                break;
+                            }
+                            parent = parent.parentElement;
+                        }
+
+                        if (!rowText || rowText.length > 500) continue;
+
+                        // Extract price
+                        const priceMatch = rowText.match(/\$(\d+)/);
+                        if (!priceMatch) continue;
+
+                        // Extract times (7:00am, 10:32am format)
+                        const times = rowText.match(/(\d{1,2}:\d{2}(?:am|pm))/gi);
+                        if (!times || times.length < 2) continue;
+
+                        // Extract duration (7h)
+                        const durMatch = rowText.match(/(\d+)h/);
+
+                        // Create unique key
+                        const key = priceMatch[1] + times[0] + times[1];
+                        if (seen.has(key)) continue;
+                        seen.add(key);
+
                         // Extract stops
                         let stops = "Unknown";
-                        if (text.toLowerCase().includes("nonstop")) {
+                        const rowLower = rowText.toLowerCase();
+                        if (rowLower.includes("nonstop")) {
                             stops = "Nonstop";
                         } else {
-                            const stopMatch = text.match(/(\d+)\s*stop/i);
+                            const stopMatch = rowText.match(/(\d+)\s*stop/i);
                             if (stopMatch) {
                                 stops = stopMatch[1] === "1" ? "1 stop" : stopMatch[1] + " stops";
                             }
                         }
 
                         flights.push({
-                            airline: airline,
+                            airline: foundAirline,
                             departure_time: times[0],
                             arrival_time: times[1],
-                            duration: durMatch[1] + "h",
+                            duration: durMatch ? durMatch[1] + "h" : "N/A",
                             stops: stops,
                             price: "$" + priceMatch[1],
                             source: "Skiplagged"
