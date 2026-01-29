@@ -11,6 +11,7 @@ import asyncio
 import os
 import glob
 import shutil
+import random
 from datetime import datetime, timedelta
 from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeout
 
@@ -50,10 +51,32 @@ class SkyscannerScraper:
         self.context = await self.browser.new_context(
             viewport={'width': 1280, 'height': 800},
             record_video_dir='videos/',
-            record_video_size={'width': 1280, 'height': 800}
+            record_video_size={'width': 1280, 'height': 800},
+            user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            locale='en-US',
+            timezone_id='America/New_York'
         )
 
         self.page = await self.context.new_page()
+
+        # Add anti-detection scripts
+        await self.page.add_init_script('''
+            // Override webdriver property
+            Object.defineProperty(navigator, 'webdriver', {
+                get: () => undefined
+            });
+
+            // Override plugins
+            Object.defineProperty(navigator, 'plugins', {
+                get: () => [1, 2, 3, 4, 5]
+            });
+
+            // Override languages
+            Object.defineProperty(navigator, 'languages', {
+                get: () => ['en-US', 'en']
+            });
+        ''')
+
         print("Browser started! Video recording enabled (saves to videos/ folder)")
 
     def _clear_old_videos(self):
@@ -67,6 +90,11 @@ class SkyscannerScraper:
                     pass
             if old_videos:
                 print(f"Cleared {len(old_videos)} old video(s) from videos/ folder")
+
+    async def _human_delay(self, min_ms=200, max_ms=600):
+        """Add a random human-like delay between actions."""
+        delay = random.randint(min_ms, max_ms)
+        await self.page.wait_for_timeout(delay)
 
     async def close_browser(self):
         """Clean up: close the browser and save the video with descriptive name."""
@@ -140,7 +168,15 @@ class SkyscannerScraper:
         return_date: str = None
     ) -> list[dict]:
         """
-        Search for flights on Skyscanner.
+        Search for flights on Skyscanner using manual form filling.
+
+        This approach mimics human behavior to avoid bot detection:
+        1. Go to Skyscanner homepage
+        2. Set one-way mode if needed
+        3. Fill origin field
+        4. Fill destination field
+        5. Select date
+        6. Click search
 
         Args:
             origin: Departure city or airport code
@@ -154,36 +190,278 @@ class SkyscannerScraper:
         print(f"\nSearching Skyscanner: {origin} → {destination}")
         print(f"Departure: {departure_date}" + (f", Return: {return_date}" if return_date else " (one-way)"))
 
-        # Build the Skyscanner URL directly (more reliable than form filling)
-        # Skyscanner URL format: /transport/flights/{origin}/{destination}/{date}/{return_date}/
-        origin_code = origin.replace(" ", "-").lower()
-        dest_code = destination.replace(" ", "-").lower()
-
-        # Format date as YYMMDD for URL
-        dep_date = datetime.strptime(departure_date, '%Y-%m-%d')
-        date_str = dep_date.strftime('%y%m%d')
-
-        if return_date:
-            ret_date = datetime.strptime(return_date, '%Y-%m-%d')
-            ret_str = ret_date.strftime('%y%m%d')
-            url = f"https://www.skyscanner.com/transport/flights/{origin_code}/{dest_code}/{date_str}/{ret_str}/"
-        else:
-            url = f"https://www.skyscanner.com/transport/flights/{origin_code}/{dest_code}/{date_str}/"
-
-        # Step 1: Open Skyscanner search page
-        print("\n[Step 1] Opening Skyscanner...")
-        await self.page.goto(url, wait_until='domcontentloaded')
-        await self.page.wait_for_timeout(2000)
+        # Step 1: Open Skyscanner homepage
+        print("\n[Step 1] Opening Skyscanner homepage...")
+        await self.page.goto('https://www.skyscanner.com/', wait_until='networkidle')
+        await self.page.wait_for_timeout(1500)
 
         # Handle cookie consent
         await self.handle_cookie_consent()
 
-        # Step 2: Wait for results to load
-        print("[Step 2] Waiting for flight results...")
+        # Step 2: Set one-way if no return date
+        if not return_date:
+            print("[Step 2] Setting trip type to one-way...")
+            try:
+                # Look for trip type selector (usually shows "Return" by default)
+                trip_type_selectors = [
+                    'button[name="trip-type"]',
+                    '[data-testid="trip-type-selector"]',
+                    'button:has-text("Return")',
+                    'button:has-text("Round trip")',
+                    '[class*="TripType"] button',
+                ]
+
+                for selector in trip_type_selectors:
+                    try:
+                        btn = await self.page.wait_for_selector(selector, timeout=1500)
+                        if btn:
+                            await btn.click()
+                            print(f"  ✓ Clicked trip type: {selector}")
+                            await self.page.wait_for_timeout(300)
+                            break
+                    except:
+                        continue
+
+                # Now select One-way from dropdown
+                one_way_selectors = [
+                    'a:has-text("One way")',
+                    'button:has-text("One way")',
+                    'li:has-text("One way")',
+                    '[data-testid="one-way"]',
+                    'span:has-text("One way")',
+                ]
+
+                for selector in one_way_selectors:
+                    try:
+                        one_way = await self.page.wait_for_selector(selector, timeout=1500)
+                        if one_way:
+                            await one_way.click()
+                            print("  ✓ Selected One way")
+                            await self.page.wait_for_timeout(300)
+                            break
+                    except:
+                        continue
+
+            except Exception as e:
+                print(f"  ⚠ Could not set one-way: {e}")
+        else:
+            print("[Step 2] Keeping round trip mode...")
+
+        # Step 3: Fill origin field
+        print(f"[Step 3] Entering origin: {origin}...")
+        try:
+            # Click on origin field
+            origin_selectors = [
+                '#fsc-origin-search',
+                'input[name="origin"]',
+                '[data-testid="origin-input"]',
+                'input[placeholder*="From"]',
+                'input[aria-label*="From"]',
+                'button[aria-label*="origin"]',
+                '#originInput',
+            ]
+
+            origin_clicked = False
+            for selector in origin_selectors:
+                try:
+                    origin_field = await self.page.wait_for_selector(selector, timeout=1500)
+                    if origin_field:
+                        await origin_field.click()
+                        origin_clicked = True
+                        print(f"  ✓ Clicked origin field")
+                        break
+                except:
+                    continue
+
+            if not origin_clicked:
+                # Try clicking on the first input in the search form
+                await self.page.locator('input').first.click()
+                print("  ✓ Clicked first input field")
+
+            await self.page.wait_for_timeout(300)
+
+            # Clear and type origin
+            await self.page.keyboard.press('Control+a')
+            await self.page.keyboard.type(origin, delay=80)
+            await self.page.wait_for_timeout(1000)
+
+            # Select from dropdown
+            try:
+                suggestion = await self.page.wait_for_selector(
+                    'ul li:first-child, [role="option"]:first-child, [class*="suggestion"]:first-child',
+                    timeout=2000
+                )
+                if suggestion:
+                    await suggestion.click()
+                    print(f"  ✓ Selected {origin}")
+            except:
+                await self.page.keyboard.press('Enter')
+                print(f"  ✓ Pressed Enter for {origin}")
+
+            await self.page.wait_for_timeout(500)
+
+        except Exception as e:
+            print(f"  ⚠ Error setting origin: {e}")
+
+        # Step 4: Fill destination field
+        print(f"[Step 4] Entering destination: {destination}...")
+        try:
+            # Click on destination field
+            dest_selectors = [
+                '#fsc-destination-search',
+                'input[name="destination"]',
+                '[data-testid="destination-input"]',
+                'input[placeholder*="To"]',
+                'input[aria-label*="To"]',
+                'button[aria-label*="destination"]',
+                '#destinationInput',
+            ]
+
+            dest_clicked = False
+            for selector in dest_selectors:
+                try:
+                    dest_field = await self.page.wait_for_selector(selector, timeout=1500)
+                    if dest_field:
+                        await dest_field.click()
+                        dest_clicked = True
+                        print(f"  ✓ Clicked destination field")
+                        break
+                except:
+                    continue
+
+            if not dest_clicked:
+                # Try Tab to move to next field
+                await self.page.keyboard.press('Tab')
+                print("  ✓ Tabbed to destination field")
+
+            await self.page.wait_for_timeout(300)
+
+            # Type destination
+            await self.page.keyboard.type(destination, delay=80)
+            await self.page.wait_for_timeout(1000)
+
+            # Select from dropdown
+            try:
+                suggestion = await self.page.wait_for_selector(
+                    'ul li:first-child, [role="option"]:first-child, [class*="suggestion"]:first-child',
+                    timeout=2000
+                )
+                if suggestion:
+                    await suggestion.click()
+                    print(f"  ✓ Selected {destination}")
+            except:
+                await self.page.keyboard.press('Enter')
+                print(f"  ✓ Pressed Enter for {destination}")
+
+            await self.page.wait_for_timeout(500)
+
+        except Exception as e:
+            print(f"  ⚠ Error setting destination: {e}")
+
+        # Step 5: Set departure date
+        print(f"[Step 5] Setting departure date: {departure_date}...")
+        try:
+            # Click on date field
+            date_selectors = [
+                '#fsc-datepicker-button',
+                'button[aria-label*="Depart"]',
+                '[data-testid="date-input"]',
+                'input[name="depart"]',
+                'button:has-text("Depart")',
+                '[class*="DateInput"]',
+            ]
+
+            for selector in date_selectors:
+                try:
+                    date_field = await self.page.wait_for_selector(selector, timeout=1500)
+                    if date_field:
+                        await date_field.click()
+                        print(f"  ✓ Clicked date field")
+                        await self.page.wait_for_timeout(500)
+                        break
+                except:
+                    continue
+
+            # Parse target date
+            target_date = datetime.strptime(departure_date, '%Y-%m-%d')
+            day = target_date.day
+            month_name = target_date.strftime('%B')
+
+            # Try to click the specific date
+            date_cell_selectors = [
+                f'[aria-label*="{month_name} {day}"]',
+                f'[aria-label*="{day}"][aria-label*="{month_name}"]',
+                f'button:has-text("{day}")',
+                f'[data-date="{departure_date}"]',
+            ]
+
+            for selector in date_cell_selectors:
+                try:
+                    date_cell = await self.page.wait_for_selector(selector, timeout=1500)
+                    if date_cell:
+                        await date_cell.click()
+                        print(f"  ✓ Selected date: {departure_date}")
+                        break
+                except:
+                    continue
+
+            await self.page.wait_for_timeout(300)
+
+            # Click Done/Apply button if present
+            done_selectors = [
+                'button:has-text("Done")',
+                'button:has-text("Apply")',
+                'button:has-text("Select")',
+                '[data-testid="date-picker-done"]',
+            ]
+
+            for selector in done_selectors:
+                try:
+                    done_btn = await self.page.wait_for_selector(selector, timeout=1000)
+                    if done_btn:
+                        await done_btn.click()
+                        print("  ✓ Clicked Done button")
+                        break
+                except:
+                    continue
+
+            await self.page.wait_for_timeout(300)
+
+        except Exception as e:
+            print(f"  ⚠ Error setting date: {e}")
+
+        # Step 6: Click Search button
+        print("[Step 6] Clicking Search...")
+        try:
+            search_selectors = [
+                'button[type="submit"]',
+                'button:has-text("Search")',
+                'button:has-text("Search flights")',
+                '[data-testid="search-button"]',
+                '#search-button',
+            ]
+
+            for selector in search_selectors:
+                try:
+                    search_btn = await self.page.wait_for_selector(selector, timeout=2000)
+                    if search_btn:
+                        await search_btn.click()
+                        print("  ✓ Clicked Search button")
+                        break
+                except:
+                    continue
+
+        except Exception as e:
+            print(f"  ⚠ Error clicking search: {e}")
+
+        # Step 7: Wait for results to load
+        print("[Step 7] Waiting for flight results...")
+        await self.page.wait_for_timeout(3000)
+        await self.page.screenshot(path='debug_skyscanner_after_search.png')
         await self._wait_for_results()
 
-        # Step 3: Extract flight data
-        print("[Step 3] Extracting flight data...")
+        # Step 8: Extract flight data
+        print("[Step 8] Extracting flight data...")
         await self.page.screenshot(path='debug_skyscanner.png')
         flights = await self._extract_flights()
 
