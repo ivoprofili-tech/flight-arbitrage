@@ -2,5 +2,12 @@
 # This file makes the scraper folder a Python "package"
 
 from .google_flights import GoogleFlightsScraper, search_google_flights, save_results_to_file
+from .skyscanner import SkyscannerScraper, search_skyscanner_flights
 
-__all__ = ['GoogleFlightsScraper', 'search_google_flights', 'save_results_to_file']
+__all__ = [
+    'GoogleFlightsScraper',
+    'search_google_flights',
+    'save_results_to_file',
+    'SkyscannerScraper',
+    'search_skyscanner_flights'
+]
