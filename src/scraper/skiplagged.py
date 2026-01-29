@@ -177,11 +177,36 @@ class SkiplaggedScraper:
         print("[Step 2] Waiting for flight results...")
         await self._wait_for_results()
 
-        # Scroll down to load more results (lazy loading)
-        print("[Step 3] Scrolling to load more flights...")
-        for _ in range(3):
-            await self.page.evaluate('window.scrollBy(0, 500)')
-            await self._human_delay(500, 800)
+        # First scroll to top of page to ensure top flights are rendered
+        print("[Step 3] Scrolling to ensure all flights are loaded...")
+        await self.page.evaluate('window.scrollTo(0, 0)')
+        await self._human_delay(500, 800)
+
+        # Find and scroll to the flight list section
+        await self.page.evaluate('''
+            () => {
+                const header = document.evaluate(
+                    "//*[contains(text(), 'Please select your flight')]",
+                    document,
+                    null,
+                    XPathResult.FIRST_ORDERED_NODE_TYPE,
+                    null
+                ).singleNodeValue;
+                if (header) {
+                    header.scrollIntoView({ behavior: 'instant', block: 'start' });
+                }
+            }
+        ''')
+        await self._human_delay(1000, 1500)
+
+        # Scroll down through the results to trigger lazy loading
+        for _ in range(4):
+            await self.page.evaluate('window.scrollBy(0, 600)')
+            await self._human_delay(600, 900)
+
+        # Scroll back up to capture top flights
+        await self.page.evaluate('window.scrollTo(0, 0)')
+        await self._human_delay(500, 800)
 
         await self.page.wait_for_timeout(2000)
 
@@ -278,98 +303,104 @@ class SkiplaggedScraper:
 
         try:
             # First, try JavaScript DOM extraction for flight rows
-            # This captures flights that may not appear in innerText
+            # Uses multiple strategies to capture flights with different formats
             js_flights = await self.page.evaluate('''
                 () => {
                     const flights = [];
                     const airlines = ["JetBlue", "Delta", "American", "United", "Spirit", "Frontier", "Alaska", "Southwest"];
-
-                    // Find all elements that look like flight rows
-                    // Look for elements containing duration patterns like "7h" followed by stops
-                    const allDivs = document.querySelectorAll('div');
-
-                    for (const div of allDivs) {
-                        const text = div.innerText || "";
-                        const lines = text.split("\\n").map(l => l.trim()).filter(l => l);
-
-                        // Check if this div has the flight structure:
-                        // Line 0: duration (e.g., "7h")
-                        // Line 1: stops (e.g., "nonstop" or "1 stop")
-                        // Contains airline, times, price
-                        if (lines.length < 5 || lines.length > 25) continue;
-
-                        // Check for duration + stops pattern at start
-                        const durMatch = lines[0].match(/^(\\d+h)$/);
-                        if (!durMatch) continue;
-
-                        const stopsLine = lines[1].toLowerCase();
-                        if (stopsLine !== "nonstop" && !stopsLine.match(/^\\d+\\s*stops?$/)) continue;
-
-                        // Find airline
-                        let airline = "Unknown";
-                        for (const a of airlines) {
-                            if (lines.includes(a)) {
-                                airline = a;
-                                break;
-                            }
-                        }
-
-                        // Find price (last $XXX or US$XXX that's not "off")
-                        let price = null;
-                        for (let i = lines.length - 1; i >= 0; i--) {
-                            const priceMatch = lines[i].match(/^(?:US)?\\$(\\d+)$/);
-                            if (priceMatch) {
-                                price = "$" + priceMatch[1];
-                                break;
-                            }
-                        }
-                        if (!price) continue;
-
-                        // Find times - support both 12h (6:00am) and 24h (07:00) formats
-                        const times12h = text.match(/(\\d{1,2}:\\d{2}(?:am|pm))/gi) || [];
-                        const times24h = lines.filter(l => l.match(/^\\d{2}:\\d{2}$/));
-                        const times = times12h.length >= 2 ? times12h : times24h;
-
-                        if (times.length < 2) continue;
-
-                        // Check for skiplagging deal
-                        const isSkiplagged = text.toLowerCase().includes("skiplagging");
-                        const savingsMatch = text.match(/\\$(\\d+)\\s*off/i);
-
-                        const flight = {
-                            airline: airline,
-                            departure_time: times[0],
-                            arrival_time: times[times.length - 1],
-                            duration: durMatch[1],
-                            stops: stopsLine === "nonstop" ? "Nonstop" : stopsLine.replace(/stop/, " stop").trim(),
-                            price: price,
-                            source: "Skiplagged"
-                        };
-
-                        if (isSkiplagged) {
-                            flight.skiplagged_deal = true;
-                            if (savingsMatch) flight.savings = "$" + savingsMatch[1] + " off";
-                        }
-
-                        // Use price + times as unique key
-                        const key = price + "_" + times[0] + "_" + times[times.length - 1];
-                        flight._key = key;
-
-                        flights.push(flight);
-                    }
-
-                    // Deduplicate by key
                     const seen = new Set();
-                    const unique = [];
-                    for (const f of flights) {
-                        if (!seen.has(f._key)) {
-                            seen.add(f._key);
-                            delete f._key;
-                            unique.push(f);
+
+                    // Strategy 1: Find elements containing price patterns and work backwards
+                    // This should capture flights with US$ format in the top section
+                    const priceElements = [];
+                    const walker = document.createTreeWalker(
+                        document.body,
+                        NodeFilter.SHOW_TEXT,
+                        null,
+                        false
+                    );
+                    let node;
+                    while (node = walker.nextNode()) {
+                        const text = node.textContent.trim();
+                        if (text.match(/^(?:US)?\\$\\d+$/)) {
+                            priceElements.push(node.parentElement);
                         }
                     }
 
-                    return unique;
+                    for (const priceEl of priceElements) {
+                        // Walk up to find a container with flight info
+                        let container = priceEl;
+                        for (let i = 0; i < 8 && container; i++) {
+                            container = container.parentElement;
+                            if (!container) break;
+
+                            const text = container.innerText || "";
+                            const lines = text.split("\\n").map(l => l.trim()).filter(l => l);
+
+                            // Check for duration + stops + times + price pattern
+                            const hasDuration = lines.some(l => l.match(/^\\d+h$/));
+                            const hasStops = lines.some(l => l.toLowerCase() === "nonstop" || l.match(/^\\d+\\s*stops?$/i));
+                            const hasTimes = text.match(/\\d{1,2}:\\d{2}/) || text.match(/\\d{2}:\\d{2}/);
+                            const hasPrice = text.match(/(?:US)?\\$\\d+/);
+
+                            if (hasDuration && hasStops && hasTimes && hasPrice && lines.length < 30) {
+                                // Find specific values
+                                let duration = "N/A";
+                                let stops = "Unknown";
+                                let airline = "Unknown";
+                                let price = null;
+
+                                for (const line of lines) {
+                                    if (line.match(/^\\d+h$/)) duration = line;
+                                    if (line.toLowerCase() === "nonstop") stops = "Nonstop";
+                                    if (line.match(/^\\d+\\s*stops?$/i)) {
+                                        const n = line.match(/^(\\d+)/)[1];
+                                        stops = n === "1" ? "1 stop" : n + " stops";
+                                    }
+                                    for (const a of airlines) {
+                                        if (line === a) airline = a;
+                                    }
+                                    const pm = line.match(/^(?:US)?\\$(\\d+)$/);
+                                    if (pm) price = "$" + pm[1];
+                                }
+
+                                // Find times (12h or 24h format)
+                                const times12h = text.match(/(\\d{1,2}:\\d{2}(?:am|pm))/gi) || [];
+                                const times24h = lines.filter(l => l.match(/^\\d{2}:\\d{2}$/));
+                                const times = times12h.length >= 2 ? times12h : times24h;
+
+                                if (times.length >= 2 && price) {
+                                    const key = price + "_" + times[0] + "_" + times[times.length - 1];
+                                    if (!seen.has(key)) {
+                                        seen.add(key);
+
+                                        const isSkiplagged = text.toLowerCase().includes("skiplagging");
+                                        const savingsMatch = text.match(/\\$(\\d+)\\s*off/i);
+
+                                        const flight = {
+                                            airline: airline,
+                                            departure_time: times[0],
+                                            arrival_time: times[times.length - 1],
+                                            duration: duration,
+                                            stops: stops,
+                                            price: price,
+                                            source: "Skiplagged"
+                                        };
+
+                                        if (isSkiplagged) {
+                                            flight.skiplagged_deal = true;
+                                            if (savingsMatch) flight.savings = "$" + savingsMatch[1] + " off";
+                                        }
+
+                                        flights.push(flight);
+                                    }
+                                }
+                                break; // Found container, stop walking up
+                            }
+                        }
+                    }
+
+                    return flights;
                 }
             ''')
 
