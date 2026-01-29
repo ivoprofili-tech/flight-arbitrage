@@ -8,6 +8,7 @@ Similar to the Google Flights scraper, but adapted for Skyscanner's interface.
 """
 
 import asyncio
+import os
 from datetime import datetime, timedelta
 from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeout
 
@@ -38,6 +39,9 @@ class SkyscannerScraper:
             args=['--disable-blink-features=AutomationControlled']
         )
 
+        # Ensure videos directory exists
+        os.makedirs('videos', exist_ok=True)
+
         self.context = await self.browser.new_context(
             viewport={'width': 1280, 'height': 800},
             record_video_dir='videos/',
@@ -45,7 +49,7 @@ class SkyscannerScraper:
         )
 
         self.page = await self.context.new_page()
-        print("Browser started successfully! (Video recording enabled)")
+        print("Browser started! Video recording enabled (saves to videos/ folder)")
 
     async def close_browser(self):
         """Clean up: close the browser and save the video."""
@@ -68,9 +72,12 @@ class SkyscannerScraper:
             await self.playwright.stop()
 
         if video_path:
-            print(f"Browser closed. Video saved to: {video_path}")
+            print(f"\n{'='*50}")
+            print(f"VIDEO SAVED: {video_path}")
+            print(f"{'='*50}")
+            print("Download this file to watch the scraping session")
         else:
-            print("Browser closed.")
+            print("Browser closed (no video saved).")
 
     async def handle_cookie_consent(self):
         """Handle cookie consent popup on Skyscanner."""
