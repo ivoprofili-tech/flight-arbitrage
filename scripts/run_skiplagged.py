@@ -86,8 +86,12 @@ async def main():
         print("=" * 50)
 
         for i, flight in enumerate(flights, 1):
-            print(f"\n[{i}] {flight.get('airline', 'Unknown Airline')}")
+            # Show skiplagged deal indicator
+            deal_tag = " [SKIPLAGGED DEAL]" if flight.get('skiplagged_deal') else ""
+            print(f"\n[{i}] {flight.get('airline', 'Unknown Airline')}{deal_tag}")
             print(f"    Price: {flight.get('price', 'N/A')}")
+            if flight.get('savings'):
+                print(f"    Savings: {flight.get('savings')}")
             print(f"    Depart: {flight.get('departure_time', 'N/A')} → Arrive: {flight.get('arrival_time', 'N/A')}")
             print(f"    Duration: {flight.get('duration', 'N/A')} | Stops: {flight.get('stops', 'N/A')}")
     else:

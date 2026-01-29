@@ -272,7 +272,8 @@ class SkiplaggedScraper:
             await self.page.wait_for_timeout(5000)
 
     async def _extract_flights(self) -> list[dict]:
-        """Extract flight information from Skiplagged results."""
+        """Extract flight information from Skiplagged results using Python regex."""
+        import re
         flights = []
 
         try:
@@ -282,104 +283,124 @@ class SkiplaggedScraper:
             with open('debug_skiplagged_text.txt', 'w', encoding='utf-8') as f:
                 f.write(page_text)
 
-            # Skiplagged shows flights in rows with this structure:
-            # "7h nonstop | JetBlue | 7:00am JFK | 10:32am LAX | $164"
-            # Find elements that are flight row containers
-            flight_data = await self.page.evaluate('''
-                () => {
-                    const flights = [];
-                    const seen = new Set();
-                    const airlines = ["JetBlue", "Delta", "American", "United", "Spirit", "Frontier", "Alaska", "Southwest"];
+            # Parse the sequential text to find flight blocks
+            # Each flight follows this pattern in the text:
+            # Duration (6h or 11h 30m)
+            # Stops (nonstop or X stops)
+            # Airline
+            # Departure time (6:00am)
+            # Departure airport (JFK)
+            # [optional layover info]
+            # Arrival time (9:16am)
+            # Arrival airport (LAX)
+            # [optional "Skiplagging" and "$XX off"]
+            # Price ($209)
 
-                    // Strategy: Find airline name elements, then get parent row data
-                    const allElements = document.querySelectorAll("*");
+            lines = page_text.split('\n')
+            airlines = ["JetBlue", "Delta", "American", "United", "Spirit", "Frontier", "Alaska", "Southwest"]
+            seen = set()
 
-                    for (const el of allElements) {
-                        // Look for small elements that contain just an airline name
-                        const text = (el.innerText || "").trim();
+            i = 0
+            while i < len(lines):
+                line = lines[i].strip()
 
-                        // Check if this element contains exactly an airline name
-                        let foundAirline = null;
-                        for (const a of airlines) {
-                            if (text === a || text.startsWith(a + "\\n") || text.endsWith("\\n" + a)) {
-                                foundAirline = a;
-                                break;
+                # Look for duration pattern (start of a flight block)
+                # Duration is like "6h" or "11h 30m" or "7h"
+                duration_match = re.match(r'^(\d+h(?:\s*\d+m)?)$', line)
+
+                if duration_match:
+                    duration = duration_match.group(1)
+
+                    # Collect next several lines to form a flight block
+                    block_lines = [line]
+                    j = i + 1
+                    price = None
+                    found_price_line = False
+
+                    # Read up to 15 lines or until we hit the next flight duration
+                    while j < len(lines) and j < i + 15:
+                        next_line = lines[j].strip()
+
+                        # Check if this is a standalone price (the actual flight price)
+                        # Must be just $XXX with nothing else (not "$XX off")
+                        if re.match(r'^\$\d+$', next_line):
+                            price = next_line
+                            found_price_line = True
+                            block_lines.append(next_line)
+                            j += 1
+                            break
+
+                        # Check if we hit another duration (next flight)
+                        if re.match(r'^\d+h(?:\s*\d+m)?$', next_line) and j > i + 3:
+                            break
+
+                        block_lines.append(next_line)
+                        j += 1
+
+                    if not found_price_line:
+                        i += 1
+                        continue
+
+                    # Now parse the block
+                    block_text = '\n'.join(block_lines)
+
+                    # Find airline
+                    airline = "Unknown"
+                    for a in airlines:
+                        if a in block_text:
+                            airline = a
+                            break
+
+                    # Find stops
+                    stops = "Unknown"
+                    if "nonstop" in block_text.lower():
+                        stops = "Nonstop"
+                    else:
+                        stop_match = re.search(r'(\d+)\s*stop', block_text, re.IGNORECASE)
+                        if stop_match:
+                            stops = stop_match.group(1) + " stop" + ("s" if stop_match.group(1) != "1" else "")
+
+                    # Find times (format: 6:00am, 9:16am)
+                    times = re.findall(r'\d{1,2}:\d{2}(?:am|pm)', block_text, re.IGNORECASE)
+
+                    if len(times) >= 2 and price:
+                        departure_time = times[0]
+                        arrival_time = times[-1]  # Use last time as arrival
+
+                        # Check for skiplagging deal
+                        is_skiplagged = "skiplagging" in block_text.lower()
+                        savings_match = re.search(r'\$(\d+)\s*off', block_text, re.IGNORECASE)
+                        savings = f"${savings_match.group(1)} off" if savings_match else None
+
+                        # Create unique key to avoid duplicates
+                        key = f"{price}_{departure_time}_{arrival_time}"
+                        if key not in seen:
+                            seen.add(key)
+
+                            flight = {
+                                'airline': airline,
+                                'departure_time': departure_time,
+                                'arrival_time': arrival_time,
+                                'duration': duration,
+                                'stops': stops,
+                                'price': price,
+                                'source': 'Skiplagged'
                             }
-                        }
 
-                        if (!foundAirline) continue;
+                            if is_skiplagged:
+                                flight['skiplagged_deal'] = True
+                                if savings:
+                                    flight['savings'] = savings
 
-                        // Found an airline element, now look at parent for full row data
-                        let parent = el.parentElement;
-                        let rowText = "";
+                            flights.append(flight)
 
-                        // Go up to find a container with price and times
-                        for (let i = 0; i < 5 && parent; i++) {
-                            rowText = parent.innerText || "";
+                    i = j  # Move to after the block
+                else:
+                    i += 1
 
-                            // Check if this parent has price and times
-                            const hasPrice = /\$\d+/.test(rowText);
-                            const hasTimes = /\d{1,2}:\d{2}(?:am|pm)/i.test(rowText);
+            # Sort by price
+            flights.sort(key=lambda f: int(re.sub(r'\D', '', f['price']) or '99999'))
 
-                            if (hasPrice && hasTimes && rowText.length < 500) {
-                                break;
-                            }
-                            parent = parent.parentElement;
-                        }
-
-                        if (!rowText || rowText.length > 500) continue;
-
-                        // Extract price
-                        const priceMatch = rowText.match(/\$(\d+)/);
-                        if (!priceMatch) continue;
-
-                        // Extract times (7:00am, 10:32am format)
-                        const times = rowText.match(/(\d{1,2}:\d{2}(?:am|pm))/gi);
-                        if (!times || times.length < 2) continue;
-
-                        // Extract duration (7h)
-                        const durMatch = rowText.match(/(\d+)h/);
-
-                        // Create unique key
-                        const key = priceMatch[1] + times[0] + times[1];
-                        if (seen.has(key)) continue;
-                        seen.add(key);
-
-                        // Extract stops
-                        let stops = "Unknown";
-                        const rowLower = rowText.toLowerCase();
-                        if (rowLower.includes("nonstop")) {
-                            stops = "Nonstop";
-                        } else {
-                            const stopMatch = rowText.match(/(\d+)\s*stop/i);
-                            if (stopMatch) {
-                                stops = stopMatch[1] === "1" ? "1 stop" : stopMatch[1] + " stops";
-                            }
-                        }
-
-                        flights.push({
-                            airline: foundAirline,
-                            departure_time: times[0],
-                            arrival_time: times[1],
-                            duration: durMatch ? durMatch[1] + "h" : "N/A",
-                            stops: stops,
-                            price: "$" + priceMatch[1],
-                            source: "Skiplagged"
-                        });
-                    }
-
-                    // Sort by price
-                    flights.sort((a, b) => {
-                        const pa = parseInt(a.price.replace(/\D/g, "")) || 99999;
-                        const pb = parseInt(b.price.replace(/\D/g, "")) || 99999;
-                        return pa - pb;
-                    });
-
-                    return flights.slice(0, 30);
-                }
-            ''')
-
-            flights = flight_data if flight_data else []
             print(f"  Extracted {len(flights)} flights")
 
             if len(flights) == 0:
@@ -397,6 +418,8 @@ class SkiplaggedScraper:
 
         except Exception as e:
             print(f"  ⚠ Extraction error: {e}")
+            import traceback
+            traceback.print_exc()
             flights.append({
                 'error': str(e),
                 'source': 'Skiplagged',
