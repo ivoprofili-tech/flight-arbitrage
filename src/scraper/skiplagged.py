@@ -379,7 +379,21 @@ class SkiplaggedScraper:
                                     for (const a of airlines) {
                                         if (line === a) airline = a;
                                     }
-                                    const pm = line.match(/^(?:US)?\\$(\\d+)$/);
+                                }
+
+                                // Find ALL prices in the text - for skiplagged deals there may be multiple
+                                // (crossed out original price + discounted price)
+                                const allPrices = text.match(/(?:US)?\\$(\\d+)/g) || [];
+                                // Filter out "off" prices (like "$41 off")
+                                const realPrices = allPrices.filter(p => {
+                                    const idx = text.indexOf(p);
+                                    const after = text.substring(idx + p.length, idx + p.length + 10);
+                                    return !after.trim().toLowerCase().startsWith("off");
+                                });
+                                // Use the LAST price (discounted price for skiplagged deals)
+                                if (realPrices.length > 0) {
+                                    const lastPrice = realPrices[realPrices.length - 1];
+                                    const pm = lastPrice.match(/(?:US)?\\$(\\d+)/);
                                     if (pm) price = "$" + pm[1];
                                 }
 
@@ -409,6 +423,11 @@ class SkiplaggedScraper:
                                         if (isSkiplagged) {
                                             flight.skiplagged_deal = true;
                                             if (savingsMatch) flight.savings = "$" + savingsMatch[1] + " off";
+                                            // If multiple prices, first is original (crossed out)
+                                            if (realPrices.length >= 2) {
+                                                const origMatch = realPrices[0].match(/(?:US)?\\$(\\d+)/);
+                                                if (origMatch) flight.original_price = "$" + origMatch[1];
+                                            }
                                         }
 
                                         flights.push(flight);

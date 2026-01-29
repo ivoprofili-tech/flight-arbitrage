@@ -89,7 +89,11 @@ async def main():
             # Show skiplagged deal indicator
             deal_tag = " [SKIPLAGGED DEAL]" if flight.get('skiplagged_deal') else ""
             print(f"\n[{i}] {flight.get('airline', 'Unknown Airline')}{deal_tag}")
-            print(f"    Price: {flight.get('price', 'N/A')}")
+            # Show price with original if skiplagged deal
+            if flight.get('original_price'):
+                print(f"    Price: {flight.get('price', 'N/A')} (was {flight.get('original_price')})")
+            else:
+                print(f"    Price: {flight.get('price', 'N/A')}")
             if flight.get('savings'):
                 print(f"    Savings: {flight.get('savings')}")
             print(f"    Depart: {flight.get('departure_time', 'N/A')} → Arrive: {flight.get('arrival_time', 'N/A')}")
