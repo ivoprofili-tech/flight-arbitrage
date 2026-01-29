@@ -282,136 +282,110 @@ class SkiplaggedScraper:
             with open('debug_skiplagged_text.txt', 'w', encoding='utf-8') as f:
                 f.write(page_text)
 
-            # Skiplagged uses format like "8:35a" and "12:05p" for times
-            flight_data = await self.page.evaluate('''
+            # Try a simpler approach - parse text directly for flight patterns
+            # Skiplagged format: "Delta 8:35a JFK 6h30m 12:05p LAX ... $191 non stop"
+            flight_data = await self.page.evaluate(r'''
                 () => {
                     const flights = [];
                     const seen = new Set();
+                    const bodyText = document.body.innerText;
 
-                    // Strategy 1: Find elements with $ prices
-                    const allElements = document.querySelectorAll('*');
-                    const priceElements = [];
+                    // Split by lines and look for flight patterns
+                    const lines = bodyText.split('\n');
 
-                    for (const el of allElements) {
-                        const text = el.textContent || '';
-                        // Match prices like $191, $1,234
-                        if (/^\s*\$[\d,]+\s*$/.test(text) && text.length < 12) {
-                            priceElements.push(el);
-                        }
-                    }
+                    // Also try to find all elements that look like flight cards
+                    // by looking for containers with both time and price
+                    const allDivs = document.querySelectorAll('div, section, article, li');
 
-                    console.log('Found price elements:', priceElements.length);
+                    for (const div of allDivs) {
+                        // Skip if too small or too large
+                        if (!div.innerText || div.innerText.length < 20 || div.innerText.length > 500) continue;
 
-                    for (const priceEl of priceElements) {
-                        let container = priceEl;
+                        const text = div.innerText;
 
-                        // Walk up the DOM to find the flight card container
-                        for (let i = 0; i < 15; i++) {
-                            if (container.parentElement) {
-                                container = container.parentElement;
+                        // Must have a price
+                        const priceMatch = text.match(/\$(\d+)/);
+                        if (!priceMatch) continue;
+
+                        // Must have time patterns (8:35a or 8:35 AM format)
+                        const timeMatches = text.match(/\d{1,2}:\d{2}\s*[ap]?m?/gi);
+                        if (!timeMatches || timeMatches.length < 1) continue;
+
+                        // Must have duration (6h30m or 6h 30m)
+                        const durationMatch = text.match(/(\d+)h\s*(\d*)m?/i);
+                        if (!durationMatch) continue;
+
+                        // Create unique key
+                        const key = priceMatch[0] + timeMatches[0];
+                        if (seen.has(key)) continue;
+                        seen.add(key);
+
+                        // Extract data
+                        const price = '$' + priceMatch[1];
+
+                        let departureTime = timeMatches[0];
+                        let arrivalTime = timeMatches.length > 1 ? timeMatches[1] : null;
+
+                        const hours = durationMatch[1];
+                        const mins = durationMatch[2] || '0';
+                        const duration = hours + 'h ' + mins + 'm';
+
+                        // Stops
+                        let stops = 'Unknown';
+                        const textLower = text.toLowerCase();
+                        if (textLower.includes('non stop') || textLower.includes('nonstop') || textLower.includes('direct')) {
+                            stops = 'Nonstop';
+                        } else {
+                            const stopMatch = text.match(/(\d+)\s*stop/i);
+                            if (stopMatch) {
+                                stops = stopMatch[1] === '1' ? '1 stop' : stopMatch[1] + ' stops';
                             }
+                        }
 
-                            const containerText = container.textContent || '';
-
-                            // Skiplagged uses "8:35a" format (not "am")
-                            const hasTime = /\d{1,2}:\d{2}[ap]?\b/i.test(containerText);
-                            // Duration like "6h30m" or "5h 20m"
-                            const hasDuration = /\d+h\s*\d*m/i.test(containerText);
-
-                            if (hasTime && hasDuration && containerText.length > 30 && containerText.length < 5000) {
-                                const price = priceEl.textContent.trim();
-
-                                // Create unique key to avoid duplicates
-                                const key = price + containerText.substring(0, 100);
-                                if (seen.has(key)) continue;
-                                seen.add(key);
-
-                                let departureTime = null;
-                                let arrivalTime = null;
-
-                                // Skiplagged format: "8:35a" and "12:05p"
-                                const timePattern = /(\d{1,2}:\d{2}[ap])/gi;
-                                const allTimes = containerText.match(timePattern);
-
-                                if (allTimes && allTimes.length >= 2) {
-                                    const uniqueTimes = [...new Set(allTimes)];
-                                    departureTime = uniqueTimes[0];
-                                    arrivalTime = uniqueTimes[1] || uniqueTimes[0];
-                                }
-
-                                // Also try standard am/pm format
-                                if (!departureTime) {
-                                    const stdTimes = containerText.match(/\d{1,2}:\d{2}\s*(?:am|pm)/gi);
-                                    if (stdTimes && stdTimes.length >= 2) {
-                                        departureTime = stdTimes[0];
-                                        arrivalTime = stdTimes[1];
-                                    }
-                                }
-
-                                // Extract duration (6h30m or 5h 20m)
-                                const durationMatch = containerText.match(/(\d+)h\s*(\d*)m/i);
-                                let duration = null;
-                                if (durationMatch) {
-                                    const hours = durationMatch[1];
-                                    const mins = durationMatch[2] || '0';
-                                    duration = `${hours}h ${mins}m`;
-                                }
-
-                                // Extract stops
-                                let stops = "Unknown";
-                                const textLower = containerText.toLowerCase();
-                                if (textLower.includes("nonstop") || textLower.includes("non-stop") || textLower.includes("direct")) {
-                                    stops = "Nonstop";
-                                } else {
-                                    const stopMatch = containerText.match(/(\d+)\s*stop/i);
-                                    if (stopMatch) {
-                                        stops = stopMatch[1] === "1" ? "1 stop" : stopMatch[1] + " stops";
-                                    }
-                                }
-
-                                // Extract airline
-                                const airlineNames = [
-                                    'Spirit', 'United', 'Delta', 'American', 'JetBlue',
-                                    'Southwest', 'Frontier', 'Alaska', 'LATAM', 'Avianca',
-                                    'Copa', 'Aeromexico', 'Air France', 'British Airways',
-                                    'Lufthansa', 'Emirates', 'Qatar', 'TAP', 'Iberia',
-                                    'Sun Country', 'Hawaiian', 'Allegiant', 'Breeze'
-                                ];
-                                let airline = "Various";
-                                for (const name of airlineNames) {
-                                    if (containerText.includes(name)) {
-                                        airline = name;
-                                        break;
-                                    }
-                                }
-
-                                // Check if this is a "skiplagging" deal
-                                const isSkiplagging = textLower.includes('skiplagging') || textLower.includes('hidden');
-
-                                flights.push({
-                                    departure_time: departureTime,
-                                    arrival_time: arrivalTime,
-                                    duration: duration,
-                                    stops: stops,
-                                    airline: airline,
-                                    price: price,
-                                    source: 'Skiplagged',
-                                    deal_type: isSkiplagging ? 'Hidden City' : 'Regular'
-                                });
-
+                        // Airline
+                        const airlines = ['Spirit', 'United', 'Delta', 'American', 'JetBlue', 'Southwest', 'Frontier', 'Alaska'];
+                        let airline = 'Various';
+                        for (const a of airlines) {
+                            if (text.includes(a)) {
+                                airline = a;
                                 break;
                             }
                         }
+
+                        // Is it a skiplagging deal?
+                        const isSkiplagging = textLower.includes('skiplagging');
+
+                        flights.push({
+                            departure_time: departureTime,
+                            arrival_time: arrivalTime,
+                            duration: duration,
+                            stops: stops,
+                            airline: airline,
+                            price: price,
+                            source: 'Skiplagged',
+                            deal_type: isSkiplagging ? 'Hidden City' : 'Regular'
+                        });
                     }
 
-                    // Sort by price (lowest first)
+                    // Sort by price
                     flights.sort((a, b) => {
                         const priceA = parseInt((a.price || '0').replace(/[^\d]/g, '')) || 999999;
                         const priceB = parseInt((b.price || '0').replace(/[^\d]/g, '')) || 999999;
                         return priceA - priceB;
                     });
 
-                    return flights.slice(0, 30);
+                    // Remove duplicates by price+time
+                    const unique = [];
+                    const seenFinal = new Set();
+                    for (const f of flights) {
+                        const k = f.price + f.departure_time;
+                        if (!seenFinal.has(k)) {
+                            seenFinal.add(k);
+                            unique.push(f);
+                        }
+                    }
+
+                    return unique.slice(0, 30);
                 }
             ''')
 
