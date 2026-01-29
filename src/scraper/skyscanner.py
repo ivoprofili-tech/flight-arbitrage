@@ -160,6 +160,138 @@ class SkyscannerScraper:
         except Exception:
             return False
 
+    async def handle_captcha(self):
+        """
+        Handle the 'Press & Hold' CAPTCHA that Skyscanner shows.
+
+        This CAPTCHA requires pressing and holding a button for several seconds.
+        We simulate this by using mouse down, waiting, then mouse up.
+        """
+        try:
+            # Check if we're on the CAPTCHA page
+            page_text = await self.page.evaluate('() => document.body.innerText')
+
+            if 'Are you a person or a robot' not in page_text and 'PRESS & HOLD' not in page_text:
+                return False  # No CAPTCHA detected
+
+            print("\n[CAPTCHA] Detected 'Press & Hold' challenge...")
+
+            # Find the Press & Hold button
+            button_selectors = [
+                'button:has-text("PRESS & HOLD")',
+                'button:has-text("Press & Hold")',
+                '#px-captcha',
+                '[id*="captcha"]',
+                'button[class*="captcha"]',
+            ]
+
+            button = None
+            for selector in button_selectors:
+                try:
+                    button = await self.page.wait_for_selector(selector, timeout=2000)
+                    if button:
+                        print(f"  Found button with selector: {selector}")
+                        break
+                except:
+                    continue
+
+            if not button:
+                # Try to find any button with Press & Hold text via JavaScript
+                button_info = await self.page.evaluate('''
+                    () => {
+                        const buttons = document.querySelectorAll('button, div[role="button"], [onclick]');
+                        for (const btn of buttons) {
+                            if (btn.textContent.includes('PRESS') || btn.textContent.includes('HOLD')) {
+                                const rect = btn.getBoundingClientRect();
+                                return { x: rect.x + rect.width/2, y: rect.y + rect.height/2, found: true };
+                            }
+                        }
+                        // Look for the main interactive element
+                        const captcha = document.querySelector('#px-captcha, [id*="captcha"], [class*="captcha"]');
+                        if (captcha) {
+                            const rect = captcha.getBoundingClientRect();
+                            return { x: rect.x + rect.width/2, y: rect.y + rect.height/2, found: true };
+                        }
+                        return { found: false };
+                    }
+                ''')
+
+                if button_info and button_info.get('found'):
+                    print(f"  Found button at ({button_info['x']}, {button_info['y']})")
+
+                    # Move mouse to button with human-like movement
+                    await self.page.mouse.move(button_info['x'], button_info['y'])
+                    await self._human_delay(200, 400)
+
+                    # Press and hold
+                    print("  Pressing and holding button...")
+                    await self.page.mouse.down()
+
+                    # Hold for 8-12 seconds (CAPTCHA typically requires ~10 seconds)
+                    hold_time = random.randint(8000, 12000)
+                    print(f"  Holding for {hold_time/1000:.1f} seconds...")
+                    await self.page.wait_for_timeout(hold_time)
+
+                    # Release
+                    await self.page.mouse.up()
+                    print("  Released button")
+
+                    # Wait for redirect
+                    await self.page.wait_for_timeout(3000)
+
+                    # Check if CAPTCHA is gone
+                    new_text = await self.page.evaluate('() => document.body.innerText')
+                    if 'Are you a person or a robot' not in new_text:
+                        print("  ✓ CAPTCHA solved!")
+                        return True
+                    else:
+                        print("  ⚠ CAPTCHA still present, may need retry")
+                        return False
+                else:
+                    print("  ⚠ Could not find CAPTCHA button")
+                    return False
+
+            # If we found the button element, click and hold it
+            box = await button.bounding_box()
+            if box:
+                x = box['x'] + box['width'] / 2
+                y = box['y'] + box['height'] / 2
+
+                # Move to button
+                await self.page.mouse.move(x, y)
+                await self._human_delay(200, 400)
+
+                # Press and hold
+                print("  Pressing and holding button...")
+                await self.page.mouse.down()
+
+                # Hold for 8-12 seconds
+                hold_time = random.randint(8000, 12000)
+                print(f"  Holding for {hold_time/1000:.1f} seconds...")
+                await self.page.wait_for_timeout(hold_time)
+
+                # Release
+                await self.page.mouse.up()
+                print("  Released button")
+
+                # Wait for redirect
+                await self.page.wait_for_timeout(3000)
+
+                # Check if successful
+                new_text = await self.page.evaluate('() => document.body.innerText')
+                if 'Are you a person or a robot' not in new_text:
+                    print("  ✓ CAPTCHA solved!")
+                    return True
+                else:
+                    print("  ⚠ CAPTCHA still present")
+                    return False
+
+            return False
+
+        except Exception as e:
+            print(f"  ⚠ CAPTCHA handling error: {e}")
+            return False
+
     async def search_flights(
         self,
         origin: str,
@@ -193,7 +325,13 @@ class SkyscannerScraper:
         # Step 1: Open Skyscanner homepage
         print("\n[Step 1] Opening Skyscanner homepage...")
         await self.page.goto('https://www.skyscanner.com/', wait_until='networkidle')
-        await self.page.wait_for_timeout(1500)
+        await self.page.wait_for_timeout(2000)
+
+        # Check for and handle CAPTCHA
+        captcha_solved = await self.handle_captcha()
+        if captcha_solved:
+            # Wait for page to fully load after CAPTCHA
+            await self.page.wait_for_timeout(2000)
 
         # Handle cookie consent
         await self.handle_cookie_consent()
@@ -457,6 +595,12 @@ class SkyscannerScraper:
         # Step 7: Wait for results to load
         print("[Step 7] Waiting for flight results...")
         await self.page.wait_for_timeout(3000)
+
+        # Check for CAPTCHA again (might appear after search)
+        captcha_solved = await self.handle_captcha()
+        if captcha_solved:
+            await self.page.wait_for_timeout(2000)
+
         await self.page.screenshot(path='debug_skyscanner_after_search.png')
         await self._wait_for_results()
 
