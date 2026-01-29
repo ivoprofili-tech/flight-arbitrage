@@ -297,23 +297,25 @@ class SkiplaggedScraper:
                 if not line:
                     continue
 
-                # Check for price pattern
-                price_match = re.search(r'\$(\d+)', line)
+                # Check for price pattern (US$164 or $164)
+                price_match = re.search(r'(?:US)?\$(\d+)', line)
                 if price_match:
                     # Look at surrounding lines for flight info
                     context_start = max(0, i - 10)
                     context_end = min(len(lines), i + 5)
                     context = ' '.join(lines[context_start:context_end])
 
-                    # Extract times (format: 6:00a, 12:55p)
-                    times = re.findall(r'(\d{1,2}:\d{2}[ap])', context, re.IGNORECASE)
+                    # Extract times - handle both 24-hour (07:00, 10:32) and 12-hour (6:00a, 12:55p)
+                    times = re.findall(r'(\d{1,2}:\d{2}[ap]?)', context, re.IGNORECASE)
+                    # Filter out things that don't look like times (too many matches)
+                    times = [t for t in times if len(t) >= 4]
 
-                    # Extract duration (format: 9h55m, 6h28m)
-                    duration_match = re.search(r'(\d+)h(\d*)m', context, re.IGNORECASE)
+                    # Extract duration (format: 7h, 10h, 9h55m, 6h28m)
+                    duration_match = re.search(r'(\d+)h\s*(\d*)m?', context, re.IGNORECASE)
 
                     # Only create flight if we have times and duration
                     if times and duration_match:
-                        price = '$' + price_match.group(1)
+                        price = 'US$' + price_match.group(1)
 
                         # Check if we already have this flight
                         flight_key = price + (times[0] if times else '')
@@ -369,9 +371,6 @@ class SkiplaggedScraper:
             # Limit to 30
             flights = flights[:30]
 
-            print(f"  Extracted {len(flights)} flights")
-
-            flights = flight_data if flight_data else []
             print(f"  Extracted {len(flights)} flights")
 
             if len(flights) == 0:
