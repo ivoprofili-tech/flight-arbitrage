@@ -449,6 +449,35 @@ class SkiplaggedScraper:
                                                 if (timesBefore.length > 0) {
                                                     // Use the last time before the city name as arrival
                                                     arrivalTime = timesBefore[timesBefore.length - 1];
+
+                                                    // Calculate actual duration from departure to target arrival
+                                                    const parseTime = (t) => {
+                                                        let hours, mins;
+                                                        const match12 = t.match(/(\\d{1,2}):(\\d{2})(am|pm)/i);
+                                                        const match24 = t.match(/(\\d{2}):(\\d{2})$/);
+                                                        if (match12) {
+                                                            hours = parseInt(match12[1]);
+                                                            mins = parseInt(match12[2]);
+                                                            const isPM = match12[3].toLowerCase() === 'pm';
+                                                            if (isPM && hours !== 12) hours += 12;
+                                                            if (!isPM && hours === 12) hours = 0;
+                                                        } else if (match24) {
+                                                            hours = parseInt(match24[1]);
+                                                            mins = parseInt(match24[2]);
+                                                        }
+                                                        return hours * 60 + mins;
+                                                    };
+
+                                                    const depMins = parseTime(times[0]);
+                                                    const arrMins = parseTime(arrivalTime);
+                                                    let diffMins = arrMins - depMins;
+                                                    // Account for 3-hour timezone difference (EST to PST)
+                                                    diffMins += 3 * 60;
+                                                    if (diffMins < 0) diffMins += 24 * 60; // next day
+
+                                                    const durHours = Math.floor(diffMins / 60);
+                                                    const durMins = diffMins % 60;
+                                                    actualDuration = durMins > 0 ? durHours + "h " + durMins + "m" : durHours + "h";
                                                     break;
                                                 }
                                             }
@@ -465,7 +494,7 @@ class SkiplaggedScraper:
                                             airline: airline,
                                             departure_time: times[0],
                                             arrival_time: arrivalTime,
-                                            duration: duration,
+                                            duration: isSkiplagged ? actualDuration : duration,
                                             stops: stops,
                                             price: price,
                                             source: "Skiplagged"
