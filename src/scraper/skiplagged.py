@@ -332,7 +332,9 @@ class SkiplaggedScraper:
             # First, try JavaScript DOM extraction for flight rows
             # Uses multiple strategies to capture flights with different formats
             js_flights = await self.page.evaluate('''
-                (destCode, destName) => {
+                (args) => {
+                    const destCode = args.destCode;
+                    const destName = args.destName;
                     const flights = [];
                     const airlines = ["JetBlue", "Delta", "American", "United", "Spirit", "Frontier", "Alaska", "Southwest"];
                     const seen = new Set();
@@ -489,7 +491,7 @@ class SkiplaggedScraper:
 
                     return flights;
                 }
-            ''', dest_code, dest_name)
+            ''', {"destCode": dest_code, "destName": dest_name})
 
             if js_flights:
                 print(f"  JS DOM extraction found {len(js_flights)} flights")
