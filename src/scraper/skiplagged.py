@@ -155,7 +155,8 @@ class SkiplaggedScraper:
             url = f"https://skiplagged.com/flights/{origin_code}/{dest_code}/{departure_date}"
 
         print(f"\n[Step 1] Opening Skiplagged: {url}")
-        await self.page.goto(url, wait_until='networkidle')
+        # Use 'domcontentloaded' instead of 'networkidle' - Skiplagged keeps making requests
+        await self.page.goto(url, wait_until='domcontentloaded', timeout=15000)
         await self._human_delay(2000, 3000)
 
         # Take a screenshot to see what we got
