@@ -11,6 +11,10 @@ Arguments:
     destination  - Arrival city (e.g., "Los Angeles", "LAX")
     departure    - Departure date (YYYY-MM-DD format)
     return       - Optional return date (YYYY-MM-DD format)
+
+Results are saved to:
+    - A text file in the current directory
+    - SQLite database at data/flights.db
 """
 
 import asyncio
@@ -22,6 +26,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.scraper import search_google_flights, save_results_to_file
+from src.database import save_flight_search
 
 
 async def main():
@@ -62,7 +67,7 @@ async def main():
 
     # Save and display results
     if flights:
-        # Save to file
+        # Save to text file
         filename = save_results_to_file(
             flights=flights,
             origin=origin,
@@ -70,6 +75,16 @@ async def main():
             departure_date=departure_date,
             return_date=return_date
         )
+
+        # Save to database
+        search_id = save_flight_search(
+            origin=origin,
+            destination=destination,
+            departure_date=departure_date,
+            return_date=return_date,
+            flights=flights
+        )
+        print(f"Results saved to database (search #{search_id})")
 
         # Also print to console
         print("\n" + "=" * 50)

@@ -36,3 +36,12 @@ htmlcov/
 # OS generated files
 .DS_Store
 Thumbs.db
+
+# Database files (contain user data)
+*.db
+data/*.db
+
+# Debug files from scraper
+debug_*.png
+debug_*.txt
+videos/
