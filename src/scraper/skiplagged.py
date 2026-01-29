@@ -177,12 +177,14 @@ class SkiplaggedScraper:
         print("[Step 2] Waiting for flight results...")
         await self._wait_for_results()
 
-        # First scroll to top of page to ensure top flights are rendered
-        print("[Step 3] Scrolling to ensure all flights are loaded...")
-        await self.page.evaluate('window.scrollTo(0, 0)')
-        await self._human_delay(500, 800)
+        print("[Step 3] Extracting flights with incremental scrolling...")
 
-        # Find and scroll to the flight list section
+        # Skiplagged uses virtualized scrolling - only ~10-15 flights in DOM at a time
+        # Solution: Extract at each scroll position and combine results
+        all_flights = []
+        seen_keys = set()
+
+        # Start at the flight list
         await self.page.evaluate('''
             () => {
                 const header = document.evaluate(
@@ -197,26 +199,34 @@ class SkiplaggedScraper:
                 }
             }
         ''')
-        await self._human_delay(1000, 1500)
+        await self._human_delay(800, 1200)
 
-        # Scroll down moderately to trigger lazy loading, but not too far
-        # Skiplagged may use virtualized scrolling that unloads content
-        for i in range(5):
-            await self.page.evaluate('window.scrollBy(0, 600)')
-            await self._human_delay(400, 600)
+        # Extract flights at multiple scroll positions
+        for scroll_num in range(8):
+            # Extract current visible flights
+            batch = await self._extract_flights_batch()
 
-        await self.page.wait_for_timeout(1000)
+            # Add new flights (deduplicate by price + times)
+            for flight in batch:
+                key = f"{flight['price']}_{flight['departure_time']}_{flight['arrival_time']}"
+                if key not in seen_keys:
+                    seen_keys.add(key)
+                    all_flights.append(flight)
 
-        # Scroll back to top to ensure top flights are in DOM
-        await self.page.evaluate('window.scrollTo(0, 0)')
-        await self._human_delay(500, 800)
+            print(f"  Scroll {scroll_num + 1}: Found {len(batch)} flights, total unique: {len(all_flights)}")
 
-        print("[Step 4] Extracting flight data...")
+            # Scroll down to load more
+            await self.page.evaluate('window.scrollBy(0, 400)')
+            await self._human_delay(600, 900)
+
+        # Sort by price
+        import re
+        all_flights.sort(key=lambda f: int(re.sub(r'\D', '', f['price']) or '99999'))
+
         await self.page.screenshot(path='debug_skiplagged.png')
-        flights = await self._extract_flights()
 
-        print(f"\nFound {len(flights)} flights on Skiplagged!")
-        return flights
+        print(f"\nFound {len(all_flights)} total unique flights on Skiplagged!")
+        return all_flights
 
     def _get_airport_code(self, location: str) -> str:
         """Convert city name to airport code."""
@@ -297,8 +307,16 @@ class SkiplaggedScraper:
             print(f"  ⚠ Error waiting for results: {e}")
             await self.page.wait_for_timeout(5000)
 
+    async def _extract_flights_batch(self) -> list[dict]:
+        """Extract flights currently visible in the DOM (for incremental extraction)."""
+        return await self._extract_flights_impl()
+
     async def _extract_flights(self) -> list[dict]:
         """Extract flight information from Skiplagged results using hybrid approach."""
+        return await self._extract_flights_impl()
+
+    async def _extract_flights_impl(self) -> list[dict]:
+        """Implementation of flight extraction from Skiplagged results."""
         import re
         flights = []
 
