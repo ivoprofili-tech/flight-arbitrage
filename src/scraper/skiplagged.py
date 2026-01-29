@@ -147,6 +147,10 @@ class SkiplaggedScraper:
         origin_code = self._get_airport_code(origin)
         dest_code = self._get_airport_code(destination)
 
+        # Store destination for skiplagged deal extraction
+        self.destination_code = dest_code
+        self.destination_name = destination
+
         # Build Skiplagged URL
         # Format: https://skiplagged.com/flights/JFK/LAX/2025-03-01
         if return_date:
@@ -320,14 +324,35 @@ class SkiplaggedScraper:
         import re
         flights = []
 
+        # Get destination info for skiplagged deal extraction
+        dest_code = getattr(self, 'destination_code', 'LAX')
+        dest_name = getattr(self, 'destination_name', 'Los Angeles')
+
         try:
             # First, try JavaScript DOM extraction for flight rows
             # Uses multiple strategies to capture flights with different formats
             js_flights = await self.page.evaluate('''
-                () => {
+                (destCode, destName) => {
                     const flights = [];
                     const airlines = ["JetBlue", "Delta", "American", "United", "Spirit", "Frontier", "Alaska", "Southwest"];
                     const seen = new Set();
+
+                    // City name mapping for destination detection
+                    const cityNames = {
+                        "LAX": ["Los Angeles", "LA", "LAX"],
+                        "JFK": ["New York", "NYC", "JFK", "Kennedy"],
+                        "ORD": ["Chicago", "O'Hare", "ORD"],
+                        "SFO": ["San Francisco", "SFO"],
+                        "MIA": ["Miami", "MIA"],
+                        "BOS": ["Boston", "BOS"],
+                        "SEA": ["Seattle", "SEA"],
+                        "DEN": ["Denver", "DEN"],
+                        "ATL": ["Atlanta", "ATL"],
+                        "DFW": ["Dallas", "DFW"],
+                        "PHX": ["Phoenix", "PHX"],
+                        "LAS": ["Las Vegas", "LAS"]
+                    };
+                    const destCityNames = cityNames[destCode] || [destCode, destName];
 
                     // Strategy 1: Find elements containing price patterns and work backwards
                     // This should capture flights with US$ format in the top section
@@ -403,17 +428,41 @@ class SkiplaggedScraper:
                                 const times = times12h.length >= 2 ? times12h : times24h;
 
                                 if (times.length >= 2 && price) {
-                                    const key = price + "_" + times[0] + "_" + times[times.length - 1];
+                                    const isSkiplagged = text.toLowerCase().includes("skiplagging");
+
+                                    // For skiplagged deals, find arrival at TARGET city, not final destination
+                                    let arrivalTime = times[times.length - 1];
+                                    let actualDuration = duration;
+
+                                    if (isSkiplagged && times.length > 2) {
+                                        // Look for the target city name and find associated time
+                                        const textLower = text.toLowerCase();
+                                        for (const cityName of destCityNames) {
+                                            const cityIdx = textLower.indexOf(cityName.toLowerCase());
+                                            if (cityIdx > 0) {
+                                                // Find the time that appears just before this city name
+                                                // by looking at the text before the city
+                                                const textBefore = text.substring(0, cityIdx);
+                                                const timesBefore = textBefore.match(/(\\d{1,2}:\\d{2}(?:am|pm)?)/gi) || [];
+                                                if (timesBefore.length > 0) {
+                                                    // Use the last time before the city name as arrival
+                                                    arrivalTime = timesBefore[timesBefore.length - 1];
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    const key = price + "_" + times[0] + "_" + arrivalTime;
                                     if (!seen.has(key)) {
                                         seen.add(key);
 
-                                        const isSkiplagged = text.toLowerCase().includes("skiplagging");
                                         const savingsMatch = text.match(/\\$(\\d+)\\s*off/i);
 
                                         const flight = {
                                             airline: airline,
                                             departure_time: times[0],
-                                            arrival_time: times[times.length - 1],
+                                            arrival_time: arrivalTime,
                                             duration: duration,
                                             stops: stops,
                                             price: price,
@@ -440,7 +489,7 @@ class SkiplaggedScraper:
 
                     return flights;
                 }
-            ''')
+            ''', dest_code, dest_name)
 
             if js_flights:
                 print(f"  JS DOM extraction found {len(js_flights)} flights")
