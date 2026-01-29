@@ -176,7 +176,15 @@ class SkiplaggedScraper:
         print("[Step 2] Waiting for flight results...")
         await self._wait_for_results()
 
-        print("[Step 3] Extracting flight data...")
+        # Scroll down to load more results (lazy loading)
+        print("[Step 3] Scrolling to load more flights...")
+        for _ in range(3):
+            await self.page.evaluate('window.scrollBy(0, 500)')
+            await self._human_delay(500, 800)
+
+        await self.page.wait_for_timeout(2000)
+
+        print("[Step 4] Extracting flight data...")
         await self.page.screenshot(path='debug_skiplagged.png')
         flights = await self._extract_flights()
 
@@ -236,25 +244,27 @@ class SkiplaggedScraper:
     async def _wait_for_results(self):
         """Wait for Skiplagged results to load."""
         try:
-            result_selectors = [
-                '[class*="flight"]',
-                '[class*="result"]',
-                '[class*="itinerary"]',
-                'div[data-flight]',
-                '.trip-container',
-            ]
+            # Wait longer for Skiplagged to load flight results
+            print("  Waiting for flight cards to appear...")
 
-            for selector in result_selectors:
-                try:
-                    await self.page.wait_for_selector(selector, timeout=15000)
-                    print("  ✓ Results loaded")
-                    await self.page.wait_for_timeout(2000)
-                    return
-                except PlaywrightTimeout:
-                    continue
-
-            print("  ⚠ Could not detect results container, waiting...")
+            # Skiplagged loads results dynamically, wait for price elements
             await self.page.wait_for_timeout(5000)
+
+            # Check if we have any price-like content
+            has_prices = await self.page.evaluate('''
+                () => {
+                    const text = document.body.innerText;
+                    return /\$\d+/.test(text);
+                }
+            ''')
+
+            if has_prices:
+                print("  ✓ Found price data on page")
+                # Give a bit more time for all results to render
+                await self.page.wait_for_timeout(2000)
+            else:
+                print("  ⚠ No prices found yet, waiting more...")
+                await self.page.wait_for_timeout(5000)
 
         except Exception as e:
             print(f"  ⚠ Error waiting for results: {e}")
@@ -271,66 +281,82 @@ class SkiplaggedScraper:
             with open('debug_skiplagged_text.txt', 'w', encoding='utf-8') as f:
                 f.write(page_text)
 
+            # Skiplagged uses format like "8:35a" and "12:05p" for times
             flight_data = await self.page.evaluate('''
                 () => {
                     const flights = [];
                     const seen = new Set();
 
+                    // Strategy 1: Find elements with $ prices
                     const allElements = document.querySelectorAll('*');
                     const priceElements = [];
 
                     for (const el of allElements) {
                         const text = el.textContent || '';
-                        if (/^\s*\$\s*[\d,]+\s*$/.test(text) && text.length < 15) {
+                        // Match prices like $191, $1,234
+                        if (/^\s*\$[\d,]+\s*$/.test(text) && text.length < 12) {
                             priceElements.push(el);
                         }
                     }
 
+                    console.log('Found price elements:', priceElements.length);
+
                     for (const priceEl of priceElements) {
                         let container = priceEl;
 
-                        for (let i = 0; i < 12; i++) {
+                        // Walk up the DOM to find the flight card container
+                        for (let i = 0; i < 15; i++) {
                             if (container.parentElement) {
                                 container = container.parentElement;
                             }
 
                             const containerText = container.textContent || '';
-                            const hasTime = /\d{1,2}:\d{2}\s*(am|pm|AM|PM)?/.test(containerText);
-                            const hasDuration = /\d+h\s*\d*m?|\d+\s*hr/i.test(containerText);
 
-                            if (hasTime && hasDuration && containerText.length > 40 && containerText.length < 3000) {
+                            // Skiplagged uses "8:35a" format (not "am")
+                            const hasTime = /\d{1,2}:\d{2}[ap]?\b/i.test(containerText);
+                            // Duration like "6h30m" or "5h 20m"
+                            const hasDuration = /\d+h\s*\d*m/i.test(containerText);
+
+                            if (hasTime && hasDuration && containerText.length > 30 && containerText.length < 5000) {
                                 const price = priceEl.textContent.trim();
 
-                                const key = price + containerText.substring(0, 80);
+                                // Create unique key to avoid duplicates
+                                const key = price + containerText.substring(0, 100);
                                 if (seen.has(key)) continue;
                                 seen.add(key);
 
                                 let departureTime = null;
                                 let arrivalTime = null;
 
-                                const timeWithSep = containerText.match(/(\d{1,2}:\d{2}\s*(?:am|pm|AM|PM)?)\s*[–\-−→]\s*(\d{1,2}:\d{2}\s*(?:am|pm|AM|PM)?)/i);
-                                if (timeWithSep) {
-                                    departureTime = timeWithSep[1].trim();
-                                    arrivalTime = timeWithSep[2].trim();
-                                } else {
-                                    const allTimes = containerText.match(/\d{1,2}:\d{2}\s*(?:am|pm|AM|PM)?/gi);
-                                    if (allTimes && allTimes.length >= 2) {
-                                        const uniqueTimes = [...new Set(allTimes.map(t => t.trim()))];
-                                        if (uniqueTimes.length >= 2) {
-                                            departureTime = uniqueTimes[0];
-                                            arrivalTime = uniqueTimes[1];
-                                        }
+                                // Skiplagged format: "8:35a" and "12:05p"
+                                const timePattern = /(\d{1,2}:\d{2}[ap])/gi;
+                                const allTimes = containerText.match(timePattern);
+
+                                if (allTimes && allTimes.length >= 2) {
+                                    const uniqueTimes = [...new Set(allTimes)];
+                                    departureTime = uniqueTimes[0];
+                                    arrivalTime = uniqueTimes[1] || uniqueTimes[0];
+                                }
+
+                                // Also try standard am/pm format
+                                if (!departureTime) {
+                                    const stdTimes = containerText.match(/\d{1,2}:\d{2}\s*(?:am|pm)/gi);
+                                    if (stdTimes && stdTimes.length >= 2) {
+                                        departureTime = stdTimes[0];
+                                        arrivalTime = stdTimes[1];
                                     }
                                 }
 
-                                const durationMatch = containerText.match(/(\d+)h\s*(\d*)m?|(\d+)\s*hr\s*(\d*)\s*m?/i);
+                                // Extract duration (6h30m or 5h 20m)
+                                const durationMatch = containerText.match(/(\d+)h\s*(\d*)m/i);
                                 let duration = null;
                                 if (durationMatch) {
-                                    const hours = durationMatch[1] || durationMatch[3];
-                                    const mins = durationMatch[2] || durationMatch[4] || '0';
+                                    const hours = durationMatch[1];
+                                    const mins = durationMatch[2] || '0';
                                     duration = `${hours}h ${mins}m`;
                                 }
 
+                                // Extract stops
                                 let stops = "Unknown";
                                 const textLower = containerText.toLowerCase();
                                 if (textLower.includes("nonstop") || textLower.includes("non-stop") || textLower.includes("direct")) {
@@ -342,6 +368,7 @@ class SkiplaggedScraper:
                                     }
                                 }
 
+                                // Extract airline
                                 const airlineNames = [
                                     'Spirit', 'United', 'Delta', 'American', 'JetBlue',
                                     'Southwest', 'Frontier', 'Alaska', 'LATAM', 'Avianca',
@@ -357,6 +384,9 @@ class SkiplaggedScraper:
                                     }
                                 }
 
+                                // Check if this is a "skiplagging" deal
+                                const isSkiplagging = textLower.includes('skiplagging') || textLower.includes('hidden');
+
                                 flights.push({
                                     departure_time: departureTime,
                                     arrival_time: arrivalTime,
@@ -364,7 +394,8 @@ class SkiplaggedScraper:
                                     stops: stops,
                                     airline: airline,
                                     price: price,
-                                    source: 'Skiplagged'
+                                    source: 'Skiplagged',
+                                    deal_type: isSkiplagging ? 'Hidden City' : 'Regular'
                                 });
 
                                 break;
@@ -372,6 +403,7 @@ class SkiplaggedScraper:
                         }
                     }
 
+                    // Sort by price (lowest first)
                     flights.sort((a, b) => {
                         const priceA = parseInt((a.price || '0').replace(/[^\d]/g, '')) || 999999;
                         const priceB = parseInt((b.price || '0').replace(/[^\d]/g, '')) || 999999;
