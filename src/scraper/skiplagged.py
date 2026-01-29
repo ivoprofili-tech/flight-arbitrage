@@ -338,11 +338,14 @@ class SkiplaggedScraper:
                             if stop_match:
                                 stops = '1 stop' if stop_match.group(1) == '1' else f"{stop_match.group(1)} stops"
 
-                        # Airline
-                        airlines = ['Spirit', 'United', 'Delta', 'American', 'JetBlue', 'Southwest', 'Frontier', 'Alaska']
+                        # Airline - use a smaller context window (only 5 lines back)
+                        # to avoid picking up airlines from other flight cards
+                        airline_context_start = max(0, i - 5)
+                        airline_context = ' '.join(lines[airline_context_start:i+1])
+                        airlines = ['Frontier', 'Spirit', 'United', 'Delta', 'American', 'JetBlue', 'Southwest', 'Alaska']
                         airline = 'Various'
                         for a in airlines:
-                            if a in context:
+                            if a in airline_context:
                                 airline = a
                                 break
 
