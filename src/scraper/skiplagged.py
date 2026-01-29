@@ -305,67 +305,87 @@ class SkiplaggedScraper:
                 line = lines[i].strip()
 
                 # Look for duration pattern (start of a flight block)
-                # Duration is like "6h" or "11h 30m" or "7h"
-                duration_match = re.match(r'^(\d+h(?:\s*\d+m)?)$', line)
+                # Duration is like "6h" or "11h" - total flight times
+                duration_match = re.match(r'^(\d+h)$', line)
 
                 if duration_match:
-                    duration = duration_match.group(1)
-
-                    # Collect next several lines to form a flight block
-                    block_lines = [line]
-                    j = i + 1
-                    price = None
-                    found_price_line = False
-
-                    # Read up to 15 lines or until we hit the next flight duration
-                    while j < len(lines) and j < i + 15:
-                        next_line = lines[j].strip()
-
-                        # Check if this is a standalone price (the actual flight price)
-                        # Must be just $XXX with nothing else (not "$XX off")
-                        if re.match(r'^\$\d+$', next_line):
-                            price = next_line
-                            found_price_line = True
-                            block_lines.append(next_line)
-                            j += 1
-                            break
-
-                        # Check if we hit another duration (next flight)
-                        if re.match(r'^\d+h(?:\s*\d+m)?$', next_line) and j > i + 3:
-                            break
-
-                        block_lines.append(next_line)
-                        j += 1
-
-                    if not found_price_line:
+                    # CRITICAL: Next line MUST be stops info to confirm this is a flight block
+                    # This filters out segment times like "1h 33m" which aren't flight starts
+                    if i + 1 >= len(lines):
                         i += 1
                         continue
 
-                    # Now parse the block
-                    block_text = '\n'.join(block_lines)
+                    next_line = lines[i + 1].strip().lower()
+                    is_stops_line = (
+                        next_line == "nonstop" or
+                        re.match(r'^\d+\s*stops?$', next_line)
+                    )
 
-                    # Find airline
+                    if not is_stops_line:
+                        i += 1
+                        continue
+
+                    duration = duration_match.group(1)
+                    stops = "Nonstop" if next_line == "nonstop" else next_line.replace("stop", " stop").strip()
+                    if "1 stop" in stops:
+                        stops = "1 stop"
+                    elif "stops" not in stops and "stop" in stops:
+                        stops = stops  # keep as is
+                    else:
+                        # Format "2 stops" etc
+                        stop_num = re.search(r'(\d+)', stops)
+                        if stop_num:
+                            n = stop_num.group(1)
+                            stops = f"{n} stop" if n == "1" else f"{n} stops"
+
+                    # Collect flight block lines (starting after stops line)
+                    block_lines = [line, lines[i + 1].strip()]
+                    j = i + 2
+                    price = None
                     airline = "Unknown"
-                    for a in airlines:
-                        if a in block_text:
-                            airline = a
+
+                    # Read lines until we find the price
+                    while j < len(lines) and j < i + 25:
+                        curr_line = lines[j].strip()
+
+                        # Check for airline name (exact match on its own line)
+                        for a in airlines:
+                            if curr_line == a:
+                                airline = a
+                                break
+
+                        # Check if this is a standalone price (the actual flight price)
+                        # Must be just $XXX with nothing else (not "$XX off")
+                        if re.match(r'^\$\d+$', curr_line):
+                            price = curr_line
+                            block_lines.append(curr_line)
+                            j += 1
                             break
 
-                    # Find stops
-                    stops = "Unknown"
-                    if "nonstop" in block_text.lower():
-                        stops = "Nonstop"
-                    else:
-                        stop_match = re.search(r'(\d+)\s*stop', block_text, re.IGNORECASE)
-                        if stop_match:
-                            stops = stop_match.group(1) + " stop" + ("s" if stop_match.group(1) != "1" else "")
+                        # Check if we hit the next flight (duration + stops pattern)
+                        if re.match(r'^\d+h$', curr_line):
+                            # Peek ahead to see if next line is stops
+                            if j + 1 < len(lines):
+                                peek = lines[j + 1].strip().lower()
+                                if peek == "nonstop" or re.match(r'^\d+\s*stops?$', peek):
+                                    break  # This is the next flight
 
-                    # Find times (format: 6:00am, 9:16am)
-                    times = re.findall(r'\d{1,2}:\d{2}(?:am|pm)', block_text, re.IGNORECASE)
+                        block_lines.append(curr_line)
+                        j += 1
 
-                    if len(times) >= 2 and price:
+                    if not price:
+                        i += 1
+                        continue
+
+                    # Extract times from the block (format: 6:00am, 9:16am)
+                    block_text = '\n'.join(block_lines)
+                    times = re.findall(r'(\d{1,2}:\d{2}(?:am|pm))', block_text, re.IGNORECASE)
+
+                    # For multi-stop flights, we want first and last times
+                    # Filter out intermediate times that are part of layover info
+                    if len(times) >= 2:
                         departure_time = times[0]
-                        arrival_time = times[-1]  # Use last time as arrival
+                        arrival_time = times[-1]
 
                         # Check for skiplagging deal
                         is_skiplagged = "skiplagging" in block_text.lower()
