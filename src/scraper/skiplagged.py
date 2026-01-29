@@ -200,15 +200,16 @@ class SkiplaggedScraper:
         await self._human_delay(1000, 1500)
 
         # Scroll down through the results to trigger lazy loading
-        for _ in range(4):
-            await self.page.evaluate('window.scrollBy(0, 600)')
-            await self._human_delay(600, 900)
+        # Scroll more to load additional flights
+        for _ in range(8):
+            await self.page.evaluate('window.scrollBy(0, 800)')
+            await self._human_delay(400, 600)
 
         # Scroll back up to capture top flights
         await self.page.evaluate('window.scrollTo(0, 0)')
         await self._human_delay(500, 800)
 
-        await self.page.wait_for_timeout(2000)
+        await self.page.wait_for_timeout(1500)
 
         print("[Step 4] Extracting flight data...")
         await self.page.screenshot(path='debug_skiplagged.png')
