@@ -9,6 +9,8 @@ Similar to the Google Flights scraper, but adapted for Skyscanner's interface.
 
 import asyncio
 import os
+import glob
+import shutil
 from datetime import datetime, timedelta
 from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeout
 
@@ -32,6 +34,9 @@ class SkyscannerScraper:
 
     async def start_browser(self):
         """Launch the browser with video recording enabled."""
+        # Clear old videos from previous runs
+        self._clear_old_videos()
+
         self.playwright = await async_playwright().start()
 
         self.browser = await self.playwright.chromium.launch(
@@ -51,8 +56,20 @@ class SkyscannerScraper:
         self.page = await self.context.new_page()
         print("Browser started! Video recording enabled (saves to videos/ folder)")
 
+    def _clear_old_videos(self):
+        """Remove old video files from previous runs."""
+        if os.path.exists('videos'):
+            old_videos = glob.glob('videos/*.webm')
+            for video in old_videos:
+                try:
+                    os.remove(video)
+                except:
+                    pass
+            if old_videos:
+                print(f"Cleared {len(old_videos)} old video(s) from videos/ folder")
+
     async def close_browser(self):
-        """Clean up: close the browser and save the video."""
+        """Clean up: close the browser and save the video with descriptive name."""
         video_path = None
 
         if self.page:
@@ -71,7 +88,16 @@ class SkyscannerScraper:
         if self.playwright:
             await self.playwright.stop()
 
-        if video_path:
+        # Rename video with descriptive name
+        if video_path and os.path.exists(video_path):
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            new_name = f"videos/skyscanner_{timestamp}.webm"
+            try:
+                shutil.move(video_path, new_name)
+                video_path = new_name
+            except:
+                pass
+
             print(f"\n{'='*50}")
             print(f"VIDEO SAVED: {video_path}")
             print(f"{'='*50}")

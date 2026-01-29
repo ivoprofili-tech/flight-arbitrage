@@ -16,6 +16,9 @@ KEY CONCEPTS:
 # ============================================================================
 # 'asyncio' lets us run asynchronous code (code that waits for things)
 import asyncio
+import os
+import glob
+import shutil
 
 # 'datetime' and 'timedelta' help us work with dates
 from datetime import datetime, timedelta
@@ -58,6 +61,9 @@ class GoogleFlightsScraper:
         We use Chromium (Chrome's open-source base) because it works well
         with Playwright and is what most people use for scraping.
         """
+        # Clear old videos from previous runs
+        self._clear_old_videos()
+
         # Create a Playwright instance
         self.playwright = await async_playwright().start()
 
@@ -68,6 +74,9 @@ class GoogleFlightsScraper:
             headless=self.headless,
             args=['--disable-blink-features=AutomationControlled']  # Helps avoid detection
         )
+
+        # Ensure videos directory exists
+        os.makedirs('videos', exist_ok=True)
 
         # Create a browser context with video recording enabled
         # Videos are saved to the 'videos' directory
@@ -80,10 +89,22 @@ class GoogleFlightsScraper:
         # Create a new page (like a browser tab)
         self.page = await self.context.new_page()
 
-        print("Browser started successfully! (Video recording enabled)")
+        print("Browser started! Video recording enabled (saves to videos/ folder)")
+
+    def _clear_old_videos(self):
+        """Remove old video files from previous runs."""
+        if os.path.exists('videos'):
+            old_videos = glob.glob('videos/*.webm')
+            for video in old_videos:
+                try:
+                    os.remove(video)
+                except:
+                    pass
+            if old_videos:
+                print(f"Cleared {len(old_videos)} old video(s) from videos/ folder")
 
     async def close_browser(self):
-        """Clean up: close the browser and save the video."""
+        """Clean up: close the browser and save the video with descriptive name."""
         video_path = None
 
         # Get the video path before closing
@@ -104,10 +125,22 @@ class GoogleFlightsScraper:
         if self.playwright:
             await self.playwright.stop()
 
-        if video_path:
-            print(f"Browser closed. Video saved to: {video_path}")
+        # Rename video with descriptive name
+        if video_path and os.path.exists(video_path):
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            new_name = f"videos/google_flights_{timestamp}.webm"
+            try:
+                shutil.move(video_path, new_name)
+                video_path = new_name
+            except:
+                pass
+
+            print(f"\n{'='*50}")
+            print(f"VIDEO SAVED: {video_path}")
+            print(f"{'='*50}")
+            print("Download this file to watch the scraping session")
         else:
-            print("Browser closed.")
+            print("Browser closed (no video saved).")
 
     async def handle_cookie_consent(self):
         """
