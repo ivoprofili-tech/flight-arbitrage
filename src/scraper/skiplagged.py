@@ -282,95 +282,83 @@ class SkiplaggedScraper:
             with open('debug_skiplagged_text.txt', 'w', encoding='utf-8') as f:
                 f.write(page_text)
 
-            # Parse the page text directly using Python regex
-            # This is more reliable than JavaScript DOM traversal for Skiplagged
-            import re
+            # Use JavaScript to find flight rows - look for divs with specific size
+            # that contain both time and price patterns
+            flight_data = await self.page.evaluate('''
+                () => {
+                    const flights = [];
+                    const seen = new Set();
 
-            # Find all price patterns with surrounding context
-            # Skiplagged shows flights in a consistent format
-            lines = page_text.split('\n')
+                    // Get all divs and look for ones that look like flight rows
+                    const divs = document.querySelectorAll('div');
 
-            # Look for lines with prices
-            current_flight = {}
-            for i, line in enumerate(lines):
-                line = line.strip()
-                if not line:
-                    continue
+                    for (const div of divs) {
+                        const text = div.innerText || "";
 
-                # Check for price pattern (US$164 or $164)
-                price_match = re.search(r'(?:US)?\$(\d+)', line)
-                if price_match:
-                    # Look at surrounding lines for flight info
-                    context_start = max(0, i - 10)
-                    context_end = min(len(lines), i + 5)
-                    context = ' '.join(lines[context_start:context_end])
+                        // Flight rows are typically 50-300 chars
+                        if (text.length < 30 || text.length > 400) continue;
 
-                    # Extract times - handle both 24-hour (07:00, 10:32) and 12-hour (6:00a, 12:55p)
-                    times = re.findall(r'(\d{1,2}:\d{2}[ap]?)', context, re.IGNORECASE)
-                    # Filter out things that don't look like times (too many matches)
-                    times = [t for t in times if len(t) >= 4]
+                        // Must have a price ($164 or US$164)
+                        const priceMatch = text.match(/\$(\d+)/);
+                        if (!priceMatch) continue;
 
-                    # Extract duration (format: 7h, 10h, 9h55m, 6h28m)
-                    duration_match = re.search(r'(\d+)h\s*(\d*)m?', context, re.IGNORECASE)
+                        // Must have times with am/pm (7:00am, 10:32am)
+                        const times = text.match(/(\d{1,2}:\d{2}(?:am|pm)?)/gi);
+                        if (!times || times.length < 2) continue;
 
-                    # Only create flight if we have times and duration
-                    if times and duration_match:
-                        price = 'US$' + price_match.group(1)
+                        // Must have duration (7h or 10h)
+                        const durMatch = text.match(/(\d+)h/);
+                        if (!durMatch) continue;
 
-                        # Check if we already have this flight
-                        flight_key = price + (times[0] if times else '')
-                        existing_keys = [f.get('price', '') + f.get('departure_time', '') for f in flights]
-                        if flight_key in existing_keys:
-                            continue
+                        // Create unique key to avoid duplicates
+                        const key = priceMatch[0] + times[0] + times[1];
+                        if (seen.has(key)) continue;
+                        seen.add(key);
 
-                        departure_time = times[0] if len(times) > 0 else None
-                        arrival_time = times[1] if len(times) > 1 else None
+                        // Extract airline
+                        const airlines = ["JetBlue", "Delta", "American", "United", "Spirit", "Frontier", "Alaska", "Southwest"];
+                        let airline = "Various";
+                        for (const a of airlines) {
+                            if (text.includes(a)) {
+                                airline = a;
+                                break;
+                            }
+                        }
 
-                        hours = duration_match.group(1)
-                        mins = duration_match.group(2) or '0'
-                        duration = f"{hours}h {mins}m"
+                        // Extract stops
+                        let stops = "Unknown";
+                        if (text.toLowerCase().includes("nonstop")) {
+                            stops = "Nonstop";
+                        } else {
+                            const stopMatch = text.match(/(\d+)\s*stop/i);
+                            if (stopMatch) {
+                                stops = stopMatch[1] === "1" ? "1 stop" : stopMatch[1] + " stops";
+                            }
+                        }
 
-                        # Stops
-                        stops = 'Unknown'
-                        context_lower = context.lower()
-                        if 'non stop' in context_lower or 'nonstop' in context_lower:
-                            stops = 'Nonstop'
-                        else:
-                            stop_match = re.search(r'(\d+)\s*stop', context, re.IGNORECASE)
-                            if stop_match:
-                                stops = '1 stop' if stop_match.group(1) == '1' else f"{stop_match.group(1)} stops"
+                        flights.push({
+                            airline: airline,
+                            departure_time: times[0],
+                            arrival_time: times[1],
+                            duration: durMatch[1] + "h",
+                            stops: stops,
+                            price: "$" + priceMatch[1],
+                            source: "Skiplagged"
+                        });
+                    }
 
-                        # Airline - use a smaller context window (only 5 lines back)
-                        # to avoid picking up airlines from other flight cards
-                        airline_context_start = max(0, i - 5)
-                        airline_context = ' '.join(lines[airline_context_start:i+1])
-                        airlines = ['Frontier', 'Spirit', 'United', 'Delta', 'American', 'JetBlue', 'Southwest', 'Alaska']
-                        airline = 'Various'
-                        for a in airlines:
-                            if a in airline_context:
-                                airline = a
-                                break
+                    // Sort by price
+                    flights.sort((a, b) => {
+                        const pa = parseInt(a.price.replace(/\D/g, "")) || 99999;
+                        const pb = parseInt(b.price.replace(/\D/g, "")) || 99999;
+                        return pa - pb;
+                    });
 
-                        # Is it a skiplagging deal?
-                        is_skiplagging = 'skiplagging' in context_lower
+                    return flights.slice(0, 30);
+                }
+            ''')
 
-                        flights.append({
-                            'departure_time': departure_time,
-                            'arrival_time': arrival_time,
-                            'duration': duration,
-                            'stops': stops,
-                            'airline': airline,
-                            'price': price,
-                            'source': 'Skiplagged',
-                            'deal_type': 'Hidden City' if is_skiplagging else 'Regular'
-                        })
-
-            # Sort by price
-            flights.sort(key=lambda x: int(re.sub(r'[^\d]', '', x.get('price', '0')) or 999999))
-
-            # Limit to 30
-            flights = flights[:30]
-
+            flights = flight_data if flight_data else []
             print(f"  Extracted {len(flights)} flights")
 
             if len(flights) == 0:
