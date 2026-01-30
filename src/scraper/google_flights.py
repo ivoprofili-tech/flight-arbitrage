@@ -342,22 +342,16 @@ class GoogleFlightsScraper:
             month_name = target_date.strftime('%B')
             target_year = target_date.year
 
-            # Use JavaScript to navigate to correct month and select date
-            # This is more reliable than trying to find specific buttons
-            date_result = await self.page.evaluate('''
-                async (args) => {
-                    const targetDay = args.day;
-                    const targetMonth = args.monthName;
-                    const targetYear = args.year;
-                    const isoDate = args.isoDate;
+            # Navigate to the correct month using Python loop (allows proper waits)
+            for attempt in range(12):
+                # Check if target month is visible
+                month_visible = await self.page.evaluate('''
+                    (args) => {
+                        const targetMonth = args.monthName;
+                        const targetYear = args.year;
+                        const targetDay = args.day;
 
-                    // Helper to wait
-                    const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-                    // Helper to check if target month is visible in calendar
-                    const isTargetMonthVisible = () => {
-                        // Look for the month/year header in the calendar
-                        // Google shows "February 2026" or similar as a heading
+                        // Check headings for month/year
                         const headings = document.querySelectorAll('h2, [role="heading"], div[class*="header"]');
                         for (const h of headings) {
                             const text = h.textContent || '';
@@ -365,43 +359,29 @@ class GoogleFlightsScraper:
                                 return true;
                             }
                         }
-                        // Also check if we can find a date cell for the target month
-                        const dateCell = document.querySelector(`[aria-label*="${targetMonth} ${targetDay}"]`);
-                        if (dateCell) return true;
-
+                        // Check if date cell exists
+                        const selector = '[aria-label*="' + targetMonth + ' ' + targetDay + '"]';
+                        if (document.querySelector(selector)) return true;
                         return false;
-                    };
+                    }
+                ''', {"monthName": month_name, "year": target_year, "day": day})
 
-                    // Helper to click next month
-                    const clickNextMonth = () => {
-                        // Try multiple strategies to find the next button
-                        // Strategy 1: aria-label
+                if month_visible:
+                    print(f"  ✓ Found {month_name} {target_year} in calendar")
+                    break
+
+                # Click next month button
+                clicked = await self.page.evaluate('''
+                    () => {
+                        // Try aria-label
                         const nextByLabel = document.querySelector('[aria-label*="Next"]');
                         if (nextByLabel) {
                             nextByLabel.click();
                             return true;
                         }
-
-                        // Strategy 2: Find buttons in the calendar header area
-                        // Usually there are two navigation buttons, the second one is "next"
-                        const calendarButtons = document.querySelectorAll('button[jsname], button[data-value]');
-                        let navButtons = [];
-                        for (const btn of calendarButtons) {
-                            // Navigation buttons are usually small and contain SVG
-                            if (btn.querySelector('svg') || btn.textContent.trim() === '') {
-                                navButtons.push(btn);
-                            }
-                        }
-                        // The "next" button is usually the last/rightmost one
-                        if (navButtons.length >= 1) {
-                            navButtons[navButtons.length - 1].click();
-                            return true;
-                        }
-
-                        // Strategy 3: Find all buttons with SVG icons in calendar area
+                        // Try SVG buttons
                         const allButtons = Array.from(document.querySelectorAll('button'));
                         const svgButtons = allButtons.filter(b => b.querySelector('svg'));
-                        // Usually there are prev/next pairs - take the second one
                         if (svgButtons.length >= 2) {
                             svgButtons[1].click();
                             return true;
@@ -409,40 +389,37 @@ class GoogleFlightsScraper:
                             svgButtons[0].click();
                             return true;
                         }
-
                         return false;
-                    };
-
-                    // Navigate to the target month (up to 12 clicks)
-                    let foundMonth = false;
-                    for (let i = 0; i < 12; i++) {
-                        if (isTargetMonthVisible()) {
-                            foundMonth = true;
-                            break;
-                        }
-                        const clicked = clickNextMonth();
-                        if (!clicked) {
-                            return { success: false, error: 'Could not find next month button' };
-                        }
-                        await wait(400);
                     }
+                ''')
 
-                    if (!foundMonth) {
-                        return { success: false, error: 'Could not navigate to target month' };
-                    }
+                if clicked:
+                    print(f"  → Navigating to next month...")
+                    await self.page.wait_for_timeout(400)
+                else:
+                    print(f"  ⚠ Could not find next month button")
+                    break
 
-                    await wait(300);
+            await self.page.wait_for_timeout(300)
 
-                    // Now find and click the date
-                    // Strategy 1: aria-label with full date
-                    const dateByLabel = document.querySelector(`[aria-label*="${targetMonth} ${targetDay}"]`);
+            # Now click the date
+            date_result = await self.page.evaluate('''
+                (args) => {
+                    const targetDay = args.day;
+                    const targetMonth = args.monthName;
+                    const isoDate = args.isoDate;
+
+                    // Strategy 1: aria-label with month and day
+                    const labelSelector = '[aria-label*="' + targetMonth + ' ' + targetDay + '"]';
+                    const dateByLabel = document.querySelector(labelSelector);
                     if (dateByLabel) {
                         dateByLabel.click();
                         return { success: true, method: 'aria-label' };
                     }
 
                     // Strategy 2: data-iso attribute
-                    const dateByIso = document.querySelector(`[data-iso="${isoDate}"]`);
+                    const isoSelector = '[data-iso="' + isoDate + '"]';
+                    const dateByIso = document.querySelector(isoSelector);
                     if (dateByIso) {
                         dateByIso.click();
                         return { success: true, method: 'data-iso' };
@@ -452,8 +429,7 @@ class GoogleFlightsScraper:
                     const allCells = document.querySelectorAll('[role="gridcell"], td, [role="button"]');
                     for (const cell of allCells) {
                         const text = cell.textContent.trim();
-                        // Match just the day number or day with price
-                        if (text === String(targetDay) || text.startsWith(targetDay + '$') || text.startsWith(targetDay + '\n')) {
+                        if (text === String(targetDay) || text.startsWith(targetDay + '$') || text.startsWith(targetDay + '\\n')) {
                             cell.click();
                             return { success: true, method: 'grid-cell' };
                         }
@@ -461,7 +437,7 @@ class GoogleFlightsScraper:
 
                     return { success: false, error: 'Could not find date cell' };
                 }
-            ''', {"day": day, "monthName": month_name, "year": target_year, "isoDate": departure_date})
+            ''', {"day": day, "monthName": month_name, "isoDate": departure_date})
 
             if date_result.get('success'):
                 print(f"  ✓ Selected date {departure_date} via {date_result.get('method')}")
