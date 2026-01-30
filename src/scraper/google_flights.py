@@ -982,30 +982,51 @@ class GoogleFlightsScraper:
                                     }
                                 }
 
-                                // Extract airline
+                                // Extract airline - check longer names first to avoid partial matches
                                 const airlineNames = [
+                                    'AlaskaHawaiian', 'AmericanAlaska',  // Codeshare combinations first
+                                    'Sun Country', 'British Airways', 'Air France',
                                     'Spirit', 'United', 'Delta', 'American', 'JetBlue',
                                     'Southwest', 'Frontier', 'Alaska', 'LATAM', 'Avianca',
-                                    'Copa', 'Aeromexico', 'Air France', 'British Airways',
-                                    'Lufthansa', 'Emirates', 'Qatar', 'TAP', 'Iberia', 'Azul', 'GOL',
-                                    'Sun Country', 'Hawaiian', 'Allegiant', 'Breeze'
+                                    'Copa', 'Aeromexico', 'Lufthansa', 'Emirates', 'Qatar',
+                                    'TAP', 'Iberia', 'Azul', 'GOL', 'Hawaiian', 'Allegiant', 'Breeze'
                                 ];
                                 let airline = "Various";
                                 for (const name of airlineNames) {
                                     if (containerText.includes(name)) {
-                                        airline = name;
+                                        // Map codeshare names to primary airline
+                                        if (name === 'AlaskaHawaiian') airline = 'Alaska';
+                                        else if (name === 'AmericanAlaska') airline = 'American/Alaska';
+                                        else airline = name;
                                         break;
                                     }
                                 }
 
                                 // Try to extract layover airport from the summary line
-                                // Google shows "1 stop LAX" or "1 stop 2 hr 30 min LAX"
+                                // Google shows format like "1 stop 3 hr 46 min ATL" or "2 stops ORD, DEN"
                                 let layoverFromSummary = [];
                                 if (numStops > 0) {
-                                    // Look for airport codes after "stop" - pattern: "X stop(s) [duration] CODE"
-                                    const layoverMatch = containerText.match(/\d+\s*stops?\s*(?:\d+\s*(?:hr|h)\s*(?:\d+\s*(?:min|m))?\s*)?([A-Z]{3})/i);
-                                    if (layoverMatch) {
-                                        layoverFromSummary.push(layoverMatch[1].toUpperCase());
+                                    // Look for airport codes (3 uppercase letters) after "stop"
+                                    // Use specific pattern to avoid matching random 3-letter sequences
+                                    const stopIndex = containerText.toLowerCase().indexOf('stop');
+                                    if (stopIndex !== -1) {
+                                        // Get text after "stop"
+                                        const afterStop = containerText.substring(stopIndex);
+                                        // Find all 3-letter uppercase airport codes
+                                        const airportCodes = afterStop.match(/\b([A-Z]{3})\b/g);
+                                        if (airportCodes) {
+                                            for (const code of airportCodes) {
+                                                // Filter out non-airport codes (common false positives)
+                                                const excluded = ['PHX', 'JFK', 'LAX', 'SFO', 'NYC', 'LGA', 'EWR']; // origin/dest
+                                                const origin = 'JFK'; // We know this from search
+                                                const dest = 'PHX';
+                                                if (code !== origin && code !== dest &&
+                                                    !layoverFromSummary.includes(code) &&
+                                                    code.match(/^[A-Z]{3}$/)) {
+                                                    layoverFromSummary.push(code);
+                                                }
+                                            }
+                                        }
                                     }
                                     // Also try pattern where layover appears separately
                                     const airportCodes = containerText.match(/\b([A-Z]{3})\b/g);
@@ -1142,9 +1163,15 @@ class GoogleFlightsScraper:
             try:
                 row = flight_rows[row_index]
 
-                # Click to expand the flight details
-                await row.click()
-                await self.page.wait_for_timeout(self.wait_long)
+                # Click to expand the flight details with short timeout
+                try:
+                    await row.click(timeout=3000)  # 3 second timeout
+                except Exception as click_err:
+                    # Skip this flight if click fails - don't hang
+                    print(f"    → Skipping {flight['price']}: click failed")
+                    continue
+
+                await self.page.wait_for_timeout(self.wait_medium)
 
                 # Extract layover airports from expanded view
                 layovers = await self.page.evaluate('''
