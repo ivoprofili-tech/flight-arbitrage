@@ -898,6 +898,7 @@ class GoogleFlightsScraper:
 
             # Pre-extract layover mapping from page text
             # This is more reliable than trying to extract from individual containers
+            # Use departure_time + price as composite key since price alone isn't unique
             layover_map = await self.page.evaluate('''
                 () => {
                     const text = document.body.innerText;
@@ -935,17 +936,34 @@ class GoogleFlightsScraper:
                                 }
                             }
 
-                            // Look backwards to find the price for this flight
+                            if (layovers.length === 0) continue;
+
+                            // Look backwards to find departure time (format: "X:XX AM/PM")
+                            let departureTime = null;
+                            for (let j = 1; j <= 20 && i - j >= 0; j++) {
+                                const prevLine = lines[i - j].trim();
+                                const timeMatch = prevLine.match(/^(\\d{1,2}:\\d{2}\\s*(?:AM|PM))$/i);
+                                if (timeMatch) {
+                                    departureTime = timeMatch[1];
+                                    break;
+                                }
+                            }
+
+                            // Look forward to find the price
+                            let price = null;
                             for (let j = 1; j <= 15 && i + j < lines.length; j++) {
                                 const priceLine = lines[i + j].trim();
                                 const priceMatch = priceLine.match(/^\\$([\\d,]+)$/);
-                                if (priceMatch && layovers.length > 0) {
-                                    const price = '$' + priceMatch[1];
-                                    if (!layoverMap[price]) {
-                                        layoverMap[price] = layovers;
-                                    }
+                                if (priceMatch) {
+                                    price = '$' + priceMatch[1];
                                     break;
                                 }
+                            }
+
+                            // Use composite key: departureTime|price
+                            if (departureTime && price && layovers.length > 0) {
+                                const key = departureTime + '|' + price;
+                                layoverMap[key] = layovers;
                             }
                         }
                     }
@@ -1126,8 +1144,12 @@ class GoogleFlightsScraper:
                                     }
 
                                     // Strategy 4: Use pre-extracted layovers from page text parsing
-                                    if (layoverFromSummary.length < numStops && preExtractedLayovers && preExtractedLayovers[price]) {
-                                        layoverFromSummary = preExtractedLayovers[price];
+                                    // Use composite key: departureTime|price
+                                    if (layoverFromSummary.length < numStops && preExtractedLayovers) {
+                                        const compositeKey = departureTime + '|' + price;
+                                        if (preExtractedLayovers[compositeKey]) {
+                                            layoverFromSummary = preExtractedLayovers[compositeKey];
+                                        }
                                     }
                                 }
 
