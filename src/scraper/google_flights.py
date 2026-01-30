@@ -198,9 +198,25 @@ class GoogleFlightsScraper:
         print(f"\nSearching flights: {origin} → {destination}")
         print(f"Departure: {departure_date}" + (f", Return: {return_date}" if return_date else " (one-way)"))
 
-        # Step 1: Open Google Flights
+        # Step 1: Open Google Flights with retry logic
         print("\n[Step 1] Opening Google Flights...")
-        await self.page.goto('https://www.google.com/travel/flights', wait_until='domcontentloaded', timeout=60000)
+        max_retries = 4
+        retry_delays = [2, 4, 8, 16]  # Exponential backoff in seconds
+
+        for attempt in range(max_retries):
+            try:
+                await self.page.goto('https://www.google.com/travel/flights', wait_until='domcontentloaded', timeout=60000)
+                print("  ✓ Page loaded successfully")
+                break
+            except PlaywrightTimeout as e:
+                if attempt < max_retries - 1:
+                    delay = retry_delays[attempt]
+                    print(f"  ⚠ Page load timeout (attempt {attempt + 1}/{max_retries}), retrying in {delay}s...")
+                    await asyncio.sleep(delay)
+                else:
+                    print(f"  ✗ Page load failed after {max_retries} attempts")
+                    raise e
+
         await self.page.wait_for_timeout(1000)
 
         # Handle cookie consent if needed
