@@ -557,6 +557,9 @@ class GoogleFlightsScraper:
         # Wait for flight results
         await self._wait_for_results()
 
+        # Load more flights by scrolling and clicking "Show more"
+        await self._load_more_flights()
+
         # Extract flight data
         print("[Step 8] Extracting flight data...")
         await self.page.screenshot(path='debug_screenshot.png')
@@ -564,6 +567,64 @@ class GoogleFlightsScraper:
 
         print(f"\nFound {len(flights)} flights!")
         return flights
+
+    async def _load_more_flights(self):
+        """
+        Load more flights by scrolling and clicking 'Show more flights' button.
+        Google Flights lazy-loads results and has a button to show more.
+        """
+        print("[Step 7b] Loading more flights...")
+
+        try:
+            # First, scroll down to trigger lazy loading
+            for i in range(3):
+                await self.page.evaluate('window.scrollBy(0, 800)')
+                await self.page.wait_for_timeout(self.wait_short)
+
+            # Look for and click "Show more flights" or similar button
+            show_more_clicked = await self.page.evaluate('''
+                () => {
+                    // Find buttons with "more" text
+                    const buttons = document.querySelectorAll('button');
+                    for (const btn of buttons) {
+                        const text = btn.textContent.toLowerCase();
+                        if (text.includes('more flights') || text.includes('show more') ||
+                            text.includes('view more') || text.includes('load more')) {
+                            btn.scrollIntoView({ behavior: 'instant', block: 'center' });
+                            btn.click();
+                            return true;
+                        }
+                    }
+                    // Also try links/spans
+                    const links = document.querySelectorAll('a, span, div[role="button"]');
+                    for (const el of links) {
+                        const text = el.textContent.toLowerCase();
+                        if (text.includes('more flights') && text.length < 50) {
+                            el.click();
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+            ''')
+
+            if show_more_clicked:
+                print("  ✓ Clicked 'Show more flights' button")
+                await self.page.wait_for_timeout(self.wait_long)
+
+                # Scroll again to load any additional results
+                for i in range(2):
+                    await self.page.evaluate('window.scrollBy(0, 600)')
+                    await self.page.wait_for_timeout(self.wait_short)
+            else:
+                print("  → No 'Show more' button found (may have all results)")
+
+            # Scroll back to top for extraction
+            await self.page.evaluate('window.scrollTo(0, 0)')
+            await self.page.wait_for_timeout(self.wait_short)
+
+        except Exception as e:
+            print(f"  ⚠ Error loading more flights: {e}")
 
     async def _fill_location_field(self, is_origin: bool, location: str):
         """
