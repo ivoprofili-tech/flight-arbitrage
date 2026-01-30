@@ -40,7 +40,7 @@ class GoogleFlightsScraper:
     state (like the browser instance) across multiple operations.
     """
 
-    def __init__(self, headless: bool = True):
+    def __init__(self, headless: bool = True, fast_mode: bool = True):
         """
         Initialize the scraper.
 
@@ -48,11 +48,24 @@ class GoogleFlightsScraper:
             headless: If True, browser runs invisibly in background.
                       If False, you can watch the browser do its thing!
                       Set to False when debugging to see what's happening.
+            fast_mode: If True, use shorter wait times for faster execution.
+                       Target: ~30 seconds total. Default is True.
         """
         self.headless = headless
+        self.fast_mode = fast_mode
         self.browser = None
         self.page = None
         self.context = None
+
+        # Wait times (in ms) - shorter in fast mode
+        if fast_mode:
+            self.wait_short = 100      # Was 200-300ms
+            self.wait_medium = 200     # Was 400-500ms
+            self.wait_long = 500       # Was 800-1000ms
+        else:
+            self.wait_short = 300
+            self.wait_medium = 500
+            self.wait_long = 1000
 
     async def start_browser(self):
         """
@@ -166,7 +179,7 @@ class GoogleFlightsScraper:
                     if button:
                         await button.click()
                         print(f"Clicked cookie consent button")
-                        await self.page.wait_for_timeout(300)
+                        await self.page.wait_for_timeout(self.wait_short)
                         return True
                 except PlaywrightTimeout:
                     # Button not found, try the next one
@@ -217,7 +230,7 @@ class GoogleFlightsScraper:
                     print(f"  ✗ Page load failed after {max_retries} attempts")
                     raise e
 
-        await self.page.wait_for_timeout(1000)
+        await self.page.wait_for_timeout(self.wait_long)
 
         # Handle cookie consent if needed
         await self.handle_cookie_consent()
@@ -234,14 +247,14 @@ class GoogleFlightsScraper:
                 await round_trip_locator.click(timeout=2000)
                 print("  ✓ Clicked Round trip dropdown")
 
-                await self.page.wait_for_timeout(200)
+                await self.page.wait_for_timeout(self.wait_short)
 
                 # Now click "One way" from the dropdown menu
                 one_way_locator = self.page.locator('text="One way"').first
                 await one_way_locator.click(timeout=2000)
                 print("  ✓ Selected One way")
 
-                await self.page.wait_for_timeout(200)
+                await self.page.wait_for_timeout(self.wait_short)
             except Exception as e:
                 print(f"  ⚠ Could not set one-way via locator: {e}")
                 # Fallback: try JavaScript
@@ -259,7 +272,7 @@ class GoogleFlightsScraper:
                             return false;
                         }
                     ''')
-                    await self.page.wait_for_timeout(200)
+                    await self.page.wait_for_timeout(self.wait_short)
                     await self.page.evaluate('''
                         () => {
                             const elements = document.querySelectorAll('li, [role="option"]');
@@ -288,12 +301,12 @@ class GoogleFlightsScraper:
                 # Try clicking on the displayed city text in the first combobox
                 await self.page.click('div[role="combobox"]:first-of-type')
 
-            await self.page.wait_for_timeout(200)
+            await self.page.wait_for_timeout(self.wait_short)
 
             # Clear existing text and type new origin
             await self.page.keyboard.press('Control+a')
             await self.page.keyboard.type(origin, delay=50)
-            await self.page.wait_for_timeout(800)
+            await self.page.wait_for_timeout(self.wait_long)
 
             # Select from dropdown - click first suggestion or press Enter
             try:
@@ -305,7 +318,7 @@ class GoogleFlightsScraper:
                 await self.page.keyboard.press('Enter')
                 print(f"  ✓ Pressed Enter for {origin}")
 
-            await self.page.wait_for_timeout(300)
+            await self.page.wait_for_timeout(self.wait_short)
         except Exception as e:
             print(f"  ⚠ Error setting origin: {e}")
 
@@ -320,11 +333,11 @@ class GoogleFlightsScraper:
                 # Try clicking on "Where to?" text
                 await self.page.click('text="Where to?"')
 
-            await self.page.wait_for_timeout(200)
+            await self.page.wait_for_timeout(self.wait_short)
 
             # Type destination
             await self.page.keyboard.type(destination, delay=50)
-            await self.page.wait_for_timeout(800)
+            await self.page.wait_for_timeout(self.wait_long)
 
             # Select from dropdown
             try:
@@ -336,7 +349,7 @@ class GoogleFlightsScraper:
                 await self.page.keyboard.press('Enter')
                 print(f"  ✓ Pressed Enter for {destination}")
 
-            await self.page.wait_for_timeout(300)
+            await self.page.wait_for_timeout(self.wait_short)
         except Exception as e:
             print(f"  ⚠ Error setting destination: {e}")
 
@@ -350,7 +363,7 @@ class GoogleFlightsScraper:
             else:
                 await self.page.click('text="Departure"')
 
-            await self.page.wait_for_timeout(500)
+            await self.page.wait_for_timeout(self.wait_medium)
 
             # Parse date
             target_date = datetime.strptime(departure_date, '%Y-%m-%d')
@@ -411,12 +424,12 @@ class GoogleFlightsScraper:
 
                 if clicked:
                     print(f"  → Navigating to next month...")
-                    await self.page.wait_for_timeout(400)
+                    await self.page.wait_for_timeout(self.wait_medium)
                 else:
                     print(f"  ⚠ Could not find next month button")
                     break
 
-            await self.page.wait_for_timeout(300)
+            await self.page.wait_for_timeout(self.wait_short)
 
             # Now click the date
             date_result = await self.page.evaluate('''
@@ -460,7 +473,7 @@ class GoogleFlightsScraper:
             else:
                 print(f"  ⚠ Date selection issue: {date_result.get('error')}")
 
-            await self.page.wait_for_timeout(300)
+            await self.page.wait_for_timeout(self.wait_short)
 
             # Click Done button - use JavaScript directly (faster and more reliable)
             done_clicked = False
@@ -510,7 +523,7 @@ class GoogleFlightsScraper:
                 print("  → Pressing Escape to close calendar...")
                 await self.page.keyboard.press('Escape')
 
-            await self.page.wait_for_timeout(300)
+            await self.page.wait_for_timeout(self.wait_short)
         except Exception as e:
             print(f"  ⚠ Error setting date: {e}")
 
@@ -535,7 +548,7 @@ class GoogleFlightsScraper:
 
         # Wait for results to load
         print("[Step 7] Waiting for results...")
-        await self.page.wait_for_timeout(3000)
+        await self.page.wait_for_timeout(self.wait_long * 2 if not self.fast_mode else self.wait_long)
         await self.page.screenshot(path='debug_step7_results.png')
 
         current_url = self.page.url
@@ -602,18 +615,18 @@ class GoogleFlightsScraper:
                 if not is_origin:
                     await self.page.keyboard.press('Tab')
 
-            await self.page.wait_for_timeout(500)
+            await self.page.wait_for_timeout(self.wait_medium)
 
             # Clear any existing text
             await self.page.keyboard.press('Control+a')
-            await self.page.wait_for_timeout(100)
+            await self.page.wait_for_timeout(50 if self.fast_mode else 100)
 
             # Type the location slowly for autocomplete to work
             await self.page.keyboard.type(location, delay=150)
             print(f"  Typed: {location}")
 
             # Wait for autocomplete suggestions to appear
-            await self.page.wait_for_timeout(2000)
+            await self.page.wait_for_timeout(self.wait_long)
 
             # Try to click on the first suggestion in the dropdown
             suggestion_selectors = [
@@ -640,7 +653,7 @@ class GoogleFlightsScraper:
                 await self.page.keyboard.press('Enter')
                 print(f"  ✓ Pressed Enter for: {location}")
 
-            await self.page.wait_for_timeout(1000)
+            await self.page.wait_for_timeout(self.wait_long)
 
         except Exception as e:
             print(f"  ⚠ Could not fill location field: {e}")
@@ -678,7 +691,7 @@ class GoogleFlightsScraper:
                 print("  ⚠ Could not find date field")
                 return
 
-            await self.page.wait_for_timeout(1000)
+            await self.page.wait_for_timeout(self.wait_long)
 
             # Parse the target date
             target_date = datetime.strptime(date_str, '%Y-%m-%d')
@@ -709,7 +722,7 @@ class GoogleFlightsScraper:
             if not date_selected:
                 print(f"  ⚠ Could not find date {date_str} in calendar")
 
-            await self.page.wait_for_timeout(500)
+            await self.page.wait_for_timeout(self.wait_medium)
 
             # Click "Done" button if present
             done_selectors = [
@@ -729,7 +742,7 @@ class GoogleFlightsScraper:
                 except PlaywrightTimeout:
                     continue
 
-            await self.page.wait_for_timeout(500)
+            await self.page.wait_for_timeout(self.wait_medium)
 
         except Exception as e:
             print(f"  ⚠ Could not fill date field: {e}")
@@ -789,7 +802,7 @@ class GoogleFlightsScraper:
             print("  ✓ Results loaded")
 
             # Small extra wait for all results to fully render
-            await self.page.wait_for_timeout(1000)
+            await self.page.wait_for_timeout(self.wait_long)
 
         except PlaywrightTimeout:
             print("  ⚠ Timeout waiting for results - page may still have content")
@@ -981,11 +994,17 @@ class GoogleFlightsScraper:
             flights = flight_rows_data if flight_rows_data else []
             print(f"  Extracted {len(flights)} flights from summary view")
 
-            # Now expand connecting flights to get detailed layover info
+            # Expand connecting flights to get detailed layover info
+            # Skip in fast_mode if we already have summary layovers (saves ~5-10 seconds)
             connecting_flights = [f for f in flights if f.get('num_stops', 0) > 0]
             if connecting_flights:
-                print(f"  Found {len(connecting_flights)} connecting flights - extracting layover details...")
-                await self._extract_layover_details(flights)
+                # Check if we need to expand - in fast mode, only expand if no layovers from summary
+                needs_expansion = [f for f in connecting_flights if not f.get('layovers')]
+                if self.fast_mode and not needs_expansion:
+                    print(f"  Found {len(connecting_flights)} connecting flights - using summary layovers (fast mode)")
+                else:
+                    print(f"  Found {len(connecting_flights)} connecting flights - extracting layover details...")
+                    await self._extract_layover_details(flights)
 
             # Clean up internal fields
             for flight in flights:
@@ -1066,7 +1085,7 @@ class GoogleFlightsScraper:
 
                 # Click to expand the flight details
                 await row.click()
-                await self.page.wait_for_timeout(800)
+                await self.page.wait_for_timeout(self.wait_long)
 
                 # Extract layover airports from expanded view
                 layovers = await self.page.evaluate('''
@@ -1159,7 +1178,7 @@ class GoogleFlightsScraper:
 
                 # Close expanded view by pressing Escape or clicking elsewhere
                 await self.page.keyboard.press('Escape')
-                await self.page.wait_for_timeout(300)
+                await self.page.wait_for_timeout(self.wait_short)
 
             except Exception as e:
                 print(f"    ⚠ Error expanding flight {flight['price']}: {e}")
@@ -1174,12 +1193,21 @@ async def search_google_flights(
     destination: str,
     departure_date: str,
     return_date: str = None,
-    headless: bool = True
+    headless: bool = True,
+    fast_mode: bool = True
 ) -> list[dict]:
     """
     Convenience function to search for flights without managing the scraper.
 
     This is what you'll typically call from other code.
+
+    Args:
+        origin: Departure city/airport
+        destination: Arrival city/airport
+        departure_date: Date in YYYY-MM-DD format
+        return_date: Optional return date
+        headless: Run browser invisibly (default True)
+        fast_mode: Use shorter wait times for ~30s execution (default True)
 
     Example:
         flights = await search_google_flights(
@@ -1188,7 +1216,7 @@ async def search_google_flights(
             departure_date="2025-02-15"
         )
     """
-    scraper = GoogleFlightsScraper(headless=headless)
+    scraper = GoogleFlightsScraper(headless=headless, fast_mode=fast_mode)
 
     try:
         await scraper.start_browser()
