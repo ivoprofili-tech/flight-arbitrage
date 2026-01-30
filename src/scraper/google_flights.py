@@ -1006,38 +1006,24 @@ class GoogleFlightsScraper:
                                 // Google shows format like "1 stop 3 hr 46 min ATL" or "2 stops ORD, DEN"
                                 let layoverFromSummary = [];
                                 if (numStops > 0) {
-                                    // Look for airport codes (3 uppercase letters) after "stop"
-                                    // Use specific pattern to avoid matching random 3-letter sequences
-                                    const stopIndex = containerText.toLowerCase().indexOf('stop');
-                                    if (stopIndex !== -1) {
-                                        // Get text after "stop"
-                                        const afterStop = containerText.substring(stopIndex);
-                                        // Find all 3-letter uppercase airport codes
-                                        const airportCodes = afterStop.match(/\b([A-Z]{3})\b/g);
-                                        if (airportCodes) {
-                                            for (const code of airportCodes) {
-                                                // Filter out non-airport codes (common false positives)
-                                                const excluded = ['PHX', 'JFK', 'LAX', 'SFO', 'NYC', 'LGA', 'EWR']; // origin/dest
-                                                const origin = 'JFK'; // We know this from search
-                                                const dest = 'PHX';
-                                                if (code !== origin && code !== dest &&
-                                                    !layoverFromSummary.includes(code) &&
-                                                    code.match(/^[A-Z]{3}$/)) {
-                                                    layoverFromSummary.push(code);
-                                                }
-                                            }
+                                    // Strategy 1: Look for pattern "X hr Y min CODE" or "X min CODE"
+                                    // This is the most reliable pattern for layover airports
+                                    const durationCodePattern = /(\d+\s*(?:hr|h)\s*(?:\d+\s*(?:min|m))?|\d+\s*min)\s+([A-Z]{3})\b/g;
+                                    let match;
+                                    while ((match = durationCodePattern.exec(containerText)) !== null) {
+                                        const code = match[2];
+                                        if (!layoverFromSummary.includes(code)) {
+                                            layoverFromSummary.push(code);
                                         }
                                     }
-                                    // Also try pattern where layover appears separately
-                                    const airportCodes = containerText.match(/\b([A-Z]{3})\b/g);
-                                    if (airportCodes && airportCodes.length > 2) {
-                                        // First and last are usually origin/destination
-                                        // Middle codes are layovers
-                                        for (let j = 1; j < airportCodes.length - 1; j++) {
-                                            const code = airportCodes[j];
-                                            if (!layoverFromSummary.includes(code)) {
-                                                layoverFromSummary.push(code);
-                                            }
+
+                                    // Strategy 2: For "2 stops ORD, DEN" format
+                                    if (numStops >= 2 && layoverFromSummary.length < numStops) {
+                                        const multiStopPattern = /\d+\s*stops?\s+([A-Z]{3})\s*,\s*([A-Z]{3})/;
+                                        const multiMatch = containerText.match(multiStopPattern);
+                                        if (multiMatch) {
+                                            if (!layoverFromSummary.includes(multiMatch[1])) layoverFromSummary.push(multiMatch[1]);
+                                            if (!layoverFromSummary.includes(multiMatch[2])) layoverFromSummary.push(multiMatch[2]);
                                         }
                                     }
                                 }
