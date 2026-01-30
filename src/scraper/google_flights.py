@@ -896,9 +896,69 @@ class GoogleFlightsScraper:
                 f.write(page_text)
             print("  Page text saved to debug_page_text.txt")
 
+            # Pre-extract layover mapping from page text
+            # This is more reliable than trying to extract from individual containers
+            layover_map = await self.page.evaluate('''
+                () => {
+                    const text = document.body.innerText;
+                    const layoverMap = {};
+
+                    // Find all "1 stop X hr Y min CODE" or "1 stop X min CODE" patterns
+                    // Also handle "2 stops CODE, CODE" format
+                    const lines = text.split('\\n');
+
+                    for (let i = 0; i < lines.length; i++) {
+                        const line = lines[i].trim();
+
+                        // Check for "N stop" or "N stops" line
+                        const stopMatch = line.match(/^(\\d+)\\s*stops?$/i);
+                        if (stopMatch) {
+                            const numStops = parseInt(stopMatch[1]);
+
+                            // Look at next few lines for layover info
+                            const layovers = [];
+                            for (let j = 1; j <= 3 && i + j < lines.length; j++) {
+                                const nextLine = lines[i + j].trim();
+
+                                // Match "X hr Y min CODE" or "X min CODE"
+                                const layoverMatch = nextLine.match(/^(\\d+\\s*(?:hr|h)\\s*(?:\\d+\\s*)?(?:min|m)?|\\d+\\s*min)\\s+([A-Z]{3})$/i);
+                                if (layoverMatch) {
+                                    layovers.push(layoverMatch[2]);
+                                    break;
+                                }
+
+                                // Match "CODE, CODE" for multi-stop
+                                const multiMatch = nextLine.match(/^([A-Z]{3})\\s*,\\s*([A-Z]{3})$/);
+                                if (multiMatch) {
+                                    layovers.push(multiMatch[1], multiMatch[2]);
+                                    break;
+                                }
+                            }
+
+                            // Look backwards to find the price for this flight
+                            for (let j = 1; j <= 15 && i + j < lines.length; j++) {
+                                const priceLine = lines[i + j].trim();
+                                const priceMatch = priceLine.match(/^\\$([\\d,]+)$/);
+                                if (priceMatch && layovers.length > 0) {
+                                    const price = '$' + priceMatch[1];
+                                    if (!layoverMap[price]) {
+                                        layoverMap[price] = layovers;
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    return layoverMap;
+                }
+            ''')
+
+            print(f"  Pre-extracted layovers for {len(layover_map)} price points")
+
             # Find all clickable flight rows and extract basic info + row index
             flight_rows_data = await self.page.evaluate('''
-                () => {
+                (preExtractedLayovers) => {
                     const flights = [];
                     const seen = new Set();
 
@@ -1064,6 +1124,11 @@ class GoogleFlightsScraper:
                                             }
                                         }
                                     }
+
+                                    // Strategy 4: Use pre-extracted layovers from page text parsing
+                                    if (layoverFromSummary.length < numStops && preExtractedLayovers && preExtractedLayovers[price]) {
+                                        layoverFromSummary = preExtractedLayovers[price];
+                                    }
                                 }
 
                                 flights.push({
@@ -1093,7 +1158,7 @@ class GoogleFlightsScraper:
 
                     return flights.slice(0, 30);
                 }
-            ''')
+            ''', layover_map)
 
             flights = flight_rows_data if flight_rows_data else []
             print(f"  Extracted {len(flights)} flights from summary view")
