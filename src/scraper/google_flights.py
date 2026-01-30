@@ -340,6 +340,53 @@ class GoogleFlightsScraper:
             target_date = datetime.strptime(departure_date, '%Y-%m-%d')
             day = target_date.day
             month_name = target_date.strftime('%B')
+            target_year = target_date.year
+
+            # Navigate to the correct month by clicking the next arrow
+            # Google Flights calendar shows current month, we may need to go forward
+            for _ in range(12):  # Try up to 12 months ahead
+                # Check if target month is visible
+                calendar_text = await self.page.evaluate('() => document.body.innerText')
+                if month_name in calendar_text and str(target_year) in calendar_text:
+                    print(f"  ✓ Found {month_name} {target_year} in calendar")
+                    break
+
+                # Click next month arrow
+                try:
+                    next_arrow = await self.page.query_selector('button[aria-label="Next"], [aria-label*="Next month"], button svg[viewBox]')
+                    if next_arrow:
+                        await next_arrow.click()
+                        await self.page.wait_for_timeout(300)
+                        print(f"  → Navigating to next month...")
+                    else:
+                        # Try JavaScript to find and click the next button
+                        await self.page.evaluate('''
+                            () => {
+                                // Find buttons that look like next arrows (usually on the right side of calendar)
+                                const buttons = document.querySelectorAll('button');
+                                for (const btn of buttons) {
+                                    const label = btn.getAttribute('aria-label') || '';
+                                    if (label.toLowerCase().includes('next')) {
+                                        btn.click();
+                                        return true;
+                                    }
+                                }
+                                // Try finding by SVG arrow pointing right
+                                const svgButtons = document.querySelectorAll('button svg');
+                                if (svgButtons.length >= 2) {
+                                    // Usually the second SVG button is "next"
+                                    svgButtons[1].closest('button')?.click();
+                                    return true;
+                                }
+                                return false;
+                            }
+                        ''')
+                        await self.page.wait_for_timeout(300)
+                except Exception as e:
+                    print(f"  ⚠ Error navigating months: {e}")
+                    break
+
+            await self.page.wait_for_timeout(300)
 
             # Try to click the specific date
             date_selectors = [
@@ -347,15 +394,43 @@ class GoogleFlightsScraper:
                 f'[data-iso="{departure_date}"]',
             ]
 
+            date_clicked = False
             for selector in date_selectors:
                 try:
                     date_cell = await self.page.wait_for_selector(selector, timeout=1500)
                     if date_cell:
                         await date_cell.click()
+                        date_clicked = True
                         print(f"  ✓ Selected date: {departure_date}")
                         break
                 except:
                     continue
+
+            # Fallback: use JavaScript to find and click the date
+            if not date_clicked:
+                result = await self.page.evaluate('''
+                    (args) => {
+                        const day = args.day;
+                        const monthName = args.monthName;
+
+                        // Find all elements with aria-label containing the date
+                        const elements = document.querySelectorAll('[aria-label]');
+                        for (const el of elements) {
+                            const label = el.getAttribute('aria-label') || '';
+                            if (label.includes(monthName) && label.includes(String(day))) {
+                                // Make sure it's the exact day (not day 15 matching in day 1)
+                                const dayPattern = new RegExp('\\\\b' + day + '\\\\b');
+                                if (dayPattern.test(label)) {
+                                    el.click();
+                                    return 'clicked';
+                                }
+                            }
+                        }
+                        return 'not_found';
+                    }
+                ''', {"day": day, "monthName": month_name})
+                if result == 'clicked':
+                    print(f"  ✓ Selected date via JavaScript: {departure_date}")
 
             await self.page.wait_for_timeout(300)
 
