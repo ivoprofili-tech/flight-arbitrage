@@ -902,13 +902,11 @@ class GoogleFlightsScraper:
                     const flights = [];
                     const seen = new Set();
 
-                    // Google Flights uses list items for flight results
-                    // Find all elements that look like flight rows
-                    const allElements = document.querySelectorAll('*');
-
-                    // Find all price elements first
+                    // Target specific elements instead of all '*' for performance
+                    // Prices are typically in span elements
                     const priceElements = [];
-                    for (const el of allElements) {
+                    const spans = document.querySelectorAll('span');
+                    for (const el of spans) {
                         const text = el.textContent || '';
                         // Match prices like $99, $1,234, US$99, etc.
                         if (/^\s*(?:US\s*)?\$\s*[\d,]+\s*$/.test(text) && text.length < 20) {
