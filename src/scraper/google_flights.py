@@ -336,161 +336,186 @@ class GoogleFlightsScraper:
 
             await self.page.wait_for_timeout(500)
 
-            # Parse date and find the right cell
+            # Parse date
             target_date = datetime.strptime(departure_date, '%Y-%m-%d')
             day = target_date.day
             month_name = target_date.strftime('%B')
             target_year = target_date.year
 
-            # Navigate to the correct month by clicking the next arrow
-            # Google Flights calendar shows current month, we may need to go forward
-            for _ in range(12):  # Try up to 12 months ahead
-                # Check if target month is visible
-                calendar_text = await self.page.evaluate('() => document.body.innerText')
-                if month_name in calendar_text and str(target_year) in calendar_text:
-                    print(f"  ✓ Found {month_name} {target_year} in calendar")
-                    break
+            # Use JavaScript to navigate to correct month and select date
+            # This is more reliable than trying to find specific buttons
+            date_result = await self.page.evaluate('''
+                async (args) => {
+                    const targetDay = args.day;
+                    const targetMonth = args.monthName;
+                    const targetYear = args.year;
+                    const isoDate = args.isoDate;
 
-                # Click next month arrow
-                try:
-                    next_arrow = await self.page.query_selector('button[aria-label="Next"], [aria-label*="Next month"], button svg[viewBox]')
-                    if next_arrow:
-                        await next_arrow.click()
-                        await self.page.wait_for_timeout(300)
-                        print(f"  → Navigating to next month...")
-                    else:
-                        # Try JavaScript to find and click the next button
-                        await self.page.evaluate('''
-                            () => {
-                                // Find buttons that look like next arrows (usually on the right side of calendar)
-                                const buttons = document.querySelectorAll('button');
-                                for (const btn of buttons) {
-                                    const label = btn.getAttribute('aria-label') || '';
-                                    if (label.toLowerCase().includes('next')) {
-                                        btn.click();
-                                        return true;
-                                    }
-                                }
-                                // Try finding by SVG arrow pointing right
-                                const svgButtons = document.querySelectorAll('button svg');
-                                if (svgButtons.length >= 2) {
-                                    // Usually the second SVG button is "next"
-                                    svgButtons[1].closest('button')?.click();
-                                    return true;
-                                }
-                                return false;
+                    // Helper to wait
+                    const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+                    // Helper to check if target month is visible in calendar
+                    const isTargetMonthVisible = () => {
+                        // Look for the month/year header in the calendar
+                        // Google shows "February 2026" or similar as a heading
+                        const headings = document.querySelectorAll('h2, [role="heading"], div[class*="header"]');
+                        for (const h of headings) {
+                            const text = h.textContent || '';
+                            if (text.includes(targetMonth) && text.includes(String(targetYear))) {
+                                return true;
                             }
-                        ''')
-                        await self.page.wait_for_timeout(300)
-                except Exception as e:
-                    print(f"  ⚠ Error navigating months: {e}")
-                    break
+                        }
+                        // Also check if we can find a date cell for the target month
+                        const dateCell = document.querySelector(`[aria-label*="${targetMonth} ${targetDay}"]`);
+                        if (dateCell) return true;
+
+                        return false;
+                    };
+
+                    // Helper to click next month
+                    const clickNextMonth = () => {
+                        // Try multiple strategies to find the next button
+                        // Strategy 1: aria-label
+                        const nextByLabel = document.querySelector('[aria-label*="Next"]');
+                        if (nextByLabel) {
+                            nextByLabel.click();
+                            return true;
+                        }
+
+                        // Strategy 2: Find buttons in the calendar header area
+                        // Usually there are two navigation buttons, the second one is "next"
+                        const calendarButtons = document.querySelectorAll('button[jsname], button[data-value]');
+                        let navButtons = [];
+                        for (const btn of calendarButtons) {
+                            // Navigation buttons are usually small and contain SVG
+                            if (btn.querySelector('svg') || btn.textContent.trim() === '') {
+                                navButtons.push(btn);
+                            }
+                        }
+                        // The "next" button is usually the last/rightmost one
+                        if (navButtons.length >= 1) {
+                            navButtons[navButtons.length - 1].click();
+                            return true;
+                        }
+
+                        // Strategy 3: Find all buttons with SVG icons in calendar area
+                        const allButtons = Array.from(document.querySelectorAll('button'));
+                        const svgButtons = allButtons.filter(b => b.querySelector('svg'));
+                        // Usually there are prev/next pairs - take the second one
+                        if (svgButtons.length >= 2) {
+                            svgButtons[1].click();
+                            return true;
+                        } else if (svgButtons.length === 1) {
+                            svgButtons[0].click();
+                            return true;
+                        }
+
+                        return false;
+                    };
+
+                    // Navigate to the target month (up to 12 clicks)
+                    let foundMonth = false;
+                    for (let i = 0; i < 12; i++) {
+                        if (isTargetMonthVisible()) {
+                            foundMonth = true;
+                            break;
+                        }
+                        const clicked = clickNextMonth();
+                        if (!clicked) {
+                            return { success: false, error: 'Could not find next month button' };
+                        }
+                        await wait(400);
+                    }
+
+                    if (!foundMonth) {
+                        return { success: false, error: 'Could not navigate to target month' };
+                    }
+
+                    await wait(300);
+
+                    // Now find and click the date
+                    // Strategy 1: aria-label with full date
+                    const dateByLabel = document.querySelector(`[aria-label*="${targetMonth} ${targetDay}"]`);
+                    if (dateByLabel) {
+                        dateByLabel.click();
+                        return { success: true, method: 'aria-label' };
+                    }
+
+                    // Strategy 2: data-iso attribute
+                    const dateByIso = document.querySelector(`[data-iso="${isoDate}"]`);
+                    if (dateByIso) {
+                        dateByIso.click();
+                        return { success: true, method: 'data-iso' };
+                    }
+
+                    // Strategy 3: Find by day number in calendar grid
+                    const allCells = document.querySelectorAll('[role="gridcell"], td, [role="button"]');
+                    for (const cell of allCells) {
+                        const text = cell.textContent.trim();
+                        // Match just the day number or day with price
+                        if (text === String(targetDay) || text.startsWith(targetDay + '$') || text.startsWith(targetDay + '\n')) {
+                            cell.click();
+                            return { success: true, method: 'grid-cell' };
+                        }
+                    }
+
+                    return { success: false, error: 'Could not find date cell' };
+                }
+            ''', {"day": day, "monthName": month_name, "year": target_year, "isoDate": departure_date})
+
+            if date_result.get('success'):
+                print(f"  ✓ Selected date {departure_date} via {date_result.get('method')}")
+            else:
+                print(f"  ⚠ Date selection issue: {date_result.get('error')}")
 
             await self.page.wait_for_timeout(300)
 
-            # Try to click the specific date
-            date_selectors = [
-                f'[aria-label*="{month_name} {day}"]',
-                f'[data-iso="{departure_date}"]',
-            ]
-
-            date_clicked = False
-            for selector in date_selectors:
-                try:
-                    date_cell = await self.page.wait_for_selector(selector, timeout=1500)
-                    if date_cell:
-                        await date_cell.click()
-                        date_clicked = True
-                        print(f"  ✓ Selected date: {departure_date}")
-                        break
-                except:
-                    continue
-
-            # Fallback: use JavaScript to find and click the date
-            if not date_clicked:
+            # Click Done button - use JavaScript directly (faster and more reliable)
+            done_clicked = False
+            try:
                 result = await self.page.evaluate('''
-                    (args) => {
-                        const day = args.day;
-                        const monthName = args.monthName;
-
-                        // Find all elements with aria-label containing the date
-                        const elements = document.querySelectorAll('[aria-label]');
-                        for (const el of elements) {
-                            const label = el.getAttribute('aria-label') || '';
-                            if (label.includes(monthName) && label.includes(String(day))) {
-                                // Make sure it's the exact day (not day 15 matching in day 1)
-                                const dayPattern = new RegExp('\\\\b' + day + '\\\\b');
-                                if (dayPattern.test(label)) {
-                                    el.click();
-                                    return 'clicked';
+                    () => {
+                        // Find all buttons with "Done" text
+                        const buttons = document.querySelectorAll('button');
+                        for (const btn of buttons) {
+                            const text = btn.textContent.trim();
+                            const innerText = btn.innerText.trim();
+                            const spanText = btn.querySelector('span')?.textContent?.trim();
+                            if (text === 'Done' || innerText === 'Done' || spanText === 'Done') {
+                                btn.scrollIntoView({ behavior: 'instant', block: 'center' });
+                                btn.click();
+                                return 'clicked_button';
+                            }
+                        }
+                        // Try finding span with Done text
+                        const spans = document.querySelectorAll('span');
+                        for (const span of spans) {
+                            if (span.textContent.trim() === 'Done') {
+                                const btn = span.closest('button');
+                                if (btn) {
+                                    btn.scrollIntoView({ behavior: 'instant', block: 'center' });
+                                    btn.click();
+                                    return 'clicked_span_parent';
                                 }
+                                // Click span directly
+                                span.click();
+                                return 'clicked_span';
                             }
                         }
                         return 'not_found';
                     }
-                ''', {"day": day, "monthName": month_name})
-                if result == 'clicked':
-                    print(f"  ✓ Selected date via JavaScript: {departure_date}")
-
-            await self.page.wait_for_timeout(300)
-
-            # Click Done button - use locator with force click
-            done_clicked = False
-            try:
-                # Use locator to find Done button - it handles scrolling automatically
-                done_locator = self.page.locator('button:has-text("Done")').first
-                await done_locator.scroll_into_view_if_needed()
-                await self.page.wait_for_timeout(150)
-                await done_locator.click(timeout=2000)
-                done_clicked = True
-                print("  ✓ Clicked Done button via locator")
+                ''')
+                if result != 'not_found':
+                    done_clicked = True
+                    print(f"  ✓ Clicked Done button ({result})")
+                else:
+                    print("  ⚠ Done button not found via JavaScript")
             except Exception as e:
-                print(f"  ⚠ Locator approach failed: {e}")
+                print(f"  ⚠ JavaScript Done click failed: {e}")
 
-            # Fallback: use JavaScript to find and click Done button
+            # Fallback: press Escape to close the date picker
             if not done_clicked:
-                try:
-                    result = await self.page.evaluate('''
-                        () => {
-                            // Find all buttons and spans with "Done" text
-                            const buttons = document.querySelectorAll('button');
-                            for (const btn of buttons) {
-                                if (btn.textContent.trim() === 'Done' ||
-                                    btn.innerText.trim() === 'Done' ||
-                                    btn.querySelector('span')?.textContent?.trim() === 'Done') {
-                                    // Scroll into view
-                                    btn.scrollIntoView({ behavior: 'instant', block: 'center' });
-                                    // Click it
-                                    btn.click();
-                                    return 'clicked_button';
-                                }
-                            }
-                            // Try finding span with Done and clicking its parent
-                            const spans = document.querySelectorAll('span');
-                            for (const span of spans) {
-                                if (span.textContent.trim() === 'Done') {
-                                    const btn = span.closest('button');
-                                    if (btn) {
-                                        btn.scrollIntoView({ behavior: 'instant', block: 'center' });
-                                        btn.click();
-                                        return 'clicked_span_parent';
-                                    }
-                                }
-                            }
-                            return 'not_found';
-                        }
-                    ''')
-                    if result != 'not_found':
-                        done_clicked = True
-                        print(f"  ✓ Clicked Done button via JavaScript ({result})")
-                    else:
-                        print("  ⚠ JavaScript couldn't find Done button")
-                except Exception as e2:
-                    print(f"  ⚠ JavaScript fallback failed: {e2}")
-
-            # Last resort: press Escape to close the date picker
-            if not done_clicked:
-                print("  ⚠ Done button not found, pressing Escape...")
+                print("  → Pressing Escape to close calendar...")
                 await self.page.keyboard.press('Escape')
 
             await self.page.wait_for_timeout(300)
