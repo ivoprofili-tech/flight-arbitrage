@@ -96,6 +96,9 @@ async def main():
             print(f"    Price: {flight.get('price', 'N/A')}")
             print(f"    Depart: {flight.get('departure_time', 'N/A')} → Arrive: {flight.get('arrival_time', 'N/A')}")
             print(f"    Duration: {flight.get('duration', 'N/A')} | Stops: {flight.get('stops', 'N/A')}")
+            layovers = flight.get('layovers', [])
+            if layovers:
+                print(f"    Layovers: {', '.join(layovers)}")
     else:
         print("\nNo flights found.")
 
