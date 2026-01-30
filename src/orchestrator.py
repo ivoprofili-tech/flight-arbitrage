@@ -116,11 +116,14 @@ async def execute_targeted_skiplag_search(
                     if 'nonstop' in stops or 'non-stop' in stops:
                         continue  # Nonstop flights can't have layovers
 
-                    # Check if destination B appears in the flight info
-                    # This checks various fields where layover info might appear
-                    flight_text = _get_flight_text(flight)
+                    # First check the layovers list (preferred - extracted from expanded details)
+                    layovers = flight.get('layovers', [])
+                    has_b_layover = _check_layovers_list(layovers, dest_b_variants)
 
-                    has_b_layover = _check_for_layover(flight_text, dest_b_variants)
+                    # Fallback: check flight text if layovers list is empty
+                    if not has_b_layover and not layovers:
+                        flight_text = _get_flight_text(flight)
+                        has_b_layover = _check_for_layover(flight_text, dest_b_variants)
 
                     if has_b_layover:
                         # Found a potential hidden-city deal!
@@ -129,10 +132,12 @@ async def execute_targeted_skiplag_search(
                         deal['hidden_city_target'] = destination_B
                         deal['search_route'] = search_route
                         deal['deal_type'] = 'hidden_city'
+                        deal['confirmed_layover'] = True  # Layover was verified
                         route_deals.append(deal)
 
+                        layover_info = f" (layovers: {layovers})" if layovers else ""
                         print(f"  ✓ DEAL FOUND: {flight.get('price', 'N/A')} - "
-                              f"Layover at {destination_B}")
+                              f"Layover at {destination_B}{layover_info}")
 
                 # Also include connecting flights where we couldn't confirm the layover
                 # (user can manually verify these)
@@ -146,14 +151,22 @@ async def execute_targeted_skiplag_search(
                 ]
 
                 if connecting_flights:
-                    print(f"  + {len(connecting_flights)} connecting flights (layover unconfirmed)")
+                    print(f"  + {len(connecting_flights)} connecting flights (layover not at {destination_B})")
                     for flight in connecting_flights:
                         deal = flight.copy()
                         deal['final_destination'] = dest_C
                         deal['hidden_city_target'] = destination_B
                         deal['search_route'] = search_route
-                        deal['deal_type'] = 'potential_hidden_city'
-                        deal['note'] = 'Layover city not confirmed - verify manually'
+                        deal['confirmed_layover'] = False
+
+                        # Check if we have layover info but it's not the target
+                        layovers = flight.get('layovers', [])
+                        if layovers:
+                            deal['deal_type'] = 'not_target_layover'
+                            deal['note'] = f'Layover at {", ".join(layovers)} (not {destination_B})'
+                        else:
+                            deal['deal_type'] = 'potential_hidden_city'
+                            deal['note'] = 'Layover city could not be extracted - verify manually'
                         route_deals.append(deal)
 
                 return route_deals
@@ -271,9 +284,44 @@ def _get_flight_text(flight: dict) -> str:
     return ' '.join(parts).lower()
 
 
+def _check_layovers_list(layovers: list[str], city_variants: list[str]) -> bool:
+    """
+    Check if any city variant appears in the layovers list.
+
+    This is the preferred method when the scraper has extracted explicit
+    layover airport codes from the flight details.
+
+    Args:
+        layovers: List of airport codes from the flight (e.g., ['LAX', 'DEN'])
+        city_variants: List of city name/code variants to search for
+
+    Returns:
+        True if a layover at the target city is detected
+    """
+    if not layovers:
+        return False
+
+    # Normalize layovers to uppercase
+    layovers_upper = [code.upper() for code in layovers]
+
+    for variant in city_variants:
+        variant_upper = variant.upper().strip()
+        # Direct match with airport code
+        if variant_upper in layovers_upper:
+            return True
+        # Also check if variant is contained in any layover (for city names)
+        for layover in layovers_upper:
+            if variant_upper in layover or layover in variant_upper:
+                return True
+
+    return True if any(v.upper() in layovers_upper for v in city_variants) else False
+
+
 def _check_for_layover(flight_text: str, city_variants: list[str]) -> bool:
     """
     Check if any city variant appears in the flight text.
+
+    This is a fallback method when explicit layover data is not available.
 
     Args:
         flight_text: Combined flight information text

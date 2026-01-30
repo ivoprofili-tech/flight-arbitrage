@@ -704,13 +704,15 @@ class GoogleFlightsScraper:
 
     async def _extract_flights(self) -> list[dict]:
         """
-        Extract flight information from the search results.
+        Extract flight information from the search results, including layover airports.
 
-        This is where we parse the actual flight data from the page.
-        We look for specific elements that contain the information we need.
+        This method:
+        1. Extracts basic flight info from the results list
+        2. For connecting flights, clicks to expand and extract layover airports
+        3. Returns flights with a 'layovers' field containing airport codes
 
         Returns:
-            List of dictionaries with flight details
+            List of dictionaries with flight details including layovers
         """
         flights = []
 
@@ -728,15 +730,14 @@ class GoogleFlightsScraper:
                 f.write(page_text)
             print("  Page text saved to debug_page_text.txt")
 
-            # Google Flights results are in divs, not ul/li
-            # Try multiple extraction strategies
-            flight_data = await self.page.evaluate('''
+            # Find all clickable flight rows and extract basic info + row index
+            flight_rows_data = await self.page.evaluate('''
                 () => {
                     const flights = [];
                     const seen = new Set();
 
-                    // Strategy 1: Look for elements with price patterns
-                    // Google Flights shows prices in specific elements
+                    // Google Flights uses list items for flight results
+                    // Find all elements that look like flight rows
                     const allElements = document.querySelectorAll('*');
 
                     // Find all price elements first
@@ -749,6 +750,7 @@ class GoogleFlightsScraper:
                         }
                     }
 
+                    let rowIndex = 0;
                     // For each price, find the parent flight row and extract data
                     for (const priceEl of priceElements) {
                         // Go up to find the flight row container (usually 3-5 levels up)
@@ -770,21 +772,17 @@ class GoogleFlightsScraper:
                                 if (seen.has(key)) continue;
                                 seen.add(key);
 
-                                // Extract times (e.g., "6:00 AM – 9:28 AM" or "6:00 AM9:28 AM")
-                                // Google Flights shows departure and arrival times, sometimes with various separators
+                                // Extract times
                                 let departureTime = null;
                                 let arrivalTime = null;
 
-                                // Try pattern with separator first (–, -, −)
                                 const timeWithSep = containerText.match(/(\d{1,2}:\d{2}\s*(?:AM|PM)?)\s*[–\-−]\s*(\d{1,2}:\d{2}\s*(?:AM|PM)?)/i);
                                 if (timeWithSep) {
                                     departureTime = timeWithSep[1].trim();
                                     arrivalTime = timeWithSep[2].trim();
                                 } else {
-                                    // Try to find two DIFFERENT time patterns
                                     const allTimes = containerText.match(/\d{1,2}:\d{2}\s*(?:AM|PM)?/gi);
                                     if (allTimes && allTimes.length >= 2) {
-                                        // Get unique times only
                                         const uniqueTimes = [...new Set(allTimes.map(t => t.trim()))];
                                         if (uniqueTimes.length >= 2) {
                                             departureTime = uniqueTimes[0];
@@ -795,7 +793,7 @@ class GoogleFlightsScraper:
                                     }
                                 }
 
-                                // Extract duration (e.g., "5 hr 28 min", "5h 28m", "5 hr")
+                                // Extract duration
                                 const durationPattern = /(\d+)\s*(?:hr|h)\s*(?:(\d+)\s*(?:min|m))?/i;
                                 const durationMatch = containerText.match(durationPattern);
                                 let duration = null;
@@ -807,13 +805,16 @@ class GoogleFlightsScraper:
 
                                 // Extract stops
                                 let stops = "Unknown";
+                                let numStops = 0;
                                 const textLower = containerText.toLowerCase();
                                 if (textLower.includes("nonstop") || textLower.includes("non-stop")) {
                                     stops = "Nonstop";
+                                    numStops = 0;
                                 } else {
                                     const stopMatch = containerText.match(/(\d+)\s*stop/i);
                                     if (stopMatch) {
-                                        stops = stopMatch[1] === "1" ? "1 stop" : stopMatch[1] + " stops";
+                                        numStops = parseInt(stopMatch[1]);
+                                        stops = numStops === 1 ? "1 stop" : numStops + " stops";
                                     }
                                 }
 
@@ -833,45 +834,43 @@ class GoogleFlightsScraper:
                                     }
                                 }
 
+                                // Try to extract layover airport from the summary line
+                                // Google shows "1 stop LAX" or "1 stop 2 hr 30 min LAX"
+                                let layoverFromSummary = [];
+                                if (numStops > 0) {
+                                    // Look for airport codes after "stop" - pattern: "X stop(s) [duration] CODE"
+                                    const layoverMatch = containerText.match(/\d+\s*stops?\s*(?:\d+\s*(?:hr|h)\s*(?:\d+\s*(?:min|m))?\s*)?([A-Z]{3})/i);
+                                    if (layoverMatch) {
+                                        layoverFromSummary.push(layoverMatch[1].toUpperCase());
+                                    }
+                                    // Also try pattern where layover appears separately
+                                    const airportCodes = containerText.match(/\b([A-Z]{3})\b/g);
+                                    if (airportCodes && airportCodes.length > 2) {
+                                        // First and last are usually origin/destination
+                                        // Middle codes are layovers
+                                        for (let j = 1; j < airportCodes.length - 1; j++) {
+                                            const code = airportCodes[j];
+                                            if (!layoverFromSummary.includes(code)) {
+                                                layoverFromSummary.push(code);
+                                            }
+                                        }
+                                    }
+                                }
+
                                 flights.push({
                                     departure_time: departureTime,
                                     arrival_time: arrivalTime,
                                     duration: duration,
                                     stops: stops,
+                                    num_stops: numStops,
                                     airline: airline,
-                                    price: price
+                                    price: price,
+                                    layovers: layoverFromSummary,
+                                    row_index: rowIndex
                                 });
 
-                                break; // Found the container, move to next price
-                            }
-                        }
-                    }
-
-                    // Strategy 2: If Strategy 1 didn't work, try looking at the whole page
-                    if (flights.length === 0) {
-                        // Get all text and try regex extraction
-                        const bodyText = document.body.innerText;
-
-                        // Look for flight-like patterns in chunks
-                        const lines = bodyText.split('\\n');
-                        let currentFlight = {};
-
-                        for (const line of lines) {
-                            const trimmed = line.trim();
-
-                            // Check for time pattern
-                            const timeMatch = trimmed.match(/(\d{1,2}:\d{2}\s*(?:AM|PM)?)\s*[–\-−]+\s*(\d{1,2}:\d{2}\s*(?:AM|PM)?)/i);
-                            if (timeMatch) {
-                                currentFlight.departure_time = timeMatch[1];
-                                currentFlight.arrival_time = timeMatch[2];
-                            }
-
-                            // Check for price
-                            const priceMatch = trimmed.match(/^\s*(?:US\s*)?\$\s*([\d,]+)\s*$/);
-                            if (priceMatch && currentFlight.departure_time) {
-                                currentFlight.price = trimmed;
-                                flights.push({...currentFlight, airline: 'See details', stops: 'See details', duration: 'See details'});
-                                currentFlight = {};
+                                rowIndex++;
+                                break;
                             }
                         }
                     }
@@ -887,8 +886,19 @@ class GoogleFlightsScraper:
                 }
             ''')
 
-            flights = flight_data if flight_data else []
-            print(f"  Extracted {len(flights)} flights")
+            flights = flight_rows_data if flight_rows_data else []
+            print(f"  Extracted {len(flights)} flights from summary view")
+
+            # Now expand connecting flights to get detailed layover info
+            connecting_flights = [f for f in flights if f.get('num_stops', 0) > 0]
+            if connecting_flights:
+                print(f"  Found {len(connecting_flights)} connecting flights - extracting layover details...")
+                await self._extract_layover_details(flights)
+
+            # Clean up internal fields
+            for flight in flights:
+                flight.pop('row_index', None)
+                flight.pop('num_stops', None)
 
             # If still no flights found, provide debug info
             if len(flights) == 0:
@@ -900,17 +910,168 @@ class GoogleFlightsScraper:
                     'duration': 'N/A',
                     'stops': 'N/A',
                     'airline': 'N/A',
+                    'layovers': [],
                     'note': 'Extraction failed - Google may have changed their page structure'
                 })
 
         except Exception as e:
             print(f"  ⚠ Extraction error: {e}")
+            import traceback
+            traceback.print_exc()
             flights.append({
                 'error': str(e),
+                'layovers': [],
                 'note': 'Try running with headless=False to debug'
             })
 
         return flights
+
+    async def _extract_layover_details(self, flights: list[dict]):
+        """
+        Click on each connecting flight to expand details and extract layover airports.
+
+        This method modifies the flights list in place, updating the 'layovers' field
+        with airport codes extracted from the expanded flight details.
+
+        Args:
+            flights: List of flight dictionaries to update
+        """
+        # Find all flight rows that can be clicked
+        flight_rows = await self.page.query_selector_all('li[class*="pIav2d"], div[role="listitem"], [data-ved]')
+
+        if not flight_rows:
+            # Try alternative selectors for flight rows
+            flight_rows = await self.page.query_selector_all('ul li')
+            # Filter to only flight-like rows
+            valid_rows = []
+            for row in flight_rows:
+                text = await row.inner_text()
+                if '$' in text and ':' in text:  # Has price and time
+                    valid_rows.append(row)
+            flight_rows = valid_rows[:30]
+
+        print(f"  Found {len(flight_rows)} clickable flight rows")
+
+        for flight in flights:
+            if flight.get('num_stops', 0) == 0:
+                # Nonstop flight - no layovers
+                flight['layovers'] = []
+                continue
+
+            # If we already found layovers from summary, we might still want to verify
+            # by expanding, but for speed let's skip if we have data
+            if flight.get('layovers') and len(flight['layovers']) >= flight.get('num_stops', 1):
+                print(f"    ✓ {flight['price']}: Layovers from summary: {flight['layovers']}")
+                continue
+
+            row_index = flight.get('row_index', 0)
+            if row_index >= len(flight_rows):
+                print(f"    ⚠ Cannot find row {row_index} for flight {flight['price']}")
+                continue
+
+            try:
+                row = flight_rows[row_index]
+
+                # Click to expand the flight details
+                await row.click()
+                await self.page.wait_for_timeout(800)
+
+                # Extract layover airports from expanded view
+                layovers = await self.page.evaluate('''
+                    () => {
+                        const layovers = [];
+
+                        // Strategy 1: Look for layover/connection info in expanded details
+                        // Google shows segments like "JFK → LAX" then "Layover 2h" then "LAX → PHX"
+                        const expandedText = document.body.innerText;
+
+                        // Find all 3-letter airport codes
+                        const allCodes = expandedText.match(/\\b([A-Z]{3})\\b/g) || [];
+
+                        // Look for "layover" or "stop" text followed by location info
+                        const layoverPattern = /(?:layover|stop|connection|connecting).*?(?:in|at)?\\s*([A-Z][a-z]+(?:\\s+[A-Z][a-z]+)?|[A-Z]{3})/gi;
+                        let match;
+                        while ((match = layoverPattern.exec(expandedText)) !== null) {
+                            const location = match[1].trim();
+                            // If it's a city name, try to find nearby airport code
+                            if (location.length > 3) {
+                                // Look for airport code near the city name
+                                const nearbyText = expandedText.substring(
+                                    Math.max(0, match.index - 50),
+                                    Math.min(expandedText.length, match.index + 100)
+                                );
+                                const nearbyCode = nearbyText.match(/\\b([A-Z]{3})\\b/);
+                                if (nearbyCode && !layovers.includes(nearbyCode[1])) {
+                                    layovers.push(nearbyCode[1]);
+                                }
+                            } else if (location.match(/^[A-Z]{3}$/)) {
+                                if (!layovers.includes(location)) {
+                                    layovers.push(location);
+                                }
+                            }
+                        }
+
+                        // Strategy 2: Look for flight segment pattern "XXX → YYY"
+                        // In a connection, there are multiple segments
+                        const segmentPattern = /([A-Z]{3})\\s*[→➔\\-–]\\s*([A-Z]{3})/g;
+                        const segments = [];
+                        while ((match = segmentPattern.exec(expandedText)) !== null) {
+                            segments.push({ from: match[1], to: match[2] });
+                        }
+
+                        // If we have multiple segments, the destination of early segments
+                        // (except the last) are layover airports
+                        if (segments.length > 1) {
+                            for (let i = 0; i < segments.length - 1; i++) {
+                                const layoverCode = segments[i].to;
+                                if (!layovers.includes(layoverCode)) {
+                                    layovers.push(layoverCode);
+                                }
+                            }
+                        }
+
+                        // Strategy 3: Look for time patterns with airport codes
+                        // "Arrives 2:30 PM LAX" or "Departs 5:00 PM LAX"
+                        const timeAirportPattern = /(?:arrives?|departs?|lands?|leaves?).*?(\\d{1,2}:\\d{2}\\s*(?:AM|PM)?).{0,20}?([A-Z]{3})/gi;
+                        const timeAirports = [];
+                        while ((match = timeAirportPattern.exec(expandedText)) !== null) {
+                            timeAirports.push(match[2]);
+                        }
+
+                        // Middle airports in the sequence are layovers
+                        if (timeAirports.length > 2) {
+                            for (let i = 1; i < timeAirports.length - 1; i++) {
+                                if (!layovers.includes(timeAirports[i])) {
+                                    layovers.push(timeAirports[i]);
+                                }
+                            }
+                        }
+
+                        // Strategy 4: Look for explicit "X hr Y min in CODE" pattern
+                        const durationInPattern = /(\\d+\\s*(?:hr?|hour)s?\\s*(?:\\d+\\s*(?:min|m))?\\s*(?:in|at)\\s*)([A-Z]{3})/gi;
+                        while ((match = durationInPattern.exec(expandedText)) !== null) {
+                            if (!layovers.includes(match[2])) {
+                                layovers.push(match[2]);
+                            }
+                        }
+
+                        return layovers;
+                    }
+                ''')
+
+                if layovers:
+                    flight['layovers'] = layovers
+                    print(f"    ✓ {flight['price']}: Found layovers: {layovers}")
+                else:
+                    print(f"    ⚠ {flight['price']}: Could not extract layover details")
+
+                # Close expanded view by pressing Escape or clicking elsewhere
+                await self.page.keyboard.press('Escape')
+                await self.page.wait_for_timeout(300)
+
+            except Exception as e:
+                print(f"    ⚠ Error expanding flight {flight['price']}: {e}")
+                continue
 
 
 # ============================================================================
