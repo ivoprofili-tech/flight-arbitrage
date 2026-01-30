@@ -395,9 +395,15 @@ class SkiplaggedScraper:
                                 let stops = "Unknown";
                                 let airline = "Unknown";
                                 let price = null;
+                                let foundDuration = false;
 
                                 for (const line of lines) {
-                                    if (line.match(/^\\d+h$/)) duration = line;
+                                    // Only use the FIRST duration found (total trip time)
+                                    // Later "Xh" patterns are leg times, not total duration
+                                    if (!foundDuration && line.match(/^\\d+h$/)) {
+                                        duration = line;
+                                        foundDuration = true;
+                                    }
                                     if (line.toLowerCase() === "nonstop") stops = "Nonstop";
                                     if (line.match(/^\\d+\\s*stops?$/i)) {
                                         const n = line.match(/^(\\d+)/)[1];
