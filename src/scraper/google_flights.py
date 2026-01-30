@@ -928,7 +928,7 @@ class GoogleFlightsScraper:
                             const hasTime = /\d{1,2}:\d{2}\s*(AM|PM)?/i.test(containerText);
                             const hasDuration = /\d+\s*hr|\d+\s*h\s*\d+/i.test(containerText);
 
-                            if (hasTime && hasDuration && containerText.length > 30 && containerText.length < 1000) {
+                            if (hasTime && hasDuration && containerText.length > 30 && containerText.length < 2000) {
                                 const price = priceEl.textContent.trim();
 
                                 // Skip if we've seen this price+container combo
@@ -964,7 +964,7 @@ class GoogleFlightsScraper:
                                 if (durationMatch) {
                                     const hours = durationMatch[1];
                                     const mins = durationMatch[2] || '0';
-                                    duration = `${hours}h ${mins}m`;
+                                    duration = hours + 'h ' + mins + 'm';
                                 }
 
                                 // Extract stops
@@ -1006,18 +1006,57 @@ class GoogleFlightsScraper:
                                 // Google shows format like "1 stop 3 hr 46 min ATL" or "2 stops ORD, DEN"
                                 let layoverFromSummary = [];
                                 if (numStops > 0) {
-                                    // Strategy 1: Look for pattern "X hr Y min CODE" or "X min CODE"
-                                    // This is the most reliable pattern for layover airports
-                                    const durationCodePattern = /(\d+\s*(?:hr|h)\s*(?:\d+\s*(?:min|m))?|\d+\s*min)\s+([A-Z]{3})\b/g;
-                                    let match;
-                                    while ((match = durationCodePattern.exec(containerText)) !== null) {
-                                        const code = match[2];
-                                        if (!layoverFromSummary.includes(code)) {
-                                            layoverFromSummary.push(code);
+                                    // Get route info for filtering (JFK-PHX means exclude JFK and PHX)
+                                    const routeMatch = containerText.match(/([A-Z]{3})\s*[–\-−]\s*([A-Z]{3})/);
+                                    const origin = routeMatch ? routeMatch[1] : '';
+                                    const dest = routeMatch ? routeMatch[2] : '';
+
+                                    // Strategy 1: Look for "N stop(s)" followed by duration and airport code
+                                    // Pattern: "1 stop" ... "X hr Y min CODE" or "X min CODE"
+                                    // Handle both with space and without (text concatenation from HTML)
+                                    const afterStopMatch = containerText.match(/\d+\s*stops?(.{0,100})/i);
+                                    if (afterStopMatch) {
+                                        const afterStop = afterStopMatch[1];
+                                        // Look for "X hr Y min CODE" or "X min CODE"
+                                        const layoverPattern = /(\d+\s*(?:hr|h)?\s*\d*\s*(?:min|m)?)\s*([A-Z]{3})\b/g;
+                                        let match;
+                                        while ((match = layoverPattern.exec(afterStop)) !== null) {
+                                            const code = match[2];
+                                            // Exclude origin, destination, common non-airport codes
+                                            const excluded = ['JFK', 'PHX', 'LAX', 'SFO', origin, dest, 'CON', 'AVG', 'USD', 'MAR'];
+                                            if (!layoverFromSummary.includes(code) && !excluded.includes(code)) {
+                                                layoverFromSummary.push(code);
+                                            }
                                         }
                                     }
 
-                                    // Strategy 2: For "2 stops ORD, DEN" format
+                                    // Strategy 2: Look for pattern "X hr Y min CODE" anywhere in text
+                                    if (layoverFromSummary.length < numStops) {
+                                        const durationCodePattern = /(\d+\s*(?:hr|h)\s*(?:\d+\s*)?(?:min|m)?)\s+([A-Z]{3})\b/g;
+                                        let match;
+                                        while ((match = durationCodePattern.exec(containerText)) !== null) {
+                                            const code = match[2];
+                                            const excluded = [origin, dest, 'CON', 'AVG', 'USD', 'MAR'];
+                                            if (!layoverFromSummary.includes(code) && !excluded.includes(code)) {
+                                                layoverFromSummary.push(code);
+                                            }
+                                        }
+                                    }
+
+                                    // Strategy 3: Look for minutes-only pattern "XX min CODE"
+                                    if (layoverFromSummary.length < numStops) {
+                                        const minCodePattern = /(\d+)\s*min\s+([A-Z]{3})\b/g;
+                                        let match;
+                                        while ((match = minCodePattern.exec(containerText)) !== null) {
+                                            const code = match[2];
+                                            const excluded = [origin, dest, 'CON', 'AVG', 'USD', 'MAR'];
+                                            if (!layoverFromSummary.includes(code) && !excluded.includes(code)) {
+                                                layoverFromSummary.push(code);
+                                            }
+                                        }
+                                    }
+
+                                    // Strategy 4: For "2 stops ORD, DEN" format
                                     if (numStops >= 2 && layoverFromSummary.length < numStops) {
                                         const multiStopPattern = /\d+\s*stops?\s+([A-Z]{3})\s*,\s*([A-Z]{3})/;
                                         const multiMatch = containerText.match(multiStopPattern);
