@@ -200,7 +200,7 @@ class GoogleFlightsScraper:
 
         # Step 1: Open Google Flights
         print("\n[Step 1] Opening Google Flights...")
-        await self.page.goto('https://www.google.com/travel/flights', wait_until='networkidle')
+        await self.page.goto('https://www.google.com/travel/flights', wait_until='domcontentloaded', timeout=60000)
         await self.page.wait_for_timeout(1000)
 
         # Handle cookie consent if needed
