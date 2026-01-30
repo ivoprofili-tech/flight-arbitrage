@@ -1010,59 +1010,58 @@ class GoogleFlightsScraper:
                                     const routeMatch = containerText.match(/([A-Z]{3})\s*[–\-−]\s*([A-Z]{3})/);
                                     const origin = routeMatch ? routeMatch[1] : '';
                                     const dest = routeMatch ? routeMatch[2] : '';
+                                    const excluded = [origin, dest, 'CON', 'AVG', 'USD', 'MAR', 'FEB', 'JAN', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 
                                     // Strategy 1: Look for "N stop(s)" followed by duration and airport code
-                                    // Pattern: "1 stop" ... "X hr Y min CODE" or "X min CODE"
-                                    // Handle both with space and without (text concatenation from HTML)
-                                    const afterStopMatch = containerText.match(/\d+\s*stops?(.{0,100})/i);
+                                    // Use [\s\S] instead of . to match newlines
+                                    const afterStopMatch = containerText.match(/\d+\s*stops?([\s\S]{0,150})/i);
                                     if (afterStopMatch) {
                                         const afterStop = afterStopMatch[1];
-                                        // Look for "X hr Y min CODE" or "X min CODE"
-                                        const layoverPattern = /(\d+\s*(?:hr|h)?\s*\d*\s*(?:min|m)?)\s*([A-Z]{3})\b/g;
+                                        // Look for "X hr Y min CODE" pattern
+                                        const hrMinPattern = /(\d+)\s*(?:hr|h)\s*(\d+)?\s*(?:min|m)?\s*([A-Z]{3})\b/g;
                                         let match;
-                                        while ((match = layoverPattern.exec(afterStop)) !== null) {
+                                        while ((match = hrMinPattern.exec(afterStop)) !== null) {
+                                            const code = match[3];
+                                            if (!layoverFromSummary.includes(code) && !excluded.includes(code)) {
+                                                layoverFromSummary.push(code);
+                                            }
+                                        }
+                                        // Also check for minutes-only "XX min CODE"
+                                        const minOnlyPattern = /(\d+)\s*min\s+([A-Z]{3})\b/g;
+                                        while ((match = minOnlyPattern.exec(afterStop)) !== null) {
                                             const code = match[2];
-                                            // Exclude origin, destination, common non-airport codes
-                                            const excluded = ['JFK', 'PHX', 'LAX', 'SFO', origin, dest, 'CON', 'AVG', 'USD', 'MAR'];
                                             if (!layoverFromSummary.includes(code) && !excluded.includes(code)) {
                                                 layoverFromSummary.push(code);
                                             }
                                         }
                                     }
 
-                                    // Strategy 2: Look for pattern "X hr Y min CODE" anywhere in text
-                                    if (layoverFromSummary.length < numStops) {
-                                        const durationCodePattern = /(\d+\s*(?:hr|h)\s*(?:\d+\s*)?(?:min|m)?)\s+([A-Z]{3})\b/g;
-                                        let match;
-                                        while ((match = durationCodePattern.exec(containerText)) !== null) {
-                                            const code = match[2];
-                                            const excluded = [origin, dest, 'CON', 'AVG', 'USD', 'MAR'];
-                                            if (!layoverFromSummary.includes(code) && !excluded.includes(code)) {
-                                                layoverFromSummary.push(code);
-                                            }
-                                        }
-                                    }
-
-                                    // Strategy 3: Look for minutes-only pattern "XX min CODE"
-                                    if (layoverFromSummary.length < numStops) {
-                                        const minCodePattern = /(\d+)\s*min\s+([A-Z]{3})\b/g;
-                                        let match;
-                                        while ((match = minCodePattern.exec(containerText)) !== null) {
-                                            const code = match[2];
-                                            const excluded = [origin, dest, 'CON', 'AVG', 'USD', 'MAR'];
-                                            if (!layoverFromSummary.includes(code) && !excluded.includes(code)) {
-                                                layoverFromSummary.push(code);
-                                            }
-                                        }
-                                    }
-
-                                    // Strategy 4: For "2 stops ORD, DEN" format
+                                    // Strategy 2: For "2 stops ORD, DEN" format (comma-separated)
                                     if (numStops >= 2 && layoverFromSummary.length < numStops) {
-                                        const multiStopPattern = /\d+\s*stops?\s+([A-Z]{3})\s*,\s*([A-Z]{3})/;
+                                        const multiStopPattern = /\d+\s*stops?\s*([A-Z]{3})\s*,\s*([A-Z]{3})/;
                                         const multiMatch = containerText.match(multiStopPattern);
                                         if (multiMatch) {
-                                            if (!layoverFromSummary.includes(multiMatch[1])) layoverFromSummary.push(multiMatch[1]);
-                                            if (!layoverFromSummary.includes(multiMatch[2])) layoverFromSummary.push(multiMatch[2]);
+                                            if (!layoverFromSummary.includes(multiMatch[1]) && !excluded.includes(multiMatch[1])) {
+                                                layoverFromSummary.push(multiMatch[1]);
+                                            }
+                                            if (!layoverFromSummary.includes(multiMatch[2]) && !excluded.includes(multiMatch[2])) {
+                                                layoverFromSummary.push(multiMatch[2]);
+                                            }
+                                        }
+                                    }
+
+                                    // Strategy 3: Direct search for "X hr Y min CODE" or "X min CODE" anywhere
+                                    if (layoverFromSummary.length < numStops) {
+                                        // Match patterns like "3 hr 46 min ATL" or "39 min SLC"
+                                        const allDurationCodes = containerText.match(/(\d+\s*(?:hr|h)\s*\d*\s*(?:min|m)?|\d+\s*min)\s+([A-Z]{3})\b/g) || [];
+                                        for (const match of allDurationCodes) {
+                                            const codeMatch = match.match(/([A-Z]{3})$/);
+                                            if (codeMatch) {
+                                                const code = codeMatch[1];
+                                                if (!layoverFromSummary.includes(code) && !excluded.includes(code)) {
+                                                    layoverFromSummary.push(code);
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -1198,88 +1197,77 @@ class GoogleFlightsScraper:
 
                 await self.page.wait_for_timeout(self.wait_medium)
 
-                # Extract layover airports from expanded view
+                # Extract layover airports from the clicked row's text content
+                # Only search within the row element, not the entire page
+                row_text = await row.inner_text()
+
                 layovers = await self.page.evaluate('''
-                    () => {
+                    (rowText) => {
                         const layovers = [];
+                        const excluded = ['CON', 'AVG', 'USD', 'MAR', 'FEB', 'JAN', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 
-                        // Strategy 1: Look for layover/connection info in expanded details
-                        // Google shows segments like "JFK → LAX" then "Layover 2h" then "LAX → PHX"
-                        const expandedText = document.body.innerText;
+                        // Extract origin and destination from route pattern
+                        const routeMatch = rowText.match(/([A-Z]{3})\\s*[–\\-−]\\s*([A-Z]{3})/);
+                        if (routeMatch) {
+                            excluded.push(routeMatch[1]); // origin
+                            excluded.push(routeMatch[2]); // destination
+                        }
 
-                        // Find all 3-letter airport codes
-                        const allCodes = expandedText.match(/\\b([A-Z]{3})\\b/g) || [];
-
-                        // Look for "layover" or "stop" text followed by location info
-                        const layoverPattern = /(?:layover|stop|connection|connecting).*?(?:in|at)?\\s*([A-Z][a-z]+(?:\\s+[A-Z][a-z]+)?|[A-Z]{3})/gi;
-                        let match;
-                        while ((match = layoverPattern.exec(expandedText)) !== null) {
-                            const location = match[1].trim();
-                            // If it's a city name, try to find nearby airport code
-                            if (location.length > 3) {
-                                // Look for airport code near the city name
-                                const nearbyText = expandedText.substring(
-                                    Math.max(0, match.index - 50),
-                                    Math.min(expandedText.length, match.index + 100)
-                                );
-                                const nearbyCode = nearbyText.match(/\\b([A-Z]{3})\\b/);
-                                if (nearbyCode && !layovers.includes(nearbyCode[1])) {
-                                    layovers.push(nearbyCode[1]);
+                        // Strategy 1: Look for "N stop(s)" followed by duration and airport
+                        const afterStopMatch = rowText.match(/\\d+\\s*stops?([\\s\\S]{0,150})/i);
+                        if (afterStopMatch) {
+                            const afterStop = afterStopMatch[1];
+                            // Match "X hr Y min CODE" pattern
+                            const hrMinPattern = /(\\d+)\\s*(?:hr|h)\\s*(\\d+)?\\s*(?:min|m)?\\s*([A-Z]{3})\\b/g;
+                            let match;
+                            while ((match = hrMinPattern.exec(afterStop)) !== null) {
+                                const code = match[3];
+                                if (!layovers.includes(code) && !excluded.includes(code)) {
+                                    layovers.push(code);
                                 }
-                            } else if (location.match(/^[A-Z]{3}$/)) {
-                                if (!layovers.includes(location)) {
-                                    layovers.push(location);
+                            }
+                            // Match "XX min CODE" pattern
+                            const minPattern = /(\\d+)\\s*min\\s+([A-Z]{3})\\b/g;
+                            while ((match = minPattern.exec(afterStop)) !== null) {
+                                const code = match[2];
+                                if (!layovers.includes(code) && !excluded.includes(code)) {
+                                    layovers.push(code);
                                 }
                             }
                         }
 
-                        // Strategy 2: Look for flight segment pattern "XXX → YYY"
-                        // In a connection, there are multiple segments
-                        const segmentPattern = /([A-Z]{3})\\s*[→➔\\-–]\\s*([A-Z]{3})/g;
-                        const segments = [];
-                        while ((match = segmentPattern.exec(expandedText)) !== null) {
-                            segments.push({ from: match[1], to: match[2] });
+                        // Strategy 2: For multi-stop "ORD, DEN" format
+                        const multiStopPattern = /\\d+\\s*stops?\\s*([A-Z]{3})\\s*,\\s*([A-Z]{3})/;
+                        const multiMatch = rowText.match(multiStopPattern);
+                        if (multiMatch) {
+                            if (!layovers.includes(multiMatch[1]) && !excluded.includes(multiMatch[1])) {
+                                layovers.push(multiMatch[1]);
+                            }
+                            if (!layovers.includes(multiMatch[2]) && !excluded.includes(multiMatch[2])) {
+                                layovers.push(multiMatch[2]);
+                            }
                         }
 
-                        // If we have multiple segments, the destination of early segments
-                        // (except the last) are layover airports
+                        // Strategy 3: Look for segment pattern "XXX → YYY" to find connections
+                        const segmentPattern = /([A-Z]{3})\\s*[→➔]\\s*([A-Z]{3})/g;
+                        const segments = [];
+                        let match;
+                        while ((match = segmentPattern.exec(rowText)) !== null) {
+                            segments.push({ from: match[1], to: match[2] });
+                        }
+                        // Middle destinations are layovers
                         if (segments.length > 1) {
                             for (let i = 0; i < segments.length - 1; i++) {
                                 const layoverCode = segments[i].to;
-                                if (!layovers.includes(layoverCode)) {
+                                if (!layovers.includes(layoverCode) && !excluded.includes(layoverCode)) {
                                     layovers.push(layoverCode);
                                 }
                             }
                         }
 
-                        // Strategy 3: Look for time patterns with airport codes
-                        // "Arrives 2:30 PM LAX" or "Departs 5:00 PM LAX"
-                        const timeAirportPattern = /(?:arrives?|departs?|lands?|leaves?).*?(\\d{1,2}:\\d{2}\\s*(?:AM|PM)?).{0,20}?([A-Z]{3})/gi;
-                        const timeAirports = [];
-                        while ((match = timeAirportPattern.exec(expandedText)) !== null) {
-                            timeAirports.push(match[2]);
-                        }
-
-                        // Middle airports in the sequence are layovers
-                        if (timeAirports.length > 2) {
-                            for (let i = 1; i < timeAirports.length - 1; i++) {
-                                if (!layovers.includes(timeAirports[i])) {
-                                    layovers.push(timeAirports[i]);
-                                }
-                            }
-                        }
-
-                        // Strategy 4: Look for explicit "X hr Y min in CODE" pattern
-                        const durationInPattern = /(\\d+\\s*(?:hr?|hour)s?\\s*(?:\\d+\\s*(?:min|m))?\\s*(?:in|at)\\s*)([A-Z]{3})/gi;
-                        while ((match = durationInPattern.exec(expandedText)) !== null) {
-                            if (!layovers.includes(match[2])) {
-                                layovers.push(match[2]);
-                            }
-                        }
-
                         return layovers;
                     }
-                ''')
+                ''', row_text)
 
                 if layovers:
                     flight['layovers'] = layovers
