@@ -17,7 +17,7 @@ import asyncio
 from typing import Optional
 from datetime import datetime
 
-from scraper.google_flights import search_google_flights
+from .scraper.google_flights import search_google_flights
 
 
 async def execute_targeted_skiplag_search(
