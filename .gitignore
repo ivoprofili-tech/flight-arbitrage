@@ -41,9 +41,7 @@ Thumbs.db
 *.db
 data/*.db
 
-# Debug files from scraper
-debug_*.png
-debug_*.txt
+# Aider and video files
 videos/
 .aider*
 
