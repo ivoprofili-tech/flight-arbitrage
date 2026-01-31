@@ -36,7 +36,10 @@ from src.data.route_database import (
     get_target_routes,
     get_destination_info,
     list_supported_destinations,
+    list_supported_origins,
+    get_origin_specific_destinations,
     ROUTE_DATABASE,
+    ORIGIN_SPECIFIC_ROUTES,
 )
 
 
@@ -111,7 +114,7 @@ Examples:
 def show_destinations():
     """Display all supported destinations."""
     print("\n" + "=" * 60)
-    print("SUPPORTED DESTINATIONS")
+    print("SUPPORTED DESTINATIONS (Default Routes)")
     print("=" * 60)
     print("\nThese destinations have pre-configured 'beyond' routes:\n")
 
@@ -122,33 +125,72 @@ def show_destinations():
         targets = info["targets"][:4]
         hub_info = f" [{', '.join(info['hub_for'])}]" if info['hub_for'] else ""
         print(f"  {code}{hub_info}")
-        print(f"      → Search routes: {', '.join(targets)}...")
+        print(f"      → Default routes: {', '.join(targets)}...")
         print()
 
-    print(f"Total: {len(destinations)} destinations")
-    print("\nUsage: python scripts/test_skiplag.py JFK <destination> <date>")
+    print(f"Total: {len(destinations)} destinations with default routes")
+
+    # Show origin-specific routes
+    print("\n" + "=" * 60)
+    print("ORIGIN-SPECIFIC ROUTES")
+    print("=" * 60)
+    print("\nThese origin→destination pairs have custom route configs:\n")
+
+    for origin in list_supported_origins():
+        dests = get_origin_specific_destinations(origin)
+        print(f"  {origin} →")
+        for dest in dests[:6]:
+            targets = ORIGIN_SPECIFIC_ROUTES[origin][dest][:3]
+            print(f"      {dest}: {', '.join(targets)}...")
+        if len(dests) > 6:
+            print(f"      ... and {len(dests) - 6} more")
+        print()
+
+    print("\nUsage: python scripts/test_skiplag.py <origin> <destination> <date>")
 
 
 def show_destination_info(code: str):
     """Display detailed info for a destination."""
+    code_upper = code.upper()
     info = get_destination_info(code)
 
     if not info:
-        print(f"\n'{code}' not found in database.")
+        print(f"\n'{code}' not found in default database.")
+        # Check if it exists in origin-specific routes
+        found_in_specific = []
+        for origin in ORIGIN_SPECIFIC_ROUTES:
+            if code_upper in ORIGIN_SPECIFIC_ROUTES[origin]:
+                found_in_specific.append(origin)
+        if found_in_specific:
+            print(f"\nHowever, origin-specific routes exist from: {', '.join(found_in_specific)}")
         print("\nUse --list-destinations to see available options.")
         print("Or specify routes manually with --targets LAX,SFO,SEA")
         return
 
     print("\n" + "=" * 60)
-    print(f"DESTINATION: {code.upper()}")
+    print(f"DESTINATION: {code_upper}")
     print("=" * 60)
     print(f"\nHub airlines: {', '.join(info.get('hub_for', [])) or 'None'}")
     print(f"Notes: {info.get('notes', 'N/A')}")
-    print(f"\nSuggested 'beyond' routes (search these for {code} layovers):")
+
+    print(f"\nDEFAULT 'beyond' routes (any origin → {code_upper}):")
     for i, target in enumerate(info.get("targets", []), 1):
         print(f"  {i}. {target}")
+
+    # Show origin-specific routes if they exist
+    specific_origins = []
+    for origin in ORIGIN_SPECIFIC_ROUTES:
+        if code_upper in ORIGIN_SPECIFIC_ROUTES[origin]:
+            specific_origins.append(origin)
+
+    if specific_origins:
+        print(f"\nORIGIN-SPECIFIC routes to {code_upper}:")
+        for origin in sorted(specific_origins):
+            targets = ORIGIN_SPECIFIC_ROUTES[origin][code_upper]
+            print(f"  {origin} → {code_upper}: {', '.join(targets)}")
+
     print(f"\nExample command:")
-    print(f"  python scripts/test_skiplag.py JFK {code} 2026-03-15")
+    print(f"  python scripts/test_skiplag.py JFK {code_upper} 2026-03-15")
 
 
 async def run_search(args):
@@ -165,12 +207,17 @@ async def run_search(args):
         date = departure.strftime('%Y-%m-%d')
 
     # Get target routes
+    is_origin_specific = False
     if args.targets:
         target_routes = [t.strip().upper() for t in args.targets.split(",")]
     else:
-        target_routes = get_target_routes(destination, limit=args.limit)
+        target_routes, is_origin_specific = get_target_routes(
+            destination=destination,
+            origin=origin,
+            limit=args.limit
+        )
         if not target_routes:
-            print(f"\nNo default routes for '{destination}' in database.")
+            print(f"\nNo routes found for '{origin}' → '{destination}' in database.")
             print("\nOptions:")
             print("  1. Specify routes manually: --targets LAX,SFO,SEA")
             print("  2. Use --list-destinations to see supported destinations")
@@ -186,6 +233,12 @@ async def run_search(args):
     print(f"  Destination: {destination} (looking for this as a LAYOVER)")
     print(f"  Date:        {date}")
     print(f"  Routes:      {origin} → {', '.join(target_routes)}")
+
+    if is_origin_specific:
+        print(f"  Route type:  ORIGIN-SPECIFIC (custom for {origin}→{destination})")
+    else:
+        print(f"  Route type:  DEFAULT (general routes for {destination})")
+
     print(f"  Browser:     {'Visible' if args.show_browser else 'Headless'}")
     print(f"  Concurrent:  {args.concurrent}")
 

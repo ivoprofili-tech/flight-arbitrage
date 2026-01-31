@@ -3,7 +3,11 @@ Route Database for Skiplagging Searches
 ========================================
 
 This module contains mappings of destinations (B) to potential "beyond" cities (C)
-that frequently have B as a layover when flying from East Coast origins.
+that frequently have B as a layover.
+
+Two-tier lookup system:
+1. ORIGIN_SPECIFIC_ROUTES - Custom C routes for specific A→B combinations
+2. ROUTE_DATABASE - Default C routes for any origin to B (fallback)
 
 The key insight: If you want to fly to city B, search for flights to cities C
 that are BEYOND B geographically. Airlines often route through B as a hub.
@@ -11,17 +15,168 @@ that are BEYOND B geographically. Airlines often route through B as a hub.
 Usage:
     from src.data.route_database import get_target_routes, ROUTE_DATABASE
 
-    # Get suggested routes for a destination
-    targets = get_target_routes("DEN")  # Returns ['LAX', 'SFO', 'SEA', ...]
+    # Get routes for specific origin-destination pair
+    targets = get_target_routes("JFK", "DEN")  # Checks JFK→DEN specific, then defaults
+
+    # Get default routes for any origin
+    targets = get_target_routes(destination="DEN")  # Returns default ['LAX', 'SFO', ...]
 """
 
 # =============================================================================
-# ROUTE DATABASE
+# ORIGIN-SPECIFIC ROUTES (A → B specific C destinations)
+# =============================================================================
+# Key = Origin airport (A)
+# Value = Dict of destination (B) → list of C destinations
+#
+# These override the default ROUTE_DATABASE when a specific A→B combo is defined.
+# Use this for routes where you know specific airlines/hubs work better.
+# =============================================================================
+
+ORIGIN_SPECIFIC_ROUTES = {
+    # -------------------------------------------------------------------------
+    # NEW YORK AREA ORIGINS
+    # -------------------------------------------------------------------------
+    "JFK": {
+        # JFK → Denver: United flies through DEN to West Coast
+        "DEN": ["LAX", "SFO", "SEA", "PDX", "SAN", "LAS"],
+        # JFK → Phoenix: American routes through PHX
+        "PHX": ["LAX", "SAN", "SFO", "LAS", "PDX"],
+        # JFK → Atlanta: Delta hub, routes to Florida/Caribbean
+        "ATL": ["MIA", "FLL", "TPA", "MCO", "SJU", "CUN"],
+        # JFK → Dallas: American mega-hub
+        "DFW": ["LAX", "SFO", "PHX", "LAS", "SAN", "SEA"],
+        # JFK → Chicago: Common connection point
+        "ORD": ["LAX", "SFO", "SEA", "DEN", "PHX", "LAS"],
+        # JFK → Charlotte: American hub to Florida
+        "CLT": ["MIA", "FLL", "TPA", "MCO", "SJU"],
+        # JFK → Salt Lake City: Delta hub
+        "SLC": ["LAX", "SFO", "SEA", "PDX", "SAN"],
+        # JFK → Minneapolis: Delta hub
+        "MSP": ["SEA", "PDX", "SFO", "LAX", "ANC"],
+    },
+
+    "EWR": {
+        # Newark is United hub - different routing than JFK
+        "DEN": ["LAX", "SFO", "SEA", "PDX", "SAN", "LAS", "PHX"],
+        "IAH": ["LAX", "SFO", "PHX", "LAS", "MEX", "CUN"],
+        "ORD": ["LAX", "SFO", "SEA", "DEN", "PHX"],
+        "SFO": ["HNL", "NRT", "HKG", "TPE"],  # United Pacific routes
+    },
+
+    "LGA": {
+        # LaGuardia - mostly domestic, Delta/American focus
+        "ATL": ["MIA", "FLL", "TPA", "MCO", "SJU"],
+        "DFW": ["LAX", "PHX", "LAS", "SAN"],
+        "ORD": ["LAX", "SFO", "DEN", "PHX"],
+        "CLT": ["MIA", "FLL", "TPA"],
+    },
+
+    # -------------------------------------------------------------------------
+    # BOSTON AREA
+    # -------------------------------------------------------------------------
+    "BOS": {
+        # Boston often routes through NYC hubs or direct to hubs
+        "DEN": ["LAX", "SFO", "SEA", "PDX", "LAS"],
+        "ATL": ["MIA", "FLL", "TPA", "MCO"],
+        "DFW": ["LAX", "PHX", "SAN", "LAS"],
+        "ORD": ["LAX", "SFO", "SEA", "DEN"],
+        "CLT": ["MIA", "FLL", "TPA", "MCO"],
+        "PHX": ["LAX", "SAN", "SFO"],
+    },
+
+    # -------------------------------------------------------------------------
+    # WASHINGTON DC AREA
+    # -------------------------------------------------------------------------
+    "IAD": {
+        # Dulles is United hub
+        "DEN": ["LAX", "SFO", "SEA", "PDX", "SAN"],
+        "ORD": ["LAX", "SFO", "SEA", "DEN"],
+        "IAH": ["LAX", "SFO", "MEX", "CUN"],
+        "SFO": ["HNL", "NRT", "HKG"],
+    },
+
+    "DCA": {
+        # Reagan National - American focus
+        "DFW": ["LAX", "PHX", "SAN", "LAS"],
+        "CLT": ["MIA", "FLL", "TPA"],
+        "ORD": ["LAX", "SFO", "DEN"],
+        "PHX": ["LAX", "SAN", "SFO"],
+    },
+
+    # -------------------------------------------------------------------------
+    # CHICAGO ORIGINS (when ORD is origin, not destination)
+    # -------------------------------------------------------------------------
+    "ORD": {
+        # From Chicago to West Coast, often through DEN or direct
+        "DEN": ["LAX", "SFO", "SEA", "PDX", "SAN"],
+        "PHX": ["LAX", "SAN", "SFO"],
+        "SLC": ["LAX", "SFO", "SEA", "PDX"],
+        "DFW": ["LAX", "PHX", "SAN"],
+    },
+
+    # -------------------------------------------------------------------------
+    # LOS ANGELES ORIGINS (reverse direction)
+    # -------------------------------------------------------------------------
+    "LAX": {
+        # LAX eastbound through hubs
+        "DEN": ["JFK", "EWR", "BOS", "ORD", "MIA"],
+        "DFW": ["JFK", "EWR", "BOS", "MIA", "ATL"],
+        "ORD": ["JFK", "EWR", "BOS", "MIA"],
+        "ATL": ["JFK", "EWR", "BOS", "MIA"],
+        "IAH": ["JFK", "EWR", "MIA", "ATL"],
+    },
+
+    # -------------------------------------------------------------------------
+    # SAN FRANCISCO ORIGINS
+    # -------------------------------------------------------------------------
+    "SFO": {
+        "DEN": ["JFK", "EWR", "BOS", "ORD", "MIA"],
+        "ORD": ["JFK", "EWR", "BOS", "MIA"],
+        "IAH": ["JFK", "EWR", "MIA", "ATL"],
+        "DFW": ["JFK", "EWR", "BOS", "MIA"],
+    },
+
+    # -------------------------------------------------------------------------
+    # MIAMI/FLORIDA ORIGINS
+    # -------------------------------------------------------------------------
+    "MIA": {
+        # Miami northbound through ATL/CLT
+        "ATL": ["JFK", "EWR", "BOS", "ORD", "DEN"],
+        "CLT": ["JFK", "EWR", "BOS", "ORD"],
+        "DFW": ["LAX", "SFO", "SEA", "PHX"],
+        "IAH": ["LAX", "SFO", "MEX"],
+    },
+
+    # -------------------------------------------------------------------------
+    # ATLANTA ORIGINS
+    # -------------------------------------------------------------------------
+    "ATL": {
+        # Atlanta westbound
+        "DEN": ["LAX", "SFO", "SEA", "PDX"],
+        "DFW": ["LAX", "SFO", "PHX", "SAN"],
+        "PHX": ["LAX", "SAN", "SFO"],
+        "SLC": ["LAX", "SFO", "SEA"],
+    },
+
+    # -------------------------------------------------------------------------
+    # SEATTLE ORIGINS
+    # -------------------------------------------------------------------------
+    "SEA": {
+        "DEN": ["JFK", "EWR", "BOS", "MIA", "ATL"],
+        "SLC": ["JFK", "EWR", "ORD", "ATL"],
+        "PHX": ["JFK", "EWR", "ORD", "MIA", "ATL"],
+    },
+}
+
+
+# =============================================================================
+# ROUTE DATABASE (Default fallback routes)
 # =============================================================================
 # Key = Your true destination (B) - where you actually want to go
 # Value = Cities BEYOND B (C destinations) that often have B as a layover
 #
-# Organized by geographic region and hub status
+# These are used when no origin-specific route is defined.
+# Organized by geographic region and hub status.
 # =============================================================================
 
 ROUTE_DATABASE = {
@@ -240,26 +395,48 @@ ROUTE_DATABASE = {
 # HELPER FUNCTIONS
 # =============================================================================
 
-def get_target_routes(destination: str, limit: int = None) -> list[str]:
+def get_target_routes(
+    destination: str,
+    origin: str = None,
+    limit: int = None
+) -> tuple[list[str], bool]:
     """
-    Get suggested target routes (C destinations) for a given destination (B).
+    Get suggested target routes (C destinations) for a given A→B route.
+
+    Checks origin-specific routes first, then falls back to default routes.
 
     Args:
-        destination: Airport code of your true destination (e.g., "DEN")
+        destination: Airport code of your true destination B (e.g., "DEN")
+        origin: Optional origin airport A (e.g., "JFK") for specific routing
         limit: Optional limit on number of targets to return
 
     Returns:
-        List of airport codes to search (cities beyond destination)
+        Tuple of (list of airport codes, is_origin_specific)
+        - List of C destinations to search
+        - Boolean indicating if origin-specific routes were found
     """
     dest_upper = destination.upper().strip()
+    is_specific = False
+    targets = []
 
-    if dest_upper in ROUTE_DATABASE:
+    # First, check origin-specific routes
+    if origin:
+        origin_upper = origin.upper().strip()
+        if origin_upper in ORIGIN_SPECIFIC_ROUTES:
+            origin_routes = ORIGIN_SPECIFIC_ROUTES[origin_upper]
+            if dest_upper in origin_routes:
+                targets = origin_routes[dest_upper]
+                is_specific = True
+
+    # Fall back to default routes if no origin-specific found
+    if not targets and dest_upper in ROUTE_DATABASE:
         targets = ROUTE_DATABASE[dest_upper]["targets"]
-        if limit:
-            return targets[:limit]
-        return targets
 
-    return []
+    # Apply limit if specified
+    if limit and targets:
+        targets = targets[:limit]
+
+    return targets, is_specific
 
 
 def get_destination_info(destination: str) -> dict:
@@ -278,12 +455,38 @@ def get_destination_info(destination: str) -> dict:
 
 def list_supported_destinations() -> list[str]:
     """
-    Get list of all supported destination codes.
+    Get list of all supported destination codes (from default routes).
 
     Returns:
         Sorted list of airport codes in the database
     """
     return sorted(ROUTE_DATABASE.keys())
+
+
+def list_supported_origins() -> list[str]:
+    """
+    Get list of origins that have specific route configurations.
+
+    Returns:
+        Sorted list of origin airport codes with custom routes
+    """
+    return sorted(ORIGIN_SPECIFIC_ROUTES.keys())
+
+
+def get_origin_specific_destinations(origin: str) -> list[str]:
+    """
+    Get list of destinations that have specific routes from a given origin.
+
+    Args:
+        origin: Origin airport code
+
+    Returns:
+        List of destination codes with custom routes from this origin
+    """
+    origin_upper = origin.upper().strip()
+    if origin_upper in ORIGIN_SPECIFIC_ROUTES:
+        return sorted(ORIGIN_SPECIFIC_ROUTES[origin_upper].keys())
+    return []
 
 
 def search_by_hub_airline(airline: str) -> list[str]:
@@ -312,21 +515,59 @@ def search_by_hub_airline(airline: str) -> list[str]:
 if __name__ == "__main__":
     import sys
 
-    if len(sys.argv) > 1:
+    if len(sys.argv) > 2:
+        # Origin and destination provided
+        origin = sys.argv[1]
+        dest = sys.argv[2]
+        targets, is_specific = get_target_routes(dest, origin)
+
+        print(f"\n{origin.upper()} → {dest.upper()} Route Information:")
+        if is_specific:
+            print(f"  [ORIGIN-SPECIFIC ROUTES]")
+        else:
+            print(f"  [DEFAULT ROUTES - no {origin}→{dest} specific config]")
+        print(f"  Targets: {', '.join(targets) if targets else 'None found'}")
+
+        info = get_destination_info(dest)
+        if info:
+            print(f"  Hub for: {', '.join(info.get('hub_for', [])) or 'N/A'}")
+            print(f"  Notes: {info.get('notes', 'N/A')}")
+
+    elif len(sys.argv) > 1:
         dest = sys.argv[1]
         info = get_destination_info(dest)
         if info:
-            print(f"\n{dest.upper()} Route Information:")
+            print(f"\n{dest.upper()} Default Route Information:")
             print(f"  Targets: {', '.join(info.get('targets', []))}")
             print(f"  Hub for: {', '.join(info.get('hub_for', [])) or 'N/A'}")
             print(f"  Notes: {info.get('notes', 'N/A')}")
+
+            # Show which origins have specific routes for this destination
+            specific_origins = []
+            for orig in ORIGIN_SPECIFIC_ROUTES:
+                if dest.upper() in ORIGIN_SPECIFIC_ROUTES[orig]:
+                    specific_origins.append(orig)
+            if specific_origins:
+                print(f"\n  Origins with specific routes to {dest.upper()}:")
+                for orig in sorted(specific_origins):
+                    targets = ORIGIN_SPECIFIC_ROUTES[orig][dest.upper()]
+                    print(f"    {orig}: {', '.join(targets[:4])}...")
         else:
             print(f"\n{dest.upper()} not found in database.")
             print(f"\nSupported destinations: {', '.join(list_supported_destinations())}")
     else:
-        print("\nSupported Destinations:")
-        print("-" * 40)
+        print("\nUsage:")
+        print("  python -m src.data.route_database <destination>")
+        print("  python -m src.data.route_database <origin> <destination>")
+        print("\nSupported Destinations (default routes):")
+        print("-" * 50)
         for code in list_supported_destinations():
             info = ROUTE_DATABASE[code]
             targets = info["targets"][:3]
             print(f"  {code}: {', '.join(targets)}...")
+
+        print("\nOrigins with specific routes:")
+        print("-" * 50)
+        for origin in list_supported_origins():
+            dests = get_origin_specific_destinations(origin)
+            print(f"  {origin}: → {', '.join(dests)}")
