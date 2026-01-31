@@ -10,9 +10,9 @@ This script tests the hidden-city fare search functionality by:
 Usage:
     python scripts/test_skiplag.py
 
-Example scenario:
+Hidden-City Concept:
     You want to fly JFK -> PHX (Phoenix)
-    We search JFK -> LAX, JFK -> SAN, JFK -> SFO, etc.
+    We search JFK -> LAX, JFK -> SAN, JFK -> SFO (cities BEYOND Phoenix)
     If a JFK -> LAX flight stops in PHX, that's a hidden-city opportunity!
     You book JFK -> LAX but get off at the PHX layover.
 """
@@ -32,8 +32,9 @@ async def test_targeted_search():
     """
     Test the targeted skiplag search with specific routes.
     
-    Scenario: Flying from JFK to Phoenix (PHX)
-    We'll search routes that commonly have PHX as a layover.
+    Scenario: Flying from JFK to Denver (DEN)
+    We search for flights to West Coast cities (LAX, SFO) that might
+    stop in Denver as a layover.
     """
     print("=" * 60)
     print("SKIPLAGGING ORCHESTRATOR TEST")
@@ -42,22 +43,22 @@ async def test_targeted_search():
     
     # Set up test parameters
     origin = "JFK"
-    true_destination = "PHX"  # Where we actually want to go
+    true_destination = "DEN"  # Where we actually want to go (Denver)
     
     # Calculate departure date (2 weeks from now)
     departure = datetime.now() + timedelta(days=14)
     departure_str = departure.strftime('%Y-%m-%d')
     
-    # Routes that might have PHX as a layover
-    # (flights to West Coast cities often stop in Phoenix)
-    target_routes = ["LAX", "SAN"]  # Start with just 2 for faster testing
+    # Routes BEYOND Denver that might have DEN as a layover
+    # Flights from East Coast to West Coast often stop in Denver
+    target_routes = ["LAX", "SFO"]  # Start with just 2 for faster testing
     
     print(f"Test Configuration:")
     print(f"  Origin: {origin}")
-    print(f"  True Destination: {true_destination}")
+    print(f"  True Destination: {true_destination} (looking for this as a LAYOVER)")
     print(f"  Departure Date: {departure_str}")
     print(f"  Searching routes: {origin} → {', '.join(target_routes)}")
-    print(f"  Looking for: Flights with {true_destination} as a layover")
+    print(f"  Strategy: Find {origin}→{target_routes[0]} flights that STOP at {true_destination}")
     print()
     print("-" * 60)
     print()
@@ -84,12 +85,12 @@ async def test_targeted_search():
             potential = [r for r in results if r.get('deal_type') != 'hidden_city']
             
             print(f"\n✓ Found {len(results)} total opportunities")
-            print(f"  - Confirmed hidden-city deals: {len(confirmed)}")
-            print(f"  - Potential/unconfirmed: {len(potential)}")
+            print(f"  - Confirmed hidden-city deals (layover at {true_destination}): {len(confirmed)}")
+            print(f"  - Other connecting flights: {len(potential)}")
             
             if confirmed:
                 print("\n" + "-" * 40)
-                print("CONFIRMED HIDDEN-CITY DEALS")
+                print(f"CONFIRMED HIDDEN-CITY DEALS (layover at {true_destination})")
                 print("-" * 40)
                 for i, flight in enumerate(confirmed, 1):
                     print(f"\n[{i}] {flight.get('price', 'N/A')}")
@@ -103,7 +104,7 @@ async def test_targeted_search():
             
             if potential:
                 print("\n" + "-" * 40)
-                print("POTENTIAL DEALS (verify manually)")
+                print("OTHER CONNECTING FLIGHTS (different layovers)")
                 print("-" * 40)
                 for i, flight in enumerate(potential[:5], 1):  # Show top 5
                     print(f"\n[{i}] {flight.get('price', 'N/A')}")
@@ -113,9 +114,9 @@ async def test_targeted_search():
                     if flight.get('note'):
                         print(f"    Note: {flight.get('note')}")
         else:
-            print("\nNo hidden-city opportunities found for this search.")
+            print(f"\nNo hidden-city opportunities found for this search.")
             print("This could mean:")
-            print("  - No flights on these routes have PHX as a layover")
+            print(f"  - No flights on these routes have {true_destination} as a layover")
             print("  - The scraper couldn't extract layover information")
             print("  - Try different target routes or dates")
         
@@ -142,16 +143,16 @@ async def test_auto_search():
     print()
     
     origin = "JFK"
-    destination = "LAX"  # LAX has default target routes defined
+    destination = "DEN"  # Denver - common layover hub, has default targets
     
     departure = datetime.now() + timedelta(days=21)
     departure_str = departure.strftime('%Y-%m-%d')
     
     print(f"Test Configuration:")
     print(f"  Origin: {origin}")
-    print(f"  Destination: {destination}")
+    print(f"  Destination: {destination} (looking for this as a LAYOVER)")
     print(f"  Departure: {departure_str}")
-    print(f"  (Auto-selecting target routes)")
+    print(f"  (Auto-selecting target routes - cities beyond {destination})")
     print()
     
     try:
@@ -164,7 +165,7 @@ async def test_auto_search():
         
         if results:
             confirmed = [r for r in results if r.get('deal_type') == 'hidden_city']
-            print(f"\n✓ Found {len(results)} total deals ({len(confirmed)} confirmed)")
+            print(f"\n✓ Found {len(results)} total deals ({len(confirmed)} confirmed at {destination})")
             for i, deal in enumerate(results[:5], 1):  # Show top 5
                 status = "✓" if deal.get('deal_type') == 'hidden_city' else "?"
                 print(f"  [{status}] {deal.get('price', 'N/A')} - {deal.get('search_route')} (layovers: {deal.get('layovers', [])})")

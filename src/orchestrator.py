@@ -8,8 +8,8 @@ This module orchestrates hidden-city (skiplagging) flight searches by:
 4. Returning confirmed hidden-city deals
 
 Hidden City Concept:
-- You want to fly A → B (e.g., JFK → LAX)
-- Sometimes A → C (e.g., JFK → Phoenix) is cheaper with a layover at B (LAX)
+- You want to fly A → B (e.g., JFK → PHX)
+- Sometimes A → C (e.g., JFK → LAX) is cheaper with a layover at B (PHX)
 - You book A → C but get off at B (the layover)
 """
 
@@ -38,9 +38,9 @@ async def execute_targeted_skiplag_search(
     Args:
         origin_A: The departure airport/city (e.g., "JFK", "New York")
         destination_B: The true destination - we're looking for this as a layover
-                      (e.g., "LAX", "Los Angeles")
+                      (e.g., "PHX", "Phoenix")
         date: Departure date in YYYY-MM-DD format
-        target_routes: List of 'C' destinations to search (e.g., ["PHX", "SAN", "LAS"])
+        target_routes: List of 'C' destinations to search (e.g., ["LAX", "SAN", "SFO"])
                       These should be cities beyond B that might have B as a layover
         headless: If True, browser runs invisibly. Set False for debugging.
         max_concurrent: Maximum number of concurrent searches (be gentle on servers)
@@ -53,11 +53,14 @@ async def execute_targeted_skiplag_search(
         - search_route: String showing "A → C" route searched
 
     Example:
+        # You want to fly JFK → PHX (Phoenix)
+        # Search for flights to cities BEYOND Phoenix (West Coast)
+        # that might have Phoenix as a layover
         >>> deals = await execute_targeted_skiplag_search(
         ...     origin_A="JFK",
-        ...     destination_B="LAX",
+        ...     destination_B="PHX",  # Where you actually want to go
         ...     date="2026-03-15",
-        ...     target_routes=["PHX", "SAN", "LAS", "SFO"]
+        ...     target_routes=["LAX", "SAN", "SFO"]  # Cities beyond PHX
         ... )
         >>> for deal in deals:
         ...     print(f"{deal['price']} - {deal['search_route']} (layover at {deal['hidden_city_target']})")
@@ -73,8 +76,10 @@ async def execute_targeted_skiplag_search(
     print("=" * 60)
     print(f"Origin (A): {origin_A}")
     print(f"Target Destination (B): {destination_B}")
+    print(f"  Looking for {destination_B} as a LAYOVER")
+    print(f"  Matching variants: {dest_b_variants}")
     print(f"Date: {date}")
-    print(f"Searching {len(target_routes)} potential C routes: {', '.join(target_routes)}")
+    print(f"Searching {len(target_routes)} routes beyond {destination_B}: {', '.join(target_routes)}")
     print("=" * 60)
     print()
 
@@ -116,14 +121,22 @@ async def execute_targeted_skiplag_search(
                     if 'nonstop' in stops or 'non-stop' in stops:
                         continue  # Nonstop flights can't have layovers
 
-                    # First check the layovers list (preferred - extracted from expanded details)
+                    # Get layovers list
                     layovers = flight.get('layovers', [])
+                    
+                    # Debug: show what we're checking
+                    if layovers:
+                        print(f"    Checking flight {flight.get('price', 'N/A')}: layovers={layovers}")
+
+                    # Check the layovers list for our target destination B
                     has_b_layover = _check_layovers_list(layovers, dest_b_variants)
 
                     # Fallback: check flight text if layovers list is empty
                     if not has_b_layover and not layovers:
                         flight_text = _get_flight_text(flight)
                         has_b_layover = _check_for_layover(flight_text, dest_b_variants)
+                        if has_b_layover:
+                            print(f"    Found {destination_B} in flight text (fallback)")
 
                     if has_b_layover:
                         # Found a potential hidden-city deal!
@@ -151,7 +164,7 @@ async def execute_targeted_skiplag_search(
                 ]
 
                 if connecting_flights:
-                    print(f"  + {len(connecting_flights)} connecting flights (layover not at {destination_B})")
+                    print(f"  + {len(connecting_flights)} other connecting flights (layover not at {destination_B})")
                     for flight in connecting_flights:
                         deal = flight.copy()
                         deal['final_destination'] = dest_C
@@ -201,8 +214,8 @@ async def execute_targeted_skiplag_search(
     if confirmed_deals:
         confirmed_count = sum(1 for d in confirmed_deals if d.get('deal_type') == 'hidden_city')
         potential_count = len(confirmed_deals) - confirmed_count
-        print(f"  - Confirmed B layovers: {confirmed_count}")
-        print(f"  - Unconfirmed (verify manually): {potential_count}")
+        print(f"  - Confirmed {destination_B} layovers: {confirmed_count}")
+        print(f"  - Other connecting flights: {potential_count}")
 
     if failed_routes:
         print("\nFailed routes:")
@@ -226,9 +239,9 @@ def _get_city_variants(city: str) -> list[str]:
     """
     # Common city/airport mappings
     city_mappings = {
-        'LAX': ['LAX', 'Los Angeles', 'LA', 'L.A.'],
+        'LAX': ['LAX', 'Los Angeles', 'LA'],
         'JFK': ['JFK', 'New York', 'NYC', 'Kennedy'],
-        'ORD': ['ORD', 'Chicago', "O'Hare"],
+        'ORD': ['ORD', 'Chicago', "O'Hare", 'OHare'],
         'SFO': ['SFO', 'San Francisco', 'SF'],
         'MIA': ['MIA', 'Miami'],
         'BOS': ['BOS', 'Boston'],
@@ -301,20 +314,27 @@ def _check_layovers_list(layovers: list[str], city_variants: list[str]) -> bool:
     if not layovers:
         return False
 
-    # Normalize layovers to uppercase
-    layovers_upper = [code.upper() for code in layovers]
+    # Normalize layovers to uppercase for comparison
+    layovers_upper = [code.upper().strip() for code in layovers]
 
     for variant in city_variants:
         variant_upper = variant.upper().strip()
+        
         # Direct match with airport code
         if variant_upper in layovers_upper:
             return True
-        # Also check if variant is contained in any layover (for city names)
+        
+        # Also check partial matches (for city names in layover data)
         for layover in layovers_upper:
-            if variant_upper in layover or layover in variant_upper:
+            # Check if the 3-letter code matches
+            if len(variant_upper) == 3 and variant_upper == layover:
                 return True
+            # Check if city name contains the layover code or vice versa
+            if len(variant_upper) > 3:
+                if layover in variant_upper or variant_upper in layover:
+                    return True
 
-    return True if any(v.upper() in layovers_upper for v in city_variants) else False
+    return False
 
 
 def _check_for_layover(flight_text: str, city_variants: list[str]) -> bool:
@@ -367,7 +387,8 @@ async def search_skiplag_deals(
     """
     Convenience wrapper with auto-generated target routes if not provided.
 
-    For common routes, this will automatically suggest potential C destinations.
+    For common routes, this will automatically suggest potential C destinations
+    (cities beyond the destination that might have it as a layover).
 
     Args:
         origin: Departure city/airport
@@ -380,13 +401,26 @@ async def search_skiplag_deals(
         List of potential hidden-city deals
     """
     # Default target routes for common destinations
-    # These are cities that often have the destination as a layover
+    # Key = where you want to go (B)
+    # Value = cities BEYOND B that might have B as a layover (C destinations)
     default_targets = {
-        'LAX': ['PHX', 'SAN', 'LAS', 'SFO', 'PDX', 'SEA', 'ABQ', 'TUS'],
-        'SFO': ['SEA', 'PDX', 'SAN', 'LAX', 'LAS', 'PHX'],
-        'ORD': ['MSP', 'DTW', 'STL', 'MKE', 'IND'],
-        'ATL': ['MIA', 'TPA', 'MCO', 'JAX', 'BNA'],
-        'DFW': ['AUS', 'SAT', 'HOU', 'OKC', 'ABQ'],
+        # If you want to go to PHX, search for flights to West Coast cities
+        # that might stop in Phoenix
+        'PHX': ['LAX', 'SAN', 'SFO', 'PDX', 'SEA'],
+        # If you want to go to DEN, search for flights to West Coast
+        'DEN': ['LAX', 'SFO', 'SEA', 'PDX', 'SAN', 'LAS'],
+        # If you want to go to DFW, search for flights further west/south
+        'DFW': ['LAX', 'SAN', 'PHX', 'LAS', 'SFO'],
+        # If you want to go to ATL, search for flights to Florida/Caribbean
+        'ATL': ['MIA', 'FLL', 'TPA', 'MCO', 'SJU'],
+        # If you want to go to ORD, search for flights further west
+        'ORD': ['LAX', 'SFO', 'SEA', 'DEN', 'PHX'],
+        # If you want to go to CLT, search for flights to Florida
+        'CLT': ['MIA', 'FLL', 'TPA', 'MCO'],
+        # If you want to go to LAX, search for international/Hawaii
+        'LAX': ['HNL', 'SYD', 'NRT', 'HKG'],
+        # If you want to go to SFO, search for Asia/Hawaii
+        'SFO': ['HNL', 'NRT', 'HKG', 'TPE'],
     }
 
     if target_routes is None:
@@ -394,8 +428,10 @@ async def search_skiplag_deals(
         if dest_upper in default_targets:
             target_routes = default_targets[dest_upper]
             print(f"Using default target routes for {destination}: {target_routes}")
+            print(f"(Searching for flights TO these cities that STOP at {destination})")
         else:
             print(f"No default targets for {destination}. Please provide target_routes.")
+            print(f"Hint: target_routes should be cities BEYOND {destination}")
             return []
 
     return await execute_targeted_skiplag_search(
@@ -423,8 +459,9 @@ if __name__ == "__main__":
         if len(sys.argv) < 4:
             print("\nUsage: python orchestrator.py <origin> <destination> <date> [target1,target2,...]")
             print("\nExample:")
-            print("  python orchestrator.py JFK LAX 2026-03-15 PHX,SAN,LAS,SFO")
-            print("\nThis searches JFK→PHX, JFK→SAN, etc. looking for LAX layovers")
+            print("  python orchestrator.py JFK PHX 2026-03-15 LAX,SAN,SFO")
+            print("\nThis searches JFK→LAX, JFK→SAN, JFK→SFO looking for PHX layovers")
+            print("(You want to go to PHX, so search flights to cities BEYOND PHX)")
             return
 
         origin = sys.argv[1]
@@ -458,6 +495,7 @@ if __name__ == "__main__":
                 print(f"    Duration: {deal.get('duration', 'N/A')}")
                 print(f"    Stops: {deal.get('stops', 'N/A')}")
                 print(f"    Airline: {deal.get('airline', 'N/A')}")
+                print(f"    Layovers: {deal.get('layovers', [])}")
                 if deal.get('note'):
                     print(f"    Note: {deal.get('note')}")
         else:
