@@ -135,6 +135,22 @@ PAIR_ROUTES = {
     ("SEA", "DEN"): ["JFK", "EWR", "BOS", "MIA", "ATL"],
     ("SEA", "SLC"): ["JFK", "EWR", "ORD", "ATL"],
     ("SEA", "PHX"): ["JFK", "EWR", "ORD", "MIA", "ATL"],
+
+    # =========================================================================
+    # BRAZIL → Orlando (MCO as layover)
+    # =========================================================================
+    # GRU (São Paulo Guarulhos) → MCO
+    ("GRU", "MCO"): [
+        "AUS", "LGA", "JFK", "EWR", "LAX", "BOS", "RIC", "BDL", "SJU", "IAD",
+        "PVD", "ALB", "DCA", "ROC", "SYR", "LAS", "MHT", "HPN", "SLC", "RDU",
+        "DTW", "ATL", "IAH", "SAN", "MSP", "SFO", "CVG", "DEN", "CLE", "BUF",
+    ],
+    # VCP (Campinas/Viracopos) → MCO
+    ("VCP", "MCO"): [
+        "AUS", "LGA", "JFK", "EWR", "LAX", "BOS", "RIC", "BDL", "SJU", "IAD",
+        "PVD", "ALB", "DCA", "ROC", "SYR", "LAS", "MHT", "HPN", "SLC", "RDU",
+        "DTW", "ATL", "IAH", "SAN", "MSP", "SFO", "CVG", "DEN", "CLE", "BUF",
+    ],
 }
 
 # Legacy alias for backwards compatibility
