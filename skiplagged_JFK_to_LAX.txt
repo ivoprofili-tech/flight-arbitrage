@@ -1,0 +1,412 @@
+============================================================
+FLIGHT SEARCH RESULTS
+============================================================
+
+Search performed: 2026-01-30 20:07:21
+Route: JFK → LAX
+Departure: 2026-03-01
+Trip type: One-way
+
+------------------------------------------------------------
+Found 39 flight(s)
+------------------------------------------------------------
+
+FLIGHT 1
+------------------------------
+  Airline: JetBlue
+  Departure Time: 7:00am
+  Arrival Time: 10:32am
+  Duration: 7h
+  Stops: Nonstop
+  Price: $119
+  Source: Skiplagged
+
+FLIGHT 2
+------------------------------
+  Airline: JetBlue
+  Departure Time: 8:30am
+  Arrival Time: 12:06pm
+  Duration: 7h
+  Stops: Nonstop
+  Price: $154
+  Source: Skiplagged
+
+FLIGHT 3
+------------------------------
+  Airline: JetBlue
+  Departure Time: 6:00am
+  Arrival Time: 9:16am
+  Duration: 6h
+  Stops: Nonstop
+  Price: $179
+  Source: Skiplagged
+
+FLIGHT 4
+------------------------------
+  Airline: JetBlue
+  Departure Time: 9:30am
+  Arrival Time: 1:04pm
+  Duration: 7h
+  Stops: Nonstop
+  Price: $179
+  Source: Skiplagged
+
+FLIGHT 5
+------------------------------
+  Airline: Delta
+  Departure Time: 7:45pm
+  Arrival Time: 11:23pm
+  Duration: 7h
+  Stops: Nonstop
+  Price: $179
+  Source: Skiplagged
+
+FLIGHT 6
+------------------------------
+  Airline: American
+  Departure Time: 5:00pm
+  Arrival Time: 12:50am
+  Duration: 11h
+  Stops: 2 stops
+  Price: $189
+  Source: Skiplagged
+
+FLIGHT 7
+------------------------------
+  Airline: American
+  Departure Time: 2:55pm
+  Arrival Time: 12:50am
+  Duration: 13h
+  Stops: 2 stops
+  Price: $189
+  Source: Skiplagged
+
+FLIGHT 8
+------------------------------
+  Airline: Frontier
+  Departure Time: 6:00am
+  Arrival Time: 12:53pm
+  Duration: 10h
+  Stops: 1 stop
+  Price: $190
+  Source: Skiplagged
+
+FLIGHT 9
+------------------------------
+  Airline: American
+  Departure Time: 6:00am
+  Arrival Time: 9:20am
+  Duration: 6h
+  Stops: Nonstop
+  Price: $199
+  Source: Skiplagged
+
+FLIGHT 10
+------------------------------
+  Airline: American
+  Departure Time: 9:29pm
+  Arrival Time: 12:57am
+  Duration: 6h
+  Stops: Nonstop
+  Price: $199
+  Source: Skiplagged
+
+FLIGHT 11
+------------------------------
+  Airline: JetBlue
+  Departure Time: 11:00am
+  Arrival Time: 2:29pm
+  Duration: 6h
+  Stops: Nonstop
+  Price: $209
+  Source: Skiplagged
+
+FLIGHT 12
+------------------------------
+  Airline: JetBlue
+  Departure Time: 5:30pm
+  Arrival Time: 9:02pm
+  Duration: 7h
+  Stops: Nonstop
+  Price: $209
+  Source: Skiplagged
+
+FLIGHT 13
+------------------------------
+  Airline: American
+  Departure Time: 6:30am
+  Arrival Time: 2:08pm
+  Duration: 11h
+  Stops: 1 stop
+  Price: $238
+  Source: Skiplagged
+  Skiplagged Deal: True
+  Savings: $21 off
+  Original Price: $259
+
+FLIGHT 14
+------------------------------
+  Airline: Delta
+  Departure Time: 7:00am
+  Arrival Time: 10:35am
+  Duration: 7h
+  Stops: Nonstop
+  Price: $239
+  Source: Skiplagged
+
+FLIGHT 15
+------------------------------
+  Airline: Delta
+  Departure Time: 8:35am
+  Arrival Time: 12:08pm
+  Duration: 7h
+  Stops: Nonstop
+  Price: $239
+  Source: Skiplagged
+
+FLIGHT 16
+------------------------------
+  Airline: Delta
+  Departure Time: 6:29pm
+  Arrival Time: 10:15pm
+  Duration: 7h
+  Stops: Nonstop
+  Price: $239
+  Source: Skiplagged
+
+FLIGHT 17
+------------------------------
+  Airline: JetBlue
+  Departure Time: 8:00pm
+  Arrival Time: 11:35pm
+  Duration: 7h
+  Stops: Nonstop
+  Price: $244
+  Source: Skiplagged
+
+FLIGHT 18
+------------------------------
+  Airline: American
+  Departure Time: 7:00am
+  Arrival Time: 10:20am
+  Duration: 6h
+  Stops: Nonstop
+  Price: $249
+  Source: Skiplagged
+
+FLIGHT 19
+------------------------------
+  Airline: American
+  Departure Time: 9:20am
+  Arrival Time: 12:41pm
+  Duration: 6h
+  Stops: Nonstop
+  Price: $249
+  Source: Skiplagged
+
+FLIGHT 20
+------------------------------
+  Airline: American
+  Departure Time: 3:15pm
+  Arrival Time: 6:36pm
+  Duration: 6h
+  Stops: Nonstop
+  Price: $249
+  Source: Skiplagged
+
+FLIGHT 21
+------------------------------
+  Airline: American
+  Departure Time: 7:45pm
+  Arrival Time: 11:13pm
+  Duration: 6h
+  Stops: Nonstop
+  Price: $249
+  Source: Skiplagged
+
+FLIGHT 22
+------------------------------
+  Airline: Alaska
+  Departure Time: 5:00pm
+  Arrival Time: 11:59pm
+  Duration: 10h
+  Stops: 1 stop
+  Price: $254
+  Source: Skiplagged
+
+FLIGHT 23
+------------------------------
+  Airline: Alaska
+  Departure Time: 7:00am
+  Arrival Time: 3:36pm
+  Duration: 12h
+  Stops: 1 stop
+  Price: $254
+  Source: Skiplagged
+
+FLIGHT 24
+------------------------------
+  Airline: American
+  Departure Time: 9:00pm
+  Arrival Time: 7:52am
+  Duration: 14h
+  Stops: 1 stop
+  Price: $257
+  Source: Skiplagged
+
+FLIGHT 25
+------------------------------
+  Airline: Alaska
+  Departure Time: 7:00am
+  Arrival Time: 11:59pm
+  Duration: 20h
+  Stops: 1 stop
+  Price: $257
+  Source: Skiplagged
+
+FLIGHT 26
+------------------------------
+  Airline: American
+  Departure Time: 8:29am
+  Arrival Time: 2:11pm
+  Duration: 9h
+  Stops: 1 stop
+  Price: $259
+  Source: Skiplagged
+
+FLIGHT 27
+------------------------------
+  Airline: American
+  Departure Time: 7:25pm
+  Arrival Time: 12:57am
+  Duration: 9h
+  Stops: 1 stop
+  Price: $259
+  Source: Skiplagged
+
+FLIGHT 28
+------------------------------
+  Airline: American
+  Departure Time: 8:25am
+  Arrival Time: 2:47pm
+  Duration: 9h
+  Stops: 1 stop
+  Price: $259
+  Source: Skiplagged
+
+FLIGHT 29
+------------------------------
+  Airline: American
+  Departure Time: 2:30pm
+  Arrival Time: 8:57pm
+  Duration: 9h
+  Stops: 1 stop
+  Price: $259
+  Source: Skiplagged
+
+FLIGHT 30
+------------------------------
+  Airline: American
+  Departure Time: 6:30am
+  Arrival Time: 2:08pm
+  Duration: 11h
+  Stops: 1 stop
+  Price: $259
+  Source: Skiplagged
+
+FLIGHT 31
+------------------------------
+  Airline: American
+  Departure Time: 8:29am
+  Arrival Time: 4:01pm
+  Duration: 11h
+  Stops: 1 stop
+  Price: $259
+  Source: Skiplagged
+
+FLIGHT 32
+------------------------------
+  Airline: American
+  Departure Time: 4:30pm
+  Arrival Time: 12:24am
+  Duration: 11h
+  Stops: 1 stop
+  Price: $259
+  Source: Skiplagged
+
+FLIGHT 33
+------------------------------
+  Airline: American
+  Departure Time: 2:30pm
+  Arrival Time: 10:44pm
+  Duration: 11h
+  Stops: 1 stop
+  Price: $259
+  Source: Skiplagged
+
+FLIGHT 34
+------------------------------
+  Airline: Delta
+  Departure Time: 3:25pm
+  Arrival Time: 6:53pm
+  Duration: 6h
+  Stops: Nonstop
+  Price: $260
+  Source: Skiplagged
+  Skiplagged Deal: True
+  Savings: $59 off
+  Original Price: $319
+
+FLIGHT 35
+------------------------------
+  Airline: American
+  Departure Time: 8:29am
+  Arrival Time: 11:24pm
+  Duration: 18h
+  Stops: 1 stop
+  Price: $267
+  Source: Skiplagged
+
+FLIGHT 36
+------------------------------
+  Airline: American
+  Departure Time: 8:29am
+  Arrival Time: 12:50am
+  Duration: 19h
+  Stops: 1 stop
+  Price: $267
+  Source: Skiplagged
+
+FLIGHT 37
+------------------------------
+  Airline: American
+  Departure Time: 9:00pm
+  Arrival Time: 11:59am
+  Duration: 18h
+  Stops: 1 stop
+  Price: $279
+  Source: Skiplagged
+
+FLIGHT 38
+------------------------------
+  Airline: American
+  Departure Time: 9:00pm
+  Arrival Time: 1:04pm
+  Duration: 19h
+  Stops: 1 stop
+  Price: $279
+  Source: Skiplagged
+
+FLIGHT 39
+------------------------------
+  Airline: American
+  Departure Time: 8:29am
+  Arrival Time: 7:21pm
+  Duration: 14h
+  Stops: 1 stop
+  Price: $286
+  Source: Skiplagged
+
+============================================================
+End of results
+============================================================

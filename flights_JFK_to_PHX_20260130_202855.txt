@@ -1,0 +1,156 @@
+============================================================
+FLIGHT SEARCH RESULTS
+============================================================
+
+Search performed: 2026-01-30 20:28:55
+Route: JFK → PHX
+Departure: 2026-02-15
+Trip type: One-way
+
+------------------------------------------------------------
+Found 14 flight(s)
+------------------------------------------------------------
+
+FLIGHT 1
+------------------------------
+  Departure Time: 4:05 PM
+  Arrival Time: 10:29 PM
+  Duration: 8h 24m
+  Stops: 1 stop
+  Airline: Delta
+  Price: $244
+  Layovers: ['SLC']
+
+FLIGHT 2
+------------------------------
+  Departure Time: 10:59 AM
+  Arrival Time: 7:10 PM
+  Duration: 10h 11m
+  Stops: 1 stop
+  Airline: American
+  Price: $279
+  Layovers: ['CLT']
+
+FLIGHT 3
+------------------------------
+  Departure Time: 6:55 AM
+  Arrival Time: 1:51 PM
+  Duration: 8h 56m
+  Stops: 1 stop
+  Airline: American
+  Price: $304
+  Layovers: ['AUS']
+
+FLIGHT 4
+------------------------------
+  Departure Time: 6:05 PM
+  Arrival Time: 9:58 PM
+  Duration: 5h 53m
+  Stops: Nonstop
+  Airline: JetBlue
+  Price: $309
+  Layovers: []
+
+FLIGHT 5
+------------------------------
+  Departure Time: 7:25 PM
+  Arrival Time: 1:07 AM
+  Duration: 7h 42m
+  Stops: 1 stop
+  Airline: American
+  Price: $345
+  Layovers: []
+
+FLIGHT 6
+------------------------------
+  Departure Time: 6:45 PM
+  Arrival Time: 10:41 PM
+  Duration: 5h 56m
+  Stops: Nonstop
+  Airline: Delta
+  Price: $379
+  Layovers: []
+
+FLIGHT 7
+------------------------------
+  Departure Time: 5:21 PM
+  Arrival Time: 8:55 PM
+  Duration: 5h 34m
+  Stops: Nonstop
+  Airline: American
+  Price: $388
+  Layovers: []
+
+FLIGHT 8
+------------------------------
+  Departure Time: 3:59 PM
+  Arrival Time: 7:48 PM
+  Duration: 5h 49m
+  Stops: Nonstop
+  Airline: American
+  Price: $388
+  Layovers: []
+
+FLIGHT 9
+------------------------------
+  Departure Time: 10:59 AM
+  Arrival Time: 5:10 PM
+  Duration: 8h 11m
+  Stops: 1 stop
+  Airline: American
+  Price: $398
+  Layovers: ['CLT']
+
+FLIGHT 10
+------------------------------
+  Departure Time: 6:30 AM
+  Arrival Time: 10:20 AM
+  Duration: 5h 50m
+  Stops: Nonstop
+  Airline: American
+  Price: $429
+  Layovers: []
+
+FLIGHT 11
+------------------------------
+  Departure Time: 8:10 AM
+  Arrival Time: 11:56 AM
+  Duration: 5h 46m
+  Stops: Nonstop
+  Airline: American
+  Price: $429
+  Layovers: []
+
+FLIGHT 12
+------------------------------
+  Departure Time: 12:29 PM
+  Arrival Time: 4:14 PM
+  Duration: 5h 45m
+  Stops: Nonstop
+  Airline: American
+  Price: $494
+  Layovers: []
+
+FLIGHT 13
+------------------------------
+  Departure Time: 8:05 AM
+  Arrival Time: 12:09 PM
+  Duration: 6h 4m
+  Stops: Nonstop
+  Airline: Delta
+  Price: $719
+  Layovers: []
+
+FLIGHT 14
+------------------------------
+  Departure Time: 11:15 AM
+  Arrival Time: 3:14 PM
+  Duration: 5h 59m
+  Stops: Nonstop
+  Airline: JetBlue
+  Price: $757
+  Layovers: []
+
+============================================================
+End of results
+============================================================

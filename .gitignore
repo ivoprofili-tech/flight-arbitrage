@@ -45,3 +45,4 @@ data/*.db
 debug_*.png
 debug_*.txt
 videos/
+.aider*

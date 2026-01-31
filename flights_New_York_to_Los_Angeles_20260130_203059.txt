@@ -1,0 +1,27 @@
+============================================================
+FLIGHT SEARCH RESULTS
+============================================================
+
+Search performed: 2026-01-30 20:30:59
+Route: New York → Los Angeles
+Departure: 2026-03-15
+Trip type: One-way
+
+------------------------------------------------------------
+Found 1 flight(s)
+------------------------------------------------------------
+
+FLIGHT 1
+------------------------------
+  Price: Could not extract - check debug files
+  Departure Time: See debug_screenshot.png
+  Arrival Time: See debug_page_text.txt
+  Duration: N/A
+  Stops: N/A
+  Airline: N/A
+  Layovers: []
+  Note: Extraction failed - Google may have changed their page structure
+
+============================================================
+End of results
+============================================================

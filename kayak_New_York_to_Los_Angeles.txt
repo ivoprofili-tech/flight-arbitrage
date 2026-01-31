@@ -1,0 +1,27 @@
+============================================================
+FLIGHT SEARCH RESULTS
+============================================================
+
+Search performed: 2026-01-29 20:53:49
+Route: New York → Los Angeles
+Departure: 2025-03-01
+Trip type: One-way
+
+------------------------------------------------------------
+Found 1 flight(s)
+------------------------------------------------------------
+
+FLIGHT 1
+------------------------------
+  Price: Could not extract - check debug files
+  Departure Time: See debug_kayak.png
+  Arrival Time: See debug_kayak_text.txt
+  Duration: N/A
+  Stops: N/A
+  Airline: N/A
+  Source: Kayak
+  Note: Extraction failed
+
+============================================================
+End of results
+============================================================
