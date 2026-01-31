@@ -71,7 +71,7 @@ async def test_targeted_search():
             date=departure_str,
             target_routes=target_routes,
             headless=True,  # Set to False to watch the browser
-            max_concurrent=2  # Limit concurrent searches
+            max_concurrent=1  # Run sequentially for clearer output
         )
         
         print()
@@ -82,11 +82,13 @@ async def test_targeted_search():
         if results:
             # Separate confirmed deals from potential ones
             confirmed = [r for r in results if r.get('deal_type') == 'hidden_city']
-            potential = [r for r in results if r.get('deal_type') != 'hidden_city']
+            not_target = [r for r in results if r.get('deal_type') == 'not_target_layover']
+            potential = [r for r in results if r.get('deal_type') == 'potential_hidden_city']
             
             print(f"\n✓ Found {len(results)} total opportunities")
             print(f"  - Confirmed hidden-city deals (layover at {true_destination}): {len(confirmed)}")
-            print(f"  - Other connecting flights: {len(potential)}")
+            print(f"  - Other layovers (not {true_destination}): {len(not_target)}")
+            print(f"  - Unknown layovers (verify manually): {len(potential)}")
             
             if confirmed:
                 print("\n" + "-" * 40)
@@ -102,15 +104,25 @@ async def test_targeted_search():
                     print(f"    Duration: {flight.get('duration', 'N/A')}")
                     print(f"    Stops: {flight.get('stops', 'N/A')}")
             
+            if not_target:
+                print("\n" + "-" * 40)
+                print(f"CONNECTING FLIGHTS (layover NOT at {true_destination})")
+                print("-" * 40)
+                for i, flight in enumerate(not_target[:5], 1):  # Show top 5
+                    print(f"\n[{i}] {flight.get('price', 'N/A')}")
+                    print(f"    Route: {flight.get('search_route', 'N/A')}")
+                    print(f"    Layovers: {flight.get('layovers', [])}")
+                    if flight.get('note'):
+                        print(f"    Note: {flight.get('note')}")
+            
             if potential:
                 print("\n" + "-" * 40)
-                print("OTHER CONNECTING FLIGHTS (different layovers)")
+                print("POTENTIAL DEALS (layover unknown - verify manually)")
                 print("-" * 40)
-                for i, flight in enumerate(potential[:5], 1):  # Show top 5
+                for i, flight in enumerate(potential[:3], 1):  # Show top 3
                     print(f"\n[{i}] {flight.get('price', 'N/A')}")
                     print(f"    Route: {flight.get('search_route', 'N/A')}")
                     print(f"    Stops: {flight.get('stops', 'N/A')}")
-                    print(f"    Layovers: {flight.get('layovers', [])}")
                     if flight.get('note'):
                         print(f"    Note: {flight.get('note')}")
         else:
