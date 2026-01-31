@@ -1,22 +1,28 @@
 #!/usr/bin/env python3
 """
-Test script for the skiplagging orchestrator.
+Skiplagging Search Script
+=========================
 
-This script tests the hidden-city fare search functionality by:
-1. Searching for flights from a major hub to various destinations
-2. Looking for flights where our true destination appears as a layover
-3. Displaying any hidden-city opportunities found
+Search for hidden-city fare opportunities by finding flights where your
+true destination appears as a layover on a cheaper route.
 
 Usage:
-    python scripts/test_skiplag.py
+    python scripts/test_skiplag.py <origin> <destination> <date> [options]
+
+Examples:
+    python scripts/test_skiplag.py JFK DEN 2026-03-15
+    python scripts/test_skiplag.py JFK DEN 2026-03-15 --show-browser
+    python scripts/test_skiplag.py JFK DEN 2026-03-15 --targets LAX,SFO,SEA
+    python scripts/test_skiplag.py --list-destinations
 
 Hidden-City Concept:
-    You want to fly JFK -> PHX (Phoenix)
-    We search JFK -> LAX, JFK -> SAN, JFK -> SFO (cities BEYOND Phoenix)
-    If a JFK -> LAX flight stops in PHX, that's a hidden-city opportunity!
-    You book JFK -> LAX but get off at the PHX layover.
+    You want to fly JFK -> DEN (Denver)
+    We search JFK -> LAX, JFK -> SFO (cities BEYOND Denver)
+    If a JFK -> LAX flight stops in DEN, that's a hidden-city opportunity!
+    You book JFK -> LAX but get off at the DEN layover.
 """
 
+import argparse
 import asyncio
 import sys
 import os
@@ -25,191 +31,277 @@ from datetime import datetime, timedelta
 # Add the project root to the Python path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src.orchestrator import execute_targeted_skiplag_search, search_skiplag_deals
+from src.orchestrator import execute_targeted_skiplag_search
+from src.data.route_database import (
+    get_target_routes,
+    get_destination_info,
+    list_supported_destinations,
+    ROUTE_DATABASE,
+)
 
 
-async def test_targeted_search():
-    """
-    Test the targeted skiplag search with specific routes.
-    
-    Scenario: Flying from JFK to Denver (DEN)
-    We search for flights to West Coast cities (LAX, SFO) that might
-    stop in Denver as a layover.
-    """
+def parse_args():
+    """Parse command-line arguments."""
+    parser = argparse.ArgumentParser(
+        description="Search for hidden-city (skiplagging) flight deals",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  %(prog)s JFK DEN 2026-03-15           Search JFK->DEN using default routes
+  %(prog)s JFK PHX 2026-03-15 --show-browser   Watch the browser scrape
+  %(prog)s JFK ATL 2026-03-15 --targets MIA,FLL,TPA   Specify routes manually
+  %(prog)s --list-destinations          Show all supported destinations
+        """
+    )
+
+    # Positional arguments (optional if using --list-destinations)
+    parser.add_argument(
+        "origin",
+        nargs="?",
+        help="Origin airport code (e.g., JFK, LAX, ORD)"
+    )
+    parser.add_argument(
+        "destination",
+        nargs="?",
+        help="True destination - will look for this as a LAYOVER (e.g., DEN, PHX)"
+    )
+    parser.add_argument(
+        "date",
+        nargs="?",
+        help="Departure date in YYYY-MM-DD format (default: 2 weeks from now)"
+    )
+
+    # Optional arguments
+    parser.add_argument(
+        "--targets", "-t",
+        help="Comma-separated list of target routes (cities beyond destination). "
+             "If not provided, uses database defaults."
+    )
+    parser.add_argument(
+        "--limit", "-l",
+        type=int,
+        default=5,
+        help="Max number of target routes to search (default: 5)"
+    )
+    parser.add_argument(
+        "--show-browser", "-s",
+        action="store_true",
+        help="Show browser window while scraping (headless=False)"
+    )
+    parser.add_argument(
+        "--concurrent", "-c",
+        type=int,
+        default=1,
+        help="Number of concurrent searches (default: 1)"
+    )
+    parser.add_argument(
+        "--list-destinations", "-L",
+        action="store_true",
+        help="List all supported destinations in the database"
+    )
+    parser.add_argument(
+        "--info", "-i",
+        metavar="CODE",
+        help="Show detailed info for a specific destination"
+    )
+
+    return parser.parse_args()
+
+
+def show_destinations():
+    """Display all supported destinations."""
+    print("\n" + "=" * 60)
+    print("SUPPORTED DESTINATIONS")
     print("=" * 60)
-    print("SKIPLAGGING ORCHESTRATOR TEST")
-    print("=" * 60)
-    print()
-    
-    # Set up test parameters
-    origin = "JFK"
-    true_destination = "DEN"  # Where we actually want to go (Denver)
-    
-    # Calculate departure date (2 weeks from now)
-    departure = datetime.now() + timedelta(days=14)
-    departure_str = departure.strftime('%Y-%m-%d')
-    
-    # Routes BEYOND Denver that might have DEN as a layover
-    # Flights from East Coast to West Coast often stop in Denver
-    target_routes = ["LAX", "SFO"]  # Start with just 2 for faster testing
-    
-    print(f"Test Configuration:")
-    print(f"  Origin: {origin}")
-    print(f"  True Destination: {true_destination} (looking for this as a LAYOVER)")
-    print(f"  Departure Date: {departure_str}")
-    print(f"  Searching routes: {origin} → {', '.join(target_routes)}")
-    print(f"  Strategy: Find {origin}→{target_routes[0]} flights that STOP at {true_destination}")
-    print()
-    print("-" * 60)
-    print()
-    
-    try:
-        # Run the targeted search
-        results = await execute_targeted_skiplag_search(
-            origin_A=origin,
-            destination_B=true_destination,
-            date=departure_str,
-            target_routes=target_routes,
-            headless=True,  # Set to False to watch the browser
-            max_concurrent=1  # Run sequentially for clearer output
-        )
-        
+    print("\nThese destinations have pre-configured 'beyond' routes:\n")
+
+    destinations = list_supported_destinations()
+
+    for code in destinations:
+        info = ROUTE_DATABASE[code]
+        targets = info["targets"][:4]
+        hub_info = f" [{', '.join(info['hub_for'])}]" if info['hub_for'] else ""
+        print(f"  {code}{hub_info}")
+        print(f"      → Search routes: {', '.join(targets)}...")
         print()
-        print("=" * 60)
-        print("DETAILED RESULTS")
-        print("=" * 60)
-        
-        if results:
-            # Separate confirmed deals from potential ones
-            confirmed = [r for r in results if r.get('deal_type') == 'hidden_city']
-            not_target = [r for r in results if r.get('deal_type') == 'not_target_layover']
-            potential = [r for r in results if r.get('deal_type') == 'potential_hidden_city']
-            
-            print(f"\n✓ Found {len(results)} total opportunities")
-            print(f"  - Confirmed hidden-city deals (layover at {true_destination}): {len(confirmed)}")
-            print(f"  - Other layovers (not {true_destination}): {len(not_target)}")
-            print(f"  - Unknown layovers (verify manually): {len(potential)}")
-            
-            if confirmed:
-                print("\n" + "-" * 40)
-                print(f"CONFIRMED HIDDEN-CITY DEALS (layover at {true_destination})")
-                print("-" * 40)
-                for i, flight in enumerate(confirmed, 1):
-                    print(f"\n[{i}] {flight.get('price', 'N/A')}")
-                    print(f"    Route searched: {flight.get('search_route', 'N/A')}")
-                    print(f"    Get off at: {flight.get('hidden_city_target', 'N/A')}")
-                    print(f"    Layovers: {flight.get('layovers', [])}")
-                    print(f"    Airline: {flight.get('airline', 'N/A')}")
-                    print(f"    Times: {flight.get('departure_time', 'N/A')} → {flight.get('arrival_time', 'N/A')}")
-                    print(f"    Duration: {flight.get('duration', 'N/A')}")
-                    print(f"    Stops: {flight.get('stops', 'N/A')}")
-            
-            if not_target:
-                print("\n" + "-" * 40)
-                print(f"CONNECTING FLIGHTS (layover NOT at {true_destination})")
-                print("-" * 40)
-                for i, flight in enumerate(not_target[:5], 1):  # Show top 5
-                    print(f"\n[{i}] {flight.get('price', 'N/A')}")
-                    print(f"    Route: {flight.get('search_route', 'N/A')}")
-                    print(f"    Layovers: {flight.get('layovers', [])}")
-                    if flight.get('note'):
-                        print(f"    Note: {flight.get('note')}")
-            
-            if potential:
-                print("\n" + "-" * 40)
-                print("POTENTIAL DEALS (layover unknown - verify manually)")
-                print("-" * 40)
-                for i, flight in enumerate(potential[:3], 1):  # Show top 3
-                    print(f"\n[{i}] {flight.get('price', 'N/A')}")
-                    print(f"    Route: {flight.get('search_route', 'N/A')}")
-                    print(f"    Stops: {flight.get('stops', 'N/A')}")
-                    if flight.get('note'):
-                        print(f"    Note: {flight.get('note')}")
-        else:
-            print(f"\nNo hidden-city opportunities found for this search.")
-            print("This could mean:")
-            print(f"  - No flights on these routes have {true_destination} as a layover")
-            print("  - The scraper couldn't extract layover information")
-            print("  - Try different target routes or dates")
-        
-        return results
-        
-    except Exception as e:
-        print(f"\n✗ Error during search: {e}")
-        import traceback
-        traceback.print_exc()
-        return []
+
+    print(f"Total: {len(destinations)} destinations")
+    print("\nUsage: python scripts/test_skiplag.py JFK <destination> <date>")
 
 
-async def test_auto_search():
-    """
-    Test the automatic skiplag deals search.
-    
-    This uses the search_skiplag_deals function which automatically
-    determines good target routes based on the destination.
-    """
-    print()
+def show_destination_info(code: str):
+    """Display detailed info for a destination."""
+    info = get_destination_info(code)
+
+    if not info:
+        print(f"\n'{code}' not found in database.")
+        print("\nUse --list-destinations to see available options.")
+        print("Or specify routes manually with --targets LAX,SFO,SEA")
+        return
+
+    print("\n" + "=" * 60)
+    print(f"DESTINATION: {code.upper()}")
     print("=" * 60)
-    print("AUTO SKIPLAG SEARCH TEST")
+    print(f"\nHub airlines: {', '.join(info.get('hub_for', [])) or 'None'}")
+    print(f"Notes: {info.get('notes', 'N/A')}")
+    print(f"\nSuggested 'beyond' routes (search these for {code} layovers):")
+    for i, target in enumerate(info.get("targets", []), 1):
+        print(f"  {i}. {target}")
+    print(f"\nExample command:")
+    print(f"  python scripts/test_skiplag.py JFK {code} 2026-03-15")
+
+
+async def run_search(args):
+    """Execute the skiplag search."""
+    origin = args.origin.upper()
+    destination = args.destination.upper()
+
+    # Handle date
+    if args.date:
+        date = args.date
+    else:
+        # Default to 2 weeks from now
+        departure = datetime.now() + timedelta(days=14)
+        date = departure.strftime('%Y-%m-%d')
+
+    # Get target routes
+    if args.targets:
+        target_routes = [t.strip().upper() for t in args.targets.split(",")]
+    else:
+        target_routes = get_target_routes(destination, limit=args.limit)
+        if not target_routes:
+            print(f"\nNo default routes for '{destination}' in database.")
+            print("\nOptions:")
+            print("  1. Specify routes manually: --targets LAX,SFO,SEA")
+            print("  2. Use --list-destinations to see supported destinations")
+            print("\nHint: Target routes should be cities BEYOND your destination")
+            print(f"      that might have {destination} as a layover.")
+            return []
+
+    # Display search configuration
+    print("\n" + "=" * 60)
+    print("SKIPLAGGING SEARCH")
     print("=" * 60)
-    print()
-    
-    origin = "JFK"
-    destination = "DEN"  # Denver - common layover hub, has default targets
-    
-    departure = datetime.now() + timedelta(days=21)
-    departure_str = departure.strftime('%Y-%m-%d')
-    
-    print(f"Test Configuration:")
-    print(f"  Origin: {origin}")
+    print(f"\n  Origin:      {origin}")
     print(f"  Destination: {destination} (looking for this as a LAYOVER)")
-    print(f"  Departure: {departure_str}")
-    print(f"  (Auto-selecting target routes - cities beyond {destination})")
+    print(f"  Date:        {date}")
+    print(f"  Routes:      {origin} → {', '.join(target_routes)}")
+    print(f"  Browser:     {'Visible' if args.show_browser else 'Headless'}")
+    print(f"  Concurrent:  {args.concurrent}")
+
+    info = get_destination_info(destination)
+    if info:
+        print(f"\n  {destination} Info: {info.get('notes', '')}")
+
+    print("\n" + "-" * 60)
+    input("\nPress Enter to start search (Ctrl+C to cancel)...")
     print()
-    
-    try:
-        results = await search_skiplag_deals(
-            origin=origin,
-            destination=destination,
-            date=departure_str,
-            headless=True
-        )
-        
-        if results:
-            confirmed = [r for r in results if r.get('deal_type') == 'hidden_city']
-            print(f"\n✓ Found {len(results)} total deals ({len(confirmed)} confirmed at {destination})")
-            for i, deal in enumerate(results[:5], 1):  # Show top 5
-                status = "✓" if deal.get('deal_type') == 'hidden_city' else "?"
-                print(f"  [{status}] {deal.get('price', 'N/A')} - {deal.get('search_route')} (layovers: {deal.get('layovers', [])})")
-        else:
-            print("\nNo deals found with auto-search.")
-            
-        return results
-        
-    except Exception as e:
-        print(f"\n✗ Error: {e}")
-        import traceback
-        traceback.print_exc()
-        return []
+
+    # Run the search
+    results = await execute_targeted_skiplag_search(
+        origin_A=origin,
+        destination_B=destination,
+        date=date,
+        target_routes=target_routes,
+        headless=not args.show_browser,
+        max_concurrent=args.concurrent
+    )
+
+    # Display results
+    print_results(results, destination)
+
+    return results
+
+
+def print_results(results: list, destination: str):
+    """Pretty-print the search results."""
+    print("\n" + "=" * 60)
+    print("RESULTS SUMMARY")
+    print("=" * 60)
+
+    if not results:
+        print(f"\nNo flights found with {destination} as a layover.")
+        print("\nTips:")
+        print("  - Try different target routes (cities further from origin)")
+        print("  - Try a different date")
+        print("  - Some routes may not stop at your destination")
+        return
+
+    # Categorize results
+    confirmed = [r for r in results if r.get('deal_type') == 'hidden_city']
+    not_target = [r for r in results if r.get('deal_type') == 'not_target_layover']
+    potential = [r for r in results if r.get('deal_type') == 'potential_hidden_city']
+
+    print(f"\n  Total flights with stops: {len(results)}")
+    print(f"  Confirmed {destination} layovers: {len(confirmed)}")
+    print(f"  Other layovers: {len(not_target)}")
+    print(f"  Unknown (check manually): {len(potential)}")
+
+    if confirmed:
+        print("\n" + "-" * 40)
+        print(f"HIDDEN-CITY DEALS (layover at {destination})")
+        print("-" * 40)
+        for i, flight in enumerate(confirmed, 1):
+            print(f"\n  [{i}] {flight.get('price', 'N/A')}")
+            print(f"      Route: {flight.get('search_route', 'N/A')}")
+            print(f"      Layovers: {flight.get('layovers', [])}")
+            print(f"      Airline: {flight.get('airline', 'N/A')}")
+            print(f"      Times: {flight.get('departure_time', '')} → {flight.get('arrival_time', '')}")
+            print(f"      Duration: {flight.get('duration', 'N/A')}")
+
+    if not_target:
+        print("\n" + "-" * 40)
+        print(f"OTHER CONNECTING FLIGHTS (not {destination})")
+        print("-" * 40)
+        # Show top 5
+        for i, flight in enumerate(not_target[:5], 1):
+            layovers = flight.get('layovers', [])
+            print(f"  [{i}] {flight.get('price', 'N/A')} - {flight.get('search_route')} via {layovers}")
+
+        if len(not_target) > 5:
+            print(f"  ... and {len(not_target) - 5} more")
+
+    if potential:
+        print("\n" + "-" * 40)
+        print("POTENTIAL DEALS (verify layover manually)")
+        print("-" * 40)
+        for i, flight in enumerate(potential[:3], 1):
+            print(f"  [{i}] {flight.get('price', 'N/A')} - {flight.get('search_route')}")
+            print(f"      Stops: {flight.get('stops', 'N/A')}")
 
 
 async def main():
-    """Run all tests."""
-    print("\n" + "=" * 60)
-    print("STARTING SKIPLAG ORCHESTRATOR TESTS")
-    print("=" * 60 + "\n")
-    
-    # Test 1: Targeted search (smaller, faster test)
-    targeted_results = await test_targeted_search()
-    
-    # Test 2: Auto search (uncomment to run - takes longer)
-    # auto_results = await test_auto_search()
-    
-    print("\n" + "=" * 60)
-    print("TESTS COMPLETE")
-    print("=" * 60)
-    
-    return targeted_results
+    """Main entry point."""
+    args = parse_args()
+
+    # Handle info/list commands
+    if args.list_destinations:
+        show_destinations()
+        return
+
+    if args.info:
+        show_destination_info(args.info)
+        return
+
+    # Validate required arguments for search
+    if not args.origin or not args.destination:
+        print("\nError: origin and destination are required for search")
+        print("\nUsage: python scripts/test_skiplag.py <origin> <destination> [date]")
+        print("       python scripts/test_skiplag.py --list-destinations")
+        print("       python scripts/test_skiplag.py --info DEN")
+        print("\nExamples:")
+        print("  python scripts/test_skiplag.py JFK DEN 2026-03-15")
+        print("  python scripts/test_skiplag.py JFK PHX 2026-03-15 --show-browser")
+        return
+
+    try:
+        await run_search(args)
+    except KeyboardInterrupt:
+        print("\n\nSearch cancelled.")
+    except Exception as e:
+        print(f"\nError: {e}")
+        import traceback
+        traceback.print_exc()
 
 
 if __name__ == "__main__":
