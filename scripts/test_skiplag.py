@@ -37,9 +37,10 @@ from src.data.route_database import (
     get_destination_info,
     list_supported_destinations,
     list_supported_origins,
-    get_origin_specific_destinations,
+    list_supported_pairs,
+    get_pair_destinations,
     ROUTE_DATABASE,
-    ORIGIN_SPECIFIC_ROUTES,
+    PAIR_ROUTES,
 )
 
 
@@ -114,9 +115,9 @@ Examples:
 def show_destinations():
     """Display all supported destinations."""
     print("\n" + "=" * 60)
-    print("SUPPORTED DESTINATIONS (Default Routes)")
+    print("DEFAULT ROUTES (by destination B)")
     print("=" * 60)
-    print("\nThese destinations have pre-configured 'beyond' routes:\n")
+    print("\nThese destinations have default 'beyond' routes for any origin:\n")
 
     destinations = list_supported_destinations()
 
@@ -125,27 +126,28 @@ def show_destinations():
         targets = info["targets"][:4]
         hub_info = f" [{', '.join(info['hub_for'])}]" if info['hub_for'] else ""
         print(f"  {code}{hub_info}")
-        print(f"      → Default routes: {', '.join(targets)}...")
+        print(f"      → C targets: {', '.join(targets)}...")
         print()
 
     print(f"Total: {len(destinations)} destinations with default routes")
 
-    # Show origin-specific routes
+    # Show pair-specific routes
     print("\n" + "=" * 60)
-    print("ORIGIN-SPECIFIC ROUTES")
+    print("PAIR-SPECIFIC ROUTES (A→B determines C)")
     print("=" * 60)
-    print("\nThese origin→destination pairs have custom route configs:\n")
+    print("\nThese A→B pairs have custom C destination configs:\n")
 
     for origin in list_supported_origins():
-        dests = get_origin_specific_destinations(origin)
+        dests = get_pair_destinations(origin)
         print(f"  {origin} →")
         for dest in dests[:6]:
-            targets = ORIGIN_SPECIFIC_ROUTES[origin][dest][:3]
+            targets = PAIR_ROUTES[(origin, dest)][:3]
             print(f"      {dest}: {', '.join(targets)}...")
         if len(dests) > 6:
             print(f"      ... and {len(dests) - 6} more")
         print()
 
+    print(f"Total: {len(list_supported_pairs())} pair-specific routes")
     print("\nUsage: python scripts/test_skiplag.py <origin> <destination> <date>")
 
 
@@ -156,13 +158,13 @@ def show_destination_info(code: str):
 
     if not info:
         print(f"\n'{code}' not found in default database.")
-        # Check if it exists in origin-specific routes
-        found_in_specific = []
-        for origin in ORIGIN_SPECIFIC_ROUTES:
-            if code_upper in ORIGIN_SPECIFIC_ROUTES[origin]:
-                found_in_specific.append(origin)
-        if found_in_specific:
-            print(f"\nHowever, origin-specific routes exist from: {', '.join(found_in_specific)}")
+        # Check if it exists in any pair-specific routes
+        pairs_to_dest = [(a, b) for (a, b) in PAIR_ROUTES.keys() if b == code_upper]
+        if pairs_to_dest:
+            print(f"\nHowever, pair-specific routes exist:")
+            for orig, _ in sorted(pairs_to_dest):
+                targets = PAIR_ROUTES[(orig, code_upper)]
+                print(f"  {orig}→{code_upper}: {', '.join(targets)}")
         print("\nUse --list-destinations to see available options.")
         print("Or specify routes manually with --targets LAX,SFO,SEA")
         return
@@ -173,21 +175,18 @@ def show_destination_info(code: str):
     print(f"\nHub airlines: {', '.join(info.get('hub_for', [])) or 'None'}")
     print(f"Notes: {info.get('notes', 'N/A')}")
 
-    print(f"\nDEFAULT 'beyond' routes (any origin → {code_upper}):")
+    print(f"\nDEFAULT C targets (any origin → {code_upper}):")
     for i, target in enumerate(info.get("targets", []), 1):
         print(f"  {i}. {target}")
 
-    # Show origin-specific routes if they exist
-    specific_origins = []
-    for origin in ORIGIN_SPECIFIC_ROUTES:
-        if code_upper in ORIGIN_SPECIFIC_ROUTES[origin]:
-            specific_origins.append(origin)
+    # Show pair-specific routes if they exist
+    pairs_to_dest = [(a, b) for (a, b) in PAIR_ROUTES.keys() if b == code_upper]
 
-    if specific_origins:
-        print(f"\nORIGIN-SPECIFIC routes to {code_upper}:")
-        for origin in sorted(specific_origins):
-            targets = ORIGIN_SPECIFIC_ROUTES[origin][code_upper]
-            print(f"  {origin} → {code_upper}: {', '.join(targets)}")
+    if pairs_to_dest:
+        print(f"\nPAIR-SPECIFIC routes to {code_upper}:")
+        for origin, _ in sorted(pairs_to_dest):
+            targets = PAIR_ROUTES[(origin, code_upper)]
+            print(f"  {origin}→{code_upper}: {', '.join(targets)}")
 
     print(f"\nExample command:")
     print(f"  python scripts/test_skiplag.py JFK {code_upper} 2026-03-15")
@@ -235,7 +234,7 @@ async def run_search(args):
     print(f"  Routes:      {origin} → {', '.join(target_routes)}")
 
     if is_origin_specific:
-        print(f"  Route type:  ORIGIN-SPECIFIC (custom for {origin}→{destination})")
+        print(f"  Route type:  PAIR-SPECIFIC (custom for {origin}→{destination})")
     else:
         print(f"  Route type:  DEFAULT (general routes for {destination})")
 
