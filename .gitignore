@@ -46,3 +46,10 @@ debug_*.png
 debug_*.txt
 videos/
 .aider*
+
+# Flight result output files
+flights_*.txt
+kayak_*.txt
+skiplagged_*.txt
+skyscanner_*.txt
+*_to_*.txt
