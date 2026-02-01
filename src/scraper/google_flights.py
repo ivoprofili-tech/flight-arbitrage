@@ -88,33 +88,34 @@ class GoogleFlightsScraper:
             args=['--disable-blink-features=AutomationControlled']  # Helps avoid detection
         )
 
-        # Ensure videos directory exists
-        os.makedirs('videos', exist_ok=True)
+        # Ensure debug directories exist
+        os.makedirs('debug/videos', exist_ok=True)
+        os.makedirs('debug/screenshots', exist_ok=True)
 
         # Create a browser context with video recording enabled
-        # Videos are saved to the 'videos' directory
+        # Videos are saved to the 'debug/videos' directory
         self.context = await self.browser.new_context(
             viewport={'width': 1280, 'height': 800},
-            record_video_dir='videos/',  # Directory to save videos
+            record_video_dir='debug/videos/',  # Directory to save videos
             record_video_size={'width': 1280, 'height': 800}
         )
 
         # Create a new page (like a browser tab)
         self.page = await self.context.new_page()
 
-        print("Browser started! Video recording enabled (saves to videos/ folder)")
+        print("Browser started! Video recording enabled (saves to debug/videos/ folder)")
 
     def _clear_old_videos(self):
         """Remove old video files from previous runs."""
-        if os.path.exists('videos'):
-            old_videos = glob.glob('videos/*.webm')
+        if os.path.exists('debug/videos'):
+            old_videos = glob.glob('debug/videos/*.webm')
             for video in old_videos:
                 try:
                     os.remove(video)
                 except:
                     pass
             if old_videos:
-                print(f"Cleared {len(old_videos)} old video(s) from videos/ folder")
+                print(f"Cleared {len(old_videos)} old video(s) from debug/videos/ folder")
 
     async def close_browser(self):
         """Clean up: close the browser and save the video with descriptive name."""
@@ -141,7 +142,7 @@ class GoogleFlightsScraper:
         # Rename video with descriptive name
         if video_path and os.path.exists(video_path):
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            new_name = f"videos/google_flights_{timestamp}.webm"
+            new_name = f"debug/videos/google_flights_{timestamp}.webm"
             try:
                 shutil.move(video_path, new_name)
                 video_path = new_name
@@ -549,7 +550,7 @@ class GoogleFlightsScraper:
         # Wait for results to load
         print("[Step 7] Waiting for results...")
         await self.page.wait_for_timeout(self.wait_long * 2 if not self.fast_mode else self.wait_long)
-        await self.page.screenshot(path='debug_step7_results.png')
+        await self.page.screenshot(path='debug/screenshots/debug_step7_results.png')
 
         current_url = self.page.url
         print(f"  Current URL: {current_url[:80]}...")
@@ -562,7 +563,7 @@ class GoogleFlightsScraper:
 
         # Extract flight data
         print("[Step 8] Extracting flight data...")
-        await self.page.screenshot(path='debug_screenshot.png')
+        await self.page.screenshot(path='debug/screenshots/debug_screenshot.png')
         flights = await self._extract_flights()
 
         print(f"\nFound {len(flights)} flights!")
@@ -812,8 +813,8 @@ class GoogleFlightsScraper:
         """Click the search button to find flights."""
         try:
             # Save a debug screenshot before searching
-            await self.page.screenshot(path='debug_before_search.png')
-            print("  Screenshot saved: debug_before_search.png")
+            await self.page.screenshot(path='debug/screenshots/debug_before_search.png')
+            print("  Screenshot saved: debug/screenshots/debug_before_search.png")
 
             # Look for the search button with various selectors
             search_selectors = [
@@ -884,17 +885,17 @@ class GoogleFlightsScraper:
 
         try:
             # Save a screenshot for debugging
-            await self.page.screenshot(path='debug_screenshot.png')
-            print("  Screenshot saved to debug_screenshot.png")
+            await self.page.screenshot(path='debug/screenshots/debug_screenshot.png')
+            print("  Screenshot saved to debug/screenshots/debug_screenshot.png")
 
             # First, let's debug what's on the page
             page_text = await self.page.evaluate('() => document.body.innerText')
             print(f"  Page text length: {len(page_text)} characters")
 
             # Save page text for debugging
-            with open('debug_page_text.txt', 'w', encoding='utf-8') as f:
+            with open('debug/debug_page_text.txt', 'w', encoding='utf-8') as f:
                 f.write(page_text)
-            print("  Page text saved to debug_page_text.txt")
+            print("  Page text saved to debug/debug_page_text.txt")
 
             # Pre-extract layover mapping from page text
             # This is more reliable than trying to extract from individual containers
@@ -1202,11 +1203,11 @@ class GoogleFlightsScraper:
 
             # If still no flights found, provide debug info
             if len(flights) == 0:
-                print("  ⚠ No flights extracted - check debug_page_text.txt and debug_screenshot.png")
+                print("  ⚠ No flights extracted - check debug/debug_page_text.txt and debug/screenshots/debug_screenshot.png")
                 flights.append({
                     'price': 'Could not extract - check debug files',
-                    'departure_time': 'See debug_screenshot.png',
-                    'arrival_time': 'See debug_page_text.txt',
+                    'departure_time': 'See debug/screenshots/debug_screenshot.png',
+                    'arrival_time': 'See debug/debug_page_text.txt',
                     'duration': 'N/A',
                     'stops': 'N/A',
                     'airline': 'N/A',

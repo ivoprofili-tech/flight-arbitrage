@@ -41,8 +41,8 @@ Thumbs.db
 *.db
 data/*.db
 
-# Aider and video files
-videos/
+# Debug output files (screenshots, videos, text dumps)
+debug/
 .aider*
 
 # Flight result output files

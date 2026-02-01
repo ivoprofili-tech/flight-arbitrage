@@ -45,11 +45,12 @@ class SkiplaggedScraper:
             args=['--disable-blink-features=AutomationControlled']
         )
 
-        os.makedirs('videos', exist_ok=True)
+        os.makedirs('debug/videos', exist_ok=True)
+        os.makedirs('debug/screenshots', exist_ok=True)
 
         self.context = await self.browser.new_context(
             viewport={'width': 1280, 'height': 800},
-            record_video_dir='videos/',
+            record_video_dir='debug/videos/',
             record_video_size={'width': 1280, 'height': 800},
             user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             locale='en-US',
@@ -64,19 +65,19 @@ class SkiplaggedScraper:
             Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
         ''')
 
-        print("Browser started! Video recording enabled (saves to videos/ folder)")
+        print("Browser started! Video recording enabled (saves to debug/videos/ folder)")
 
     def _clear_old_videos(self):
         """Remove old video files from previous runs."""
-        if os.path.exists('videos'):
-            old_videos = glob.glob('videos/*.webm')
+        if os.path.exists('debug/videos'):
+            old_videos = glob.glob('debug/videos/*.webm')
             for video in old_videos:
                 try:
                     os.remove(video)
                 except:
                     pass
             if old_videos:
-                print(f"Cleared {len(old_videos)} old video(s) from videos/ folder")
+                print(f"Cleared {len(old_videos)} old video(s) from debug/videos/ folder")
 
     async def _human_delay(self, min_ms=200, max_ms=600):
         """Add a random human-like delay between actions."""
@@ -105,7 +106,7 @@ class SkiplaggedScraper:
 
         if video_path and os.path.exists(video_path):
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            new_name = f"videos/skiplagged_{timestamp}.webm"
+            new_name = f"debug/videos/skiplagged_{timestamp}.webm"
             try:
                 shutil.move(video_path, new_name)
                 video_path = new_name
@@ -164,18 +165,18 @@ class SkiplaggedScraper:
         await self._human_delay(2000, 3000)
 
         # Take a screenshot to see what we got
-        await self.page.screenshot(path='debug_skiplagged_initial.png')
+        await self.page.screenshot(path='debug/screenshots/debug_skiplagged_initial.png')
 
         # Check for any blocking page
         page_text = await self.page.evaluate('() => document.body.innerText')
 
         if 'robot' in page_text.lower() or 'captcha' in page_text.lower() or 'verify' in page_text.lower():
             print("  ⚠ Bot detection page detected")
-            await self.page.screenshot(path='debug_skiplagged_blocked.png')
+            await self.page.screenshot(path='debug/screenshots/debug_skiplagged_blocked.png')
             return [{
                 'error': 'Bot detection triggered',
                 'source': 'Skiplagged',
-                'note': 'Check debug_skiplagged_blocked.png'
+                'note': 'Check debug/screenshots/debug_skiplagged_blocked.png'
             }]
 
         print("[Step 2] Waiting for flight results...")
@@ -227,7 +228,7 @@ class SkiplaggedScraper:
         import re
         all_flights.sort(key=lambda f: int(re.sub(r'\D', '', f['price']) or '99999'))
 
-        await self.page.screenshot(path='debug_skiplagged.png')
+        await self.page.screenshot(path='debug/screenshots/debug_skiplagged.png')
 
         print(f"\nFound {len(all_flights)} total unique flights on Skiplagged!")
         return all_flights
@@ -508,7 +509,7 @@ class SkiplaggedScraper:
             page_text = await self.page.evaluate('() => document.body.innerText')
             print(f"  Page text length: {len(page_text)} characters")
 
-            with open('debug_skiplagged_text.txt', 'w', encoding='utf-8') as f:
+            with open('debug/debug_skiplagged_text.txt', 'w', encoding='utf-8') as f:
                 f.write(page_text)
 
             # Parse the sequential text to find flight blocks
@@ -665,11 +666,11 @@ class SkiplaggedScraper:
             print(f"  Extracted {len(flights)} total flights ({len(js_flights) if js_flights else 0} from DOM, {text_parsed} from text)")
 
             if len(flights) == 0:
-                print("  ⚠ No flights extracted - check debug_skiplagged.png")
+                print("  ⚠ No flights extracted - check debug/screenshots/debug_skiplagged.png")
                 flights.append({
                     'price': 'Could not extract - check debug files',
-                    'departure_time': 'See debug_skiplagged.png',
-                    'arrival_time': 'See debug_skiplagged_text.txt',
+                    'departure_time': 'See debug/screenshots/debug_skiplagged.png',
+                    'arrival_time': 'See debug/debug_skiplagged_text.txt',
                     'duration': 'N/A',
                     'stops': 'N/A',
                     'airline': 'N/A',
