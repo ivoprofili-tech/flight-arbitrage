@@ -1,5 +1,5 @@
 #!/bin/bash
-# Push test results back to GitHub for analysis
+# Push test results back to GitHub for analysis, then clean up
 # Usage: ./scripts/push_results.sh
 
 BRANCH="claude/parallel-scraper-consolidation-D2RiE"
@@ -25,4 +25,13 @@ git pull --rebase origin "$BRANCH"
 echo "Pushing to GitHub..."
 git push origin "$BRANCH"
 
-echo "=== Done! ==="
+# Clean up after successful push
+echo ""
+echo "=== Cleaning up local debug files ==="
+rm -f debug_*.png debug_*.txt 2>/dev/null
+rm -f search_results/*.json 2>/dev/null
+rm -f videos/*.webm 2>/dev/null
+echo "✓ Local debug files cleaned"
+
+echo ""
+echo "=== Done! Ready for next test ==="
