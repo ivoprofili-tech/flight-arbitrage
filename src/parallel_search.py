@@ -286,7 +286,7 @@ class ParallelFlightSearch:
         deduplicated.sort(key=lambda f: f.price_numeric)
 
         # Find best deals by category
-        best_direct = self._find_best_by_source(deduplicated, FlightSource.GOOGLE_FLIGHTS)
+        best_direct = self._find_best_nonstop(deduplicated)  # True nonstop flights only
         best_skiplagged = self._find_best_by_source(deduplicated, FlightSource.SKIPLAGGED)
         best_hidden_city = self._find_best_by_deal_type(deduplicated, DealType.HIDDEN_CITY)
         best_overall = deduplicated[0] if deduplicated else None
@@ -587,6 +587,19 @@ class ParallelFlightSearch:
         if not matching:
             return None
         return min(matching, key=lambda f: f.price_numeric)
+
+    def _find_best_nonstop(
+        self,
+        flights: List[FlightResult],
+    ) -> Optional[FlightResult]:
+        """Find the cheapest nonstop/direct flight."""
+        nonstop_flights = [
+            f for f in flights
+            if f.stops and f.stops.lower() in ("nonstop", "direct", "0 stops")
+        ]
+        if not nonstop_flights:
+            return None
+        return min(nonstop_flights, key=lambda f: f.price_numeric)
 
 
 async def search_flights(
