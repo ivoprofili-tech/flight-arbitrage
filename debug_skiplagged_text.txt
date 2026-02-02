@@ -47,6 +47,8 @@ Aeromexico
 only
 Air Canada
 only
+Air Transat
+only
 American Airlines
 only
 Avianca
@@ -57,6 +59,8 @@ Copa Airlines
 only
 Delta Air Lines
 only
+Flair Airlines
+only
 Frontier Airlines
 only
 GOL Linhas Aereas
@@ -65,11 +69,11 @@ JetBlue Airways
 only
 LATAM Airlines
 only
+Porter Airlines
+only
 Spirit Airlines
 only
 United Airlines
-only
-Volaris
 only
 Volaris Costa Rica
 only
