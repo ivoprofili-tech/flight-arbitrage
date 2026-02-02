@@ -336,7 +336,17 @@ class SkiplaggedScraper:
                     const destCode = args.destCode;
                     const destName = args.destName;
                     const flights = [];
-                    const airlines = ["JetBlue", "Delta", "American", "United", "Spirit", "Frontier", "Alaska", "Southwest"];
+                    const airlines = [
+                        // US carriers
+                        "JetBlue", "Delta", "American", "United", "Spirit", "Frontier", "Alaska", "Southwest",
+                        // Latin American carriers
+                        "LATAM", "Avianca", "Copa", "Azul", "GOL", "Volaris", "Aeromexico", "Interjet",
+                        // Full names that might appear
+                        "LATAM Airlines", "Copa Airlines", "GOL Linhas Aereas", "Azul Linhas Aereas",
+                        "Volaris Costa Rica", "Air Canada", "WestJet",
+                        // European carriers
+                        "Iberia", "TAP", "Air France", "British Airways", "Lufthansa", "KLM"
+                    ];
                     const seen = new Set();
 
                     // City name mapping for destination detection
@@ -526,7 +536,17 @@ class SkiplaggedScraper:
 
             # Text-based fallback parsing (for flights not captured by JS DOM)
             lines = page_text.split('\n')
-            airlines = ["JetBlue", "Delta", "American", "United", "Spirit", "Frontier", "Alaska", "Southwest"]
+            airlines = [
+                # US carriers
+                "JetBlue", "Delta", "American", "United", "Spirit", "Frontier", "Alaska", "Southwest",
+                # Latin American carriers
+                "LATAM", "Avianca", "Copa", "Azul", "GOL", "Volaris", "Aeromexico", "Interjet",
+                # Full names that might appear
+                "LATAM Airlines", "Copa Airlines", "GOL Linhas Aereas", "Azul Linhas Aereas",
+                "Volaris Costa Rica", "Air Canada", "WestJet",
+                # European carriers
+                "Iberia", "TAP", "Air France", "British Airways", "Lufthansa", "KLM"
+            ]
 
             # Build seen set from JS-extracted flights to avoid duplicates
             seen = set()
