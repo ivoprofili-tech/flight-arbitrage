@@ -1,0 +1,894 @@
+{
+  "search_params": {
+    "origin": "GRU",
+    "destination": "MCO",
+    "departure_date": "2026-03-04",
+    "return_date": null
+  },
+  "timing": {
+    "search_timestamp": "2026-02-02T01:40:42.632839",
+    "total_search_time_seconds": 63.8
+  },
+  "summary": {
+    "total_flights_found": 75,
+    "sources_succeeded": [
+      "google_flights",
+      "skiplagged",
+      "hidden_city"
+    ],
+    "sources_failed": []
+  },
+  "best_deals": {
+    "direct": {
+      "airline": "Avianca",
+      "departure_time": "2:40\u202fAM",
+      "arrival_time": "12:10\u202fPM",
+      "duration": "11h 30m",
+      "stops": "1 stop",
+      "price": "$223",
+      "source": "google_flights",
+      "layovers": [
+        "BOG"
+      ]
+    },
+    "skiplagged": {
+      "airline": "Unknown",
+      "departure_time": "2:40am",
+      "arrival_time": "12:10pm",
+      "duration": "12h",
+      "stops": "1 stop",
+      "price": "$221",
+      "source": "skiplagged"
+    },
+    "hidden_city": {
+      "airline": "Delta",
+      "departure_time": "3:55\u202fAM",
+      "arrival_time": "8:07\u202fPM",
+      "duration": "19h 12m",
+      "stops": "2 stops",
+      "price": "$346",
+      "source": "hidden_city",
+      "layovers": [
+        "LIM",
+        "MCO"
+      ],
+      "deal_type": "hidden_city",
+      "final_destination": "AUS",
+      "hidden_city_target": "MCO",
+      "search_route": "GRU \u2192 AUS",
+      "confirmed_layover": true
+    },
+    "overall": {
+      "airline": "Unknown",
+      "departure_time": "2:40am",
+      "arrival_time": "12:10pm",
+      "duration": "12h",
+      "stops": "1 stop",
+      "price": "$221",
+      "source": "skiplagged"
+    }
+  },
+  "source_details": {
+    "google_flights": {
+      "status": "success",
+      "flights_found": 30,
+      "search_time_seconds": 44.38,
+      "error": null
+    },
+    "skiplagged": {
+      "status": "success",
+      "flights_found": 39,
+      "search_time_seconds": 42.0,
+      "error": null
+    },
+    "hidden_city": {
+      "status": "success",
+      "flights_found": 6,
+      "search_time_seconds": 63.8,
+      "error": null
+    }
+  },
+  "all_flights": [
+    {
+      "airline": "Unknown",
+      "departure_time": "2:40am",
+      "arrival_time": "12:10pm",
+      "duration": "12h",
+      "stops": "1 stop",
+      "price": "$221",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Unknown",
+      "departure_time": "2:40am",
+      "arrival_time": "12:55pm",
+      "duration": "12h",
+      "stops": "1 stop",
+      "price": "$221",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Unknown",
+      "departure_time": "1:20am",
+      "arrival_time": "12:10pm",
+      "duration": "13h",
+      "stops": "1 stop",
+      "price": "$221",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Unknown",
+      "departure_time": "1:20am",
+      "arrival_time": "12:55pm",
+      "duration": "14h",
+      "stops": "1 stop",
+      "price": "$221",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Unknown",
+      "departure_time": "5:25pm",
+      "arrival_time": "12:10pm",
+      "duration": "21h",
+      "stops": "1 stop",
+      "price": "$221",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Avianca",
+      "departure_time": "2:40\u202fAM",
+      "arrival_time": "12:10\u202fPM",
+      "duration": "11h 30m",
+      "stops": "1 stop",
+      "price": "$223",
+      "source": "google_flights",
+      "layovers": [
+        "BOG"
+      ]
+    },
+    {
+      "airline": "Avianca",
+      "departure_time": "1:20\u202fAM",
+      "arrival_time": "12:10\u202fPM",
+      "duration": "12h 50m",
+      "stops": "1 stop",
+      "price": "$223",
+      "source": "google_flights",
+      "layovers": [
+        "BOG"
+      ]
+    },
+    {
+      "airline": "Avianca",
+      "departure_time": "1:20\u202fAM",
+      "arrival_time": "12:55\u202fPM",
+      "duration": "13h 35m",
+      "stops": "1 stop",
+      "price": "$223",
+      "source": "google_flights",
+      "layovers": [
+        "BOG"
+      ]
+    },
+    {
+      "airline": "Avianca",
+      "departure_time": "2:40\u202fAM",
+      "arrival_time": "12:55\u202fPM",
+      "duration": "12h 15m",
+      "stops": "1 stop",
+      "price": "$223",
+      "source": "google_flights",
+      "layovers": [
+        "BOG"
+      ]
+    },
+    {
+      "airline": "Avianca",
+      "departure_time": "5:25\u202fPM",
+      "arrival_time": "12:10\u202fPM",
+      "duration": "20h 45m",
+      "stops": "1 stop",
+      "price": "$223",
+      "source": "google_flights",
+      "layovers": [
+        "BOG"
+      ]
+    },
+    {
+      "airline": "Avianca",
+      "departure_time": "5:25\u202fPM",
+      "arrival_time": "12:55\u202fPM",
+      "duration": "21h 30m",
+      "stops": "1 stop",
+      "price": "$223",
+      "source": "google_flights",
+      "layovers": [
+        "BOG"
+      ]
+    },
+    {
+      "airline": "Unknown",
+      "departure_time": "5:25pm",
+      "arrival_time": "12:55pm",
+      "duration": "22h",
+      "stops": "1 stop",
+      "price": "$223",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Unknown",
+      "departure_time": "7:35am",
+      "arrival_time": "12:10pm",
+      "duration": "31h",
+      "stops": "1 stop",
+      "price": "$235",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Avianca",
+      "departure_time": "7:35\u202fAM",
+      "arrival_time": "12:10\u202fPM",
+      "duration": "30h 35m",
+      "stops": "1 stop",
+      "price": "$247",
+      "source": "google_flights",
+      "layovers": [
+        "BOG"
+      ]
+    },
+    {
+      "airline": "Avianca",
+      "departure_time": "7:35\u202fAM",
+      "arrival_time": "12:55\u202fPM",
+      "duration": "31h 20m",
+      "stops": "1 stop",
+      "price": "$247",
+      "source": "google_flights",
+      "layovers": [
+        "BOG"
+      ]
+    },
+    {
+      "airline": "Unknown",
+      "departure_time": "7:35am",
+      "arrival_time": "12:55pm",
+      "duration": "31h",
+      "stops": "1 stop",
+      "price": "$247",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Various",
+      "departure_time": "11:10\u202fAM",
+      "arrival_time": "9:22\u202fPM",
+      "duration": "12h 12m",
+      "stops": "1 stop",
+      "price": "$269",
+      "source": "google_flights",
+      "layovers": [
+        "PTY"
+      ]
+    },
+    {
+      "airline": "Delta",
+      "departure_time": "2:40\u202fAM",
+      "arrival_time": "12:10\u202fPM",
+      "duration": "11h 30m",
+      "stops": "Nonstop",
+      "price": "$269",
+      "source": "google_flights"
+    },
+    {
+      "airline": "Various",
+      "departure_time": "1:30\u202fAM",
+      "arrival_time": "1:00\u202fPM",
+      "duration": "13h 30m",
+      "stops": "1 stop",
+      "price": "$269",
+      "source": "google_flights",
+      "layovers": [
+        "PTY"
+      ]
+    },
+    {
+      "airline": "Various",
+      "departure_time": "1:30\u202fAM",
+      "arrival_time": "1:10\u202fPM",
+      "duration": "13h 40m",
+      "stops": "1 stop",
+      "price": "$269",
+      "source": "google_flights",
+      "layovers": [
+        "PTY"
+      ]
+    },
+    {
+      "airline": "Various",
+      "departure_time": "1:30\u202fAM",
+      "arrival_time": "9:22\u202fPM",
+      "duration": "21h 52m",
+      "stops": "1 stop",
+      "price": "$269",
+      "source": "google_flights",
+      "layovers": [
+        "PTY"
+      ]
+    },
+    {
+      "airline": "Various",
+      "departure_time": "1:40\u202fAM",
+      "arrival_time": "1:00\u202fPM",
+      "duration": "13h 20m",
+      "stops": "1 stop",
+      "price": "$269",
+      "source": "google_flights",
+      "layovers": [
+        "PTY"
+      ]
+    },
+    {
+      "airline": "Various",
+      "departure_time": "1:40\u202fAM",
+      "arrival_time": "1:10\u202fPM",
+      "duration": "13h 30m",
+      "stops": "1 stop",
+      "price": "$269",
+      "source": "google_flights",
+      "layovers": [
+        "PTY"
+      ]
+    },
+    {
+      "airline": "Various",
+      "departure_time": "3:10\u202fAM",
+      "arrival_time": "1:00\u202fPM",
+      "duration": "11h 50m",
+      "stops": "1 stop",
+      "price": "$269",
+      "source": "google_flights",
+      "layovers": [
+        "PTY"
+      ]
+    },
+    {
+      "airline": "Various",
+      "departure_time": "3:10\u202fAM",
+      "arrival_time": "1:10\u202fPM",
+      "duration": "12h 0m",
+      "stops": "1 stop",
+      "price": "$269",
+      "source": "google_flights",
+      "layovers": [
+        "PTY"
+      ]
+    },
+    {
+      "airline": "Various",
+      "departure_time": "3:10\u202fAM",
+      "arrival_time": "9:22\u202fPM",
+      "duration": "20h 12m",
+      "stops": "1 stop",
+      "price": "$269",
+      "source": "google_flights",
+      "layovers": [
+        "PTY"
+      ]
+    },
+    {
+      "airline": "Various",
+      "departure_time": "3:10\u202fAM",
+      "arrival_time": "10:08\u202fPM",
+      "duration": "20h 58m",
+      "stops": "1 stop",
+      "price": "$269",
+      "source": "google_flights",
+      "layovers": [
+        "PTY"
+      ]
+    },
+    {
+      "airline": "Various",
+      "departure_time": "5:25\u202fAM",
+      "arrival_time": "9:22\u202fPM",
+      "duration": "17h 57m",
+      "stops": "1 stop",
+      "price": "$269",
+      "source": "google_flights",
+      "layovers": [
+        "PTY"
+      ]
+    },
+    {
+      "airline": "Various",
+      "departure_time": "5:25\u202fAM",
+      "arrival_time": "10:08\u202fPM",
+      "duration": "18h 43m",
+      "stops": "1 stop",
+      "price": "$269",
+      "source": "google_flights",
+      "layovers": [
+        "PTY"
+      ]
+    },
+    {
+      "airline": "Various",
+      "departure_time": "11:10\u202fAM",
+      "arrival_time": "10:08\u202fPM",
+      "duration": "12h 58m",
+      "stops": "1 stop",
+      "price": "$269",
+      "source": "google_flights",
+      "layovers": [
+        "PTY"
+      ]
+    },
+    {
+      "airline": "Unknown",
+      "departure_time": "3:10am",
+      "arrival_time": "1:00pm",
+      "duration": "12h",
+      "stops": "1 stop",
+      "price": "$269",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Unknown",
+      "departure_time": "3:10am",
+      "arrival_time": "1:10pm",
+      "duration": "12h",
+      "stops": "1 stop",
+      "price": "$269",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Unknown",
+      "departure_time": "11:10am",
+      "arrival_time": "9:22pm",
+      "duration": "12h",
+      "stops": "1 stop",
+      "price": "$269",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Unknown",
+      "departure_time": "11:10am",
+      "arrival_time": "10:08pm",
+      "duration": "13h",
+      "stops": "1 stop",
+      "price": "$269",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Unknown",
+      "departure_time": "1:40am",
+      "arrival_time": "1:00pm",
+      "duration": "13h",
+      "stops": "1 stop",
+      "price": "$269",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Unknown",
+      "departure_time": "1:30am",
+      "arrival_time": "1:00pm",
+      "duration": "14h",
+      "stops": "1 stop",
+      "price": "$269",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Unknown",
+      "departure_time": "1:40am",
+      "arrival_time": "1:10pm",
+      "duration": "14h",
+      "stops": "1 stop",
+      "price": "$269",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Unknown",
+      "departure_time": "1:30am",
+      "arrival_time": "1:10pm",
+      "duration": "14h",
+      "stops": "1 stop",
+      "price": "$269",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Unknown",
+      "departure_time": "5:25am",
+      "arrival_time": "9:22pm",
+      "duration": "18h",
+      "stops": "1 stop",
+      "price": "$269",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Unknown",
+      "departure_time": "5:25am",
+      "arrival_time": "10:08pm",
+      "duration": "19h",
+      "stops": "1 stop",
+      "price": "$269",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Unknown",
+      "departure_time": "3:10am",
+      "arrival_time": "9:22pm",
+      "duration": "20h",
+      "stops": "1 stop",
+      "price": "$269",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Unknown",
+      "departure_time": "3:10am",
+      "arrival_time": "10:08pm",
+      "duration": "21h",
+      "stops": "1 stop",
+      "price": "$269",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Unknown",
+      "departure_time": "1:30am",
+      "arrival_time": "9:22pm",
+      "duration": "22h",
+      "stops": "1 stop",
+      "price": "$269",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Unknown",
+      "departure_time": "3:55am",
+      "arrival_time": "2:23pm",
+      "duration": "12h",
+      "stops": "1 stop",
+      "price": "$272",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Unknown",
+      "departure_time": "7:45pm",
+      "arrival_time": "12:40pm",
+      "duration": "19h",
+      "stops": "2 stops",
+      "price": "$272",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Unknown",
+      "departure_time": "7:45pm",
+      "arrival_time": "2:23pm",
+      "duration": "21h",
+      "stops": "1 stop",
+      "price": "$272",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Delta",
+      "departure_time": "3:55\u202fAM",
+      "arrival_time": "2:23\u202fPM",
+      "duration": "12h 28m",
+      "stops": "1 stop",
+      "price": "$273",
+      "source": "google_flights",
+      "layovers": [
+        "LIM"
+      ]
+    },
+    {
+      "airline": "LATAM",
+      "departure_time": "4:30\u202fPM",
+      "arrival_time": "12:40\u202fPM",
+      "duration": "22h 10m",
+      "stops": "2 stops",
+      "price": "$273",
+      "source": "google_flights",
+      "layovers": [
+        "LIM",
+        "BOG"
+      ]
+    },
+    {
+      "airline": "LATAM",
+      "departure_time": "7:45\u202fPM",
+      "arrival_time": "12:40\u202fPM",
+      "duration": "18h 55m",
+      "stops": "2 stops",
+      "price": "$273",
+      "source": "google_flights",
+      "layovers": [
+        "LIM",
+        "BOG"
+      ]
+    },
+    {
+      "airline": "Delta",
+      "departure_time": "7:45\u202fPM",
+      "arrival_time": "2:23\u202fPM",
+      "duration": "20h 38m",
+      "stops": "1 stop",
+      "price": "$273",
+      "source": "google_flights",
+      "layovers": [
+        "LIM"
+      ]
+    },
+    {
+      "airline": "United",
+      "departure_time": "10:25\u202fPM",
+      "arrival_time": "10:46\u202fAM",
+      "duration": "14h 21m",
+      "stops": "1 stop",
+      "price": "$273",
+      "source": "google_flights",
+      "layovers": [
+        "IAD"
+      ]
+    },
+    {
+      "airline": "United",
+      "departure_time": "10:25\u202fPM",
+      "arrival_time": "12:26\u202fPM",
+      "duration": "16h 1m",
+      "stops": "1 stop",
+      "price": "$273",
+      "source": "google_flights",
+      "layovers": [
+        "IAD"
+      ]
+    },
+    {
+      "airline": "United",
+      "departure_time": "10:25\u202fPM",
+      "arrival_time": "3:11\u202fPM",
+      "duration": "18h 46m",
+      "stops": "1 stop",
+      "price": "$273",
+      "source": "google_flights",
+      "layovers": [
+        "IAD"
+      ]
+    },
+    {
+      "airline": "United",
+      "departure_time": "10:25\u202fPM",
+      "arrival_time": "8:20\u202fPM",
+      "duration": "23h 55m",
+      "stops": "1 stop",
+      "price": "$273",
+      "source": "google_flights",
+      "layovers": [
+        "IAD"
+      ]
+    },
+    {
+      "airline": "United",
+      "departure_time": "10:25pm",
+      "arrival_time": "10:46am",
+      "duration": "14h",
+      "stops": "1 stop",
+      "price": "$273",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "United",
+      "departure_time": "10:25pm",
+      "arrival_time": "12:26pm",
+      "duration": "16h",
+      "stops": "1 stop",
+      "price": "$273",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "United",
+      "departure_time": "10:25pm",
+      "arrival_time": "3:11pm",
+      "duration": "19h",
+      "stops": "1 stop",
+      "price": "$273",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Unknown",
+      "departure_time": "4:30pm",
+      "arrival_time": "12:40pm",
+      "duration": "22h",
+      "stops": "2 stops",
+      "price": "$273",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "United",
+      "departure_time": "10:25pm",
+      "arrival_time": "8:20pm",
+      "duration": "24h",
+      "stops": "1 stop",
+      "price": "$273",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Unknown",
+      "departure_time": "4:30pm",
+      "arrival_time": "2:23pm",
+      "duration": "24h",
+      "stops": "1 stop",
+      "price": "$273",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "United",
+      "departure_time": "10:25pm",
+      "arrival_time": "12:33am",
+      "duration": "28h",
+      "stops": "1 stop",
+      "price": "$273",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Unknown",
+      "departure_time": "9:40pm",
+      "arrival_time": "7:25pm",
+      "duration": "24h",
+      "stops": "2 stops",
+      "price": "$276",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "American",
+      "departure_time": "10:35pm",
+      "arrival_time": "7:53am",
+      "duration": "11h",
+      "stops": "1 stop",
+      "price": "$278",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Delta",
+      "departure_time": "9:15pm",
+      "arrival_time": "8:49am",
+      "duration": "14h",
+      "stops": "1 stop",
+      "price": "$278",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Delta",
+      "departure_time": "9:00pm",
+      "arrival_time": "10:05am",
+      "duration": "15h",
+      "stops": "1 stop",
+      "price": "$278",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "American",
+      "departure_time": "12:15am",
+      "arrival_time": "1:57pm",
+      "duration": "16h",
+      "stops": "2 stops",
+      "price": "$278",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Delta",
+      "departure_time": "11:45pm",
+      "arrival_time": "1:55pm",
+      "duration": "16h",
+      "stops": "1 stop",
+      "price": "$278",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "American",
+      "departure_time": "12:15am",
+      "arrival_time": "2:58pm",
+      "duration": "17h",
+      "stops": "2 stops",
+      "price": "$278",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "American",
+      "departure_time": "10:35pm",
+      "arrival_time": "1:10pm",
+      "duration": "17h",
+      "stops": "2 stops",
+      "price": "$278",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Delta",
+      "departure_time": "3:55\u202fAM",
+      "arrival_time": "8:07\u202fPM",
+      "duration": "19h 12m",
+      "stops": "2 stops",
+      "price": "$346",
+      "source": "hidden_city",
+      "layovers": [
+        "LIM",
+        "MCO"
+      ],
+      "deal_type": "hidden_city",
+      "final_destination": "AUS",
+      "hidden_city_target": "MCO",
+      "search_route": "GRU \u2192 AUS",
+      "confirmed_layover": true
+    },
+    {
+      "airline": "Delta",
+      "departure_time": "12:45\u202fPM",
+      "arrival_time": "2:41\u202fPM",
+      "duration": "28h 56m",
+      "stops": "1 stop",
+      "price": "$346",
+      "source": "hidden_city",
+      "layovers": [
+        "MCO"
+      ],
+      "deal_type": "hidden_city",
+      "final_destination": "AUS",
+      "hidden_city_target": "MCO",
+      "search_route": "GRU \u2192 AUS",
+      "confirmed_layover": true
+    },
+    {
+      "airline": "Delta",
+      "departure_time": "10:50\u202fPM",
+      "arrival_time": "6:35\u202fAM",
+      "duration": "9h 45m",
+      "stops": "Nonstop",
+      "price": "$396",
+      "source": "hidden_city",
+      "deal_type": "potential_hidden_city",
+      "final_destination": "JFK",
+      "hidden_city_target": "MCO",
+      "search_route": "GRU \u2192 JFK",
+      "confirmed_layover": false
+    },
+    {
+      "airline": "Avianca",
+      "departure_time": "7:35\u202fAM",
+      "arrival_time": "1:15\u202fAM",
+      "duration": "19h 40m",
+      "stops": "3 stops",
+      "price": "$471",
+      "source": "hidden_city",
+      "deal_type": "potential_hidden_city",
+      "final_destination": "JFK",
+      "hidden_city_target": "MCO",
+      "search_route": "GRU \u2192 JFK",
+      "confirmed_layover": false
+    },
+    {
+      "airline": "Delta",
+      "departure_time": "9:00\u202fPM",
+      "arrival_time": "5:00\u202fAM",
+      "duration": "10h 0m",
+      "stops": "Nonstop",
+      "price": "$481",
+      "source": "hidden_city",
+      "deal_type": "potential_hidden_city",
+      "final_destination": "JFK",
+      "hidden_city_target": "MCO",
+      "search_route": "GRU \u2192 JFK",
+      "confirmed_layover": false
+    },
+    {
+      "airline": "American",
+      "departure_time": "10:35\u202fPM",
+      "arrival_time": "6:15\u202fAM",
+      "duration": "9h 40m",
+      "stops": "Nonstop",
+      "price": "$481",
+      "source": "hidden_city",
+      "deal_type": "potential_hidden_city",
+      "final_destination": "JFK",
+      "hidden_city_target": "MCO",
+      "search_route": "GRU \u2192 JFK",
+      "confirmed_layover": false
+    }
+  ]
+}
