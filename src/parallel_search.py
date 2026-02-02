@@ -259,6 +259,29 @@ class ParallelFlightSearch:
         # Deduplicate flights
         deduplicated = self._deduplicate_flights(all_flights)
 
+        # Find best direct price to compare against hidden city deals
+        direct_flights = [f for f in deduplicated if f.source in (FlightSource.GOOGLE_FLIGHTS, FlightSource.SKIPLAGGED)]
+        best_direct_price = min((f.price_numeric for f in direct_flights), default=float('inf'))
+
+        # Filter out hidden city deals that don't beat the best direct price
+        # Only keep hidden city flights that offer actual savings
+        filtered = []
+        hidden_city_filtered_count = 0
+        for flight in deduplicated:
+            if flight.deal_type == DealType.HIDDEN_CITY:
+                if flight.price_numeric < best_direct_price:
+                    filtered.append(flight)
+                else:
+                    hidden_city_filtered_count += 1
+                    logger.debug(f"Filtered hidden city deal: {flight.price} >= direct {best_direct_price}")
+            else:
+                filtered.append(flight)
+
+        if hidden_city_filtered_count > 0:
+            logger.info(f"Filtered {hidden_city_filtered_count} hidden city deals that don't beat direct price ${best_direct_price}")
+
+        deduplicated = filtered
+
         # Sort by price
         deduplicated.sort(key=lambda f: f.price_numeric)
 
@@ -485,33 +508,29 @@ class ParallelFlightSearch:
                     confirmed_layover = True
                     break
 
-            # Determine deal type
-            if confirmed_layover:
-                deal_type = "hidden_city"
-            elif layovers:
-                deal_type = "not_target_layover"
-            else:
-                # No layover info - could still be a hidden city
-                deal_type = "potential_hidden_city"
+            # Only include flights with CONFIRMED layover at target city
+            # Skip "potential" deals - they create false positives (e.g., nonstop flights)
+            if not confirmed_layover:
+                continue
 
-            # Only include confirmed or potential hidden city deals
-            if deal_type in ("hidden_city", "potential_hidden_city"):
-                # Enrich flight data with hidden city metadata
-                enriched = {
-                    **flight,
-                    'final_destination': final_destination,
-                    'hidden_city_target': hidden_city_target,
-                    'search_route': f"{origin} → {final_destination}",
-                    'deal_type': deal_type,
-                    'confirmed_layover': confirmed_layover,
-                }
+            deal_type = "hidden_city"
 
-                normalized = normalize_orchestrator_flight(
-                    enriched,
-                    origin=origin,
-                    hidden_city_target=hidden_city_target,
-                )
-                results.append(normalized)
+            # Enrich flight data with hidden city metadata
+            enriched = {
+                **flight,
+                'final_destination': final_destination,
+                'hidden_city_target': hidden_city_target,
+                'search_route': f"{origin} → {final_destination}",
+                'deal_type': deal_type,
+                'confirmed_layover': confirmed_layover,
+            }
+
+            normalized = normalize_orchestrator_flight(
+                enriched,
+                origin=origin,
+                hidden_city_target=hidden_city_target,
+            )
+            results.append(normalized)
 
         return results
 
