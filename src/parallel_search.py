@@ -25,6 +25,11 @@ from src.models import (
     normalize_orchestrator_flight,
 )
 
+# Import the actual scrapers
+from src.scraper.google_flights import search_google_flights
+from src.scraper.skiplagged import search_skiplagged_flights
+from src.data.route_database import get_target_routes
+
 # Configure logging
 logger = logging.getLogger(__name__)
 
@@ -134,30 +139,24 @@ class ParallelFlightSearch:
 
     def __init__(
         self,
-        google_flights_scraper=None,
-        skiplagged_scraper=None,
-        route_database=None,
         max_concurrent_hidden_city: int = 2,
-        search_timeout_seconds: float = 120.0,
-        per_source_timeout_seconds: float = 90.0,
+        search_timeout_seconds: float = 300.0,
+        per_source_timeout_seconds: float = 120.0,
+        headless: bool = True,
     ):
         """
         Initialize the parallel search engine.
 
         Args:
-            google_flights_scraper: Google Flights scraper instance
-            skiplagged_scraper: Skiplagged scraper instance
-            route_database: Route database for hidden city target selection
             max_concurrent_hidden_city: Max concurrent A→C searches in orchestrator
             search_timeout_seconds: Global timeout for entire search operation
             per_source_timeout_seconds: Timeout for each individual source
+            headless: Whether to run browsers in headless mode
         """
-        self.google_flights_scraper = google_flights_scraper
-        self.skiplagged_scraper = skiplagged_scraper
-        self.route_database = route_database
         self.max_concurrent_hidden_city = max_concurrent_hidden_city
         self.search_timeout_seconds = search_timeout_seconds
         self.per_source_timeout_seconds = per_source_timeout_seconds
+        self.headless = headless
 
     async def search_all(
         self,
@@ -304,19 +303,23 @@ class ParallelFlightSearch:
         start_time = asyncio.get_event_loop().time()
 
         try:
-            if self.google_flights_scraper is None:
-                raise RuntimeError("Google Flights scraper not configured")
-
-            # Execute search with timeout
+            # Execute search with timeout using the imported scraper function
             raw_flights = await asyncio.wait_for(
-                self._run_google_flights_search(origin, destination, departure_date, return_date),
+                search_google_flights(
+                    origin=origin,
+                    destination=destination,
+                    departure_date=departure_date,
+                    return_date=return_date,
+                    headless=self.headless
+                ),
                 timeout=self.per_source_timeout_seconds
             )
 
-            # Normalize results
+            # Filter out error entries and normalize results
             normalized = [
                 normalize_google_flight(f, origin, destination)
                 for f in raw_flights
+                if not f.get('error') and not f.get('note', '').startswith('Extraction failed')
             ]
 
             search_time = asyncio.get_event_loop().time() - start_time
@@ -328,31 +331,6 @@ class ParallelFlightSearch:
         except Exception as e:
             logger.error(f"Google Flights search error: {e}")
             raise
-
-    async def _run_google_flights_search(
-        self,
-        origin: str,
-        destination: str,
-        departure_date: str,
-        return_date: Optional[str] = None,
-    ) -> List[Dict[str, Any]]:
-        """Execute the actual Google Flights scraper."""
-        # Check if scraper has async search method
-        if hasattr(self.google_flights_scraper, 'search_async'):
-            return await self.google_flights_scraper.search_async(
-                origin, destination, departure_date, return_date
-            )
-        elif hasattr(self.google_flights_scraper, 'search'):
-            # Run sync method in thread pool
-            loop = asyncio.get_event_loop()
-            return await loop.run_in_executor(
-                None,
-                lambda: self.google_flights_scraper.search(
-                    origin, destination, departure_date, return_date
-                )
-            )
-        else:
-            raise RuntimeError("Google Flights scraper has no search method")
 
     async def _search_skiplagged(
         self,
@@ -370,19 +348,23 @@ class ParallelFlightSearch:
         start_time = asyncio.get_event_loop().time()
 
         try:
-            if self.skiplagged_scraper is None:
-                raise RuntimeError("Skiplagged scraper not configured")
-
-            # Execute search with timeout
+            # Execute search with timeout using the imported scraper function
             raw_flights = await asyncio.wait_for(
-                self._run_skiplagged_search(origin, destination, departure_date, return_date),
+                search_skiplagged_flights(
+                    origin=origin,
+                    destination=destination,
+                    departure_date=departure_date,
+                    return_date=return_date,
+                    headless=self.headless
+                ),
                 timeout=self.per_source_timeout_seconds
             )
 
-            # Normalize results
+            # Filter out error entries and normalize results
             normalized = [
                 normalize_skiplagged_flight(f, origin, destination)
                 for f in raw_flights
+                if not f.get('error')
             ]
 
             search_time = asyncio.get_event_loop().time() - start_time
@@ -394,31 +376,6 @@ class ParallelFlightSearch:
         except Exception as e:
             logger.error(f"Skiplagged search error: {e}")
             raise
-
-    async def _run_skiplagged_search(
-        self,
-        origin: str,
-        destination: str,
-        departure_date: str,
-        return_date: Optional[str] = None,
-    ) -> List[Dict[str, Any]]:
-        """Execute the actual Skiplagged scraper."""
-        # Check if scraper has async search method
-        if hasattr(self.skiplagged_scraper, 'search_async'):
-            return await self.skiplagged_scraper.search_async(
-                origin, destination, departure_date, return_date
-            )
-        elif hasattr(self.skiplagged_scraper, 'search'):
-            # Run sync method in thread pool
-            loop = asyncio.get_event_loop()
-            return await loop.run_in_executor(
-                None,
-                lambda: self.skiplagged_scraper.search(
-                    origin, destination, departure_date, return_date
-                )
-            )
-        else:
-            raise RuntimeError("Skiplagged scraper has no search method")
 
     async def _search_hidden_city(
         self,
@@ -440,11 +397,9 @@ class ParallelFlightSearch:
         start_time = asyncio.get_event_loop().time()
 
         try:
-            if self.google_flights_scraper is None:
-                raise RuntimeError("Google Flights scraper not configured")
-
-            # Get target C destinations from route database
-            target_routes = self._get_hidden_city_targets(origin, destination)
+            # Get target C destinations from the imported route database
+            # Returns (routes_list, is_pair_specific)
+            target_routes, is_pair_specific = get_target_routes(destination, origin=origin)
 
             if not target_routes:
                 logger.warning(f"No hidden city routes configured for {origin} → {destination}")
@@ -455,12 +410,17 @@ class ParallelFlightSearch:
             # Create semaphore for concurrency control
             semaphore = asyncio.Semaphore(self.max_concurrent_hidden_city)
 
-            async def search_single_route(final_dest: str) -> List[Dict[str, Any]]:
+            async def search_single_route(final_dest: str) -> List[FlightResult]:
                 """Search a single A→C route with semaphore control."""
                 async with semaphore:
                     try:
                         raw_flights = await asyncio.wait_for(
-                            self._run_google_flights_search(origin, final_dest, departure_date),
+                            search_google_flights(
+                                origin=origin,
+                                destination=final_dest,
+                                departure_date=departure_date,
+                                headless=self.headless
+                            ),
                             timeout=self.per_source_timeout_seconds
                         )
 
@@ -493,30 +453,6 @@ class ParallelFlightSearch:
         except Exception as e:
             logger.error(f"Hidden city search error: {e}")
             raise
-
-    def _get_hidden_city_targets(self, origin: str, destination: str) -> List[str]:
-        """
-        Get list of C destinations to search for hidden city deals.
-
-        Uses route database if available, otherwise returns empty list.
-        """
-        if self.route_database is None:
-            return []
-
-        # Try to get pair-specific routes first
-        if hasattr(self.route_database, 'get_target_routes'):
-            return self.route_database.get_target_routes(destination, origin=origin)
-        elif hasattr(self.route_database, 'get_routes'):
-            return self.route_database.get_routes(origin, destination)
-        elif isinstance(self.route_database, dict):
-            # Simple dict-based route database
-            pair_key = (origin, destination)
-            if pair_key in self.route_database:
-                return self.route_database[pair_key]
-            elif destination in self.route_database:
-                return self.route_database[destination]
-
-        return []
 
     def _process_hidden_city_flights(
         self,
@@ -676,27 +612,25 @@ async def search_flights(
     destination: str,
     departure_date: str,
     return_date: Optional[str] = None,
-    google_flights_scraper=None,
-    skiplagged_scraper=None,
-    route_database=None,
     sources: Optional[List[str]] = None,
     max_concurrent: int = 2,
+    headless: bool = True,
 ) -> ParallelSearchResult:
     """
     Convenience function to run a parallel flight search.
 
-    This is the main entry point for running searches.
+    This is the main entry point for running searches. It searches across
+    Google Flights, Skiplagged, and hidden city routes in parallel.
 
     Args:
-        origin: Origin airport code
-        destination: Destination airport code
+        origin: Origin airport code (e.g., "GRU")
+        destination: Destination airport code (e.g., "MCO")
         departure_date: Departure date (YYYY-MM-DD)
-        return_date: Optional return date
-        google_flights_scraper: Google Flights scraper instance
-        skiplagged_scraper: Skiplagged scraper instance
-        route_database: Route database for hidden city targets
+        return_date: Optional return date for round-trip
         sources: List of sources to search (default: all)
+                 Options: ["google_flights", "skiplagged", "hidden_city"]
         max_concurrent: Max concurrent hidden city searches
+        headless: Whether to run browsers in headless mode
 
     Returns:
         ParallelSearchResult with all flight data
@@ -706,19 +640,20 @@ async def search_flights(
             origin="GRU",
             destination="MCO",
             departure_date="2026-03-20",
-            google_flights_scraper=gf_scraper,
-            skiplagged_scraper=sl_scraper,
-            route_database=routes,
         )
 
         print(f"Found {results.total_flights_found} flights")
         print(f"Best price: {results.best_overall.price}")
+
+        # Check hidden city savings
+        if results.best_hidden_city:
+            print(f"Hidden city deal: {results.best_hidden_city.price}")
+            print(f"  Book: {results.best_hidden_city.search_route}")
+            print(f"  Exit at: {results.best_hidden_city.hidden_city_target}")
     """
     search = ParallelFlightSearch(
-        google_flights_scraper=google_flights_scraper,
-        skiplagged_scraper=skiplagged_scraper,
-        route_database=route_database,
         max_concurrent_hidden_city=max_concurrent,
+        headless=headless,
     )
 
     return await search.search_all(
