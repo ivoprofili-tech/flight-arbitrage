@@ -337,7 +337,30 @@ class SkiplaggedScraper:
                     const destCode = args.destCode;
                     const destName = args.destName;
                     const flights = [];
-                    const airlines = ["JetBlue", "Delta", "American", "United", "Spirit", "Frontier", "Alaska", "Southwest"];
+                    const airlines = [
+                        // US Airlines
+                        "JetBlue", "Delta", "American", "United", "Spirit", "Frontier", "Alaska", "Southwest",
+                        // Europe
+                        "British Airways", "Lufthansa", "Air France", "KLM", "Iberia", "Swiss", "Turkish Airlines",
+                        "SAS", "TAP Portugal", "Norwegian", "Ryanair", "easyJet", "Vueling", "Aer Lingus",
+                        // Middle East
+                        "Emirates", "Qatar Airways", "Etihad", "Saudia", "Royal Jordanian",
+                        // Asia
+                        "Singapore Airlines", "Cathay Pacific", "Japan Airlines", "JAL", "ANA", "All Nippon Airways",
+                        "Korean Air", "Asiana", "Thai Airways", "Malaysia Airlines", "Air India", "EVA Air",
+                        "China Airlines", "Air China", "China Eastern", "China Southern", "Garuda Indonesia",
+                        "Philippine Airlines", "Vietnam Airlines",
+                        // South America
+                        "LATAM", "Avianca", "Gol", "Azul", "Copa", "Aerolineas Argentinas",
+                        // Oceania
+                        "Qantas", "Air New Zealand", "Virgin Australia", "Fiji Airways",
+                        // Africa
+                        "Ethiopian Airlines", "South African Airways", "EgyptAir", "Royal Air Maroc", "Kenya Airways",
+                        // Mexico/Caribbean
+                        "Aeromexico", "Volaris", "VivaAerobus", "Caribbean Airlines",
+                        // Canada
+                        "Air Canada", "WestJet"
+                    ];
                     const seen = new Set();
 
                     // City name mapping for destination detection
@@ -527,7 +550,30 @@ class SkiplaggedScraper:
 
             # Text-based fallback parsing (for flights not captured by JS DOM)
             lines = page_text.split('\n')
-            airlines = ["JetBlue", "Delta", "American", "United", "Spirit", "Frontier", "Alaska", "Southwest"]
+            airlines = [
+                # US Airlines
+                "JetBlue", "Delta", "American", "United", "Spirit", "Frontier", "Alaska", "Southwest",
+                # Europe
+                "British Airways", "Lufthansa", "Air France", "KLM", "Iberia", "Swiss", "Turkish Airlines",
+                "SAS", "TAP Portugal", "Norwegian", "Ryanair", "easyJet", "Vueling", "Aer Lingus",
+                # Middle East
+                "Emirates", "Qatar Airways", "Etihad", "Saudia", "Royal Jordanian",
+                # Asia
+                "Singapore Airlines", "Cathay Pacific", "Japan Airlines", "JAL", "ANA", "All Nippon Airways",
+                "Korean Air", "Asiana", "Thai Airways", "Malaysia Airlines", "Air India", "EVA Air",
+                "China Airlines", "Air China", "China Eastern", "China Southern", "Garuda Indonesia",
+                "Philippine Airlines", "Vietnam Airlines",
+                # South America
+                "LATAM", "Avianca", "Gol", "Azul", "Copa", "Aerolineas Argentinas",
+                # Oceania
+                "Qantas", "Air New Zealand", "Virgin Australia", "Fiji Airways",
+                # Africa
+                "Ethiopian Airlines", "South African Airways", "EgyptAir", "Royal Air Maroc", "Kenya Airways",
+                # Mexico/Caribbean
+                "Aeromexico", "Volaris", "VivaAerobus", "Caribbean Airlines",
+                # Canada
+                "Air Canada", "WestJet"
+            ]
 
             # Build seen set from JS-extracted flights to avoid duplicates
             seen = set()
