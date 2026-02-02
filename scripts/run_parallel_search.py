@@ -290,6 +290,63 @@ def get_default_date() -> str:
     return future.strftime("%Y-%m-%d")
 
 
+def push_results_to_github():
+    """Push debug files and results to GitHub, then clean up locally."""
+    import subprocess
+
+    branch = "claude/parallel-scraper-consolidation-D2RiE"
+
+    print_header("PUSHING RESULTS TO GITHUB")
+
+    # Add all debug/result files
+    subprocess.run(
+        "git add search_results/ debug_*.txt debug_*.png videos/*.webm 2>/dev/null",
+        shell=True, capture_output=True
+    )
+
+    # Check if there's anything to commit
+    result = subprocess.run("git diff --cached --quiet", shell=True)
+    if result.returncode == 0:
+        print(" No new files to commit")
+    else:
+        # Commit
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        subprocess.run(
+            f'git commit -m "Test results {timestamp}"',
+            shell=True, capture_output=True
+        )
+        print(" ✓ Committed new results")
+
+    # Pull and rebase
+    print(" Pulling latest changes...")
+    subprocess.run(
+        f"git pull --rebase origin {branch}",
+        shell=True, capture_output=True
+    )
+
+    # Push
+    print(" Pushing to GitHub...")
+    result = subprocess.run(
+        f"git push origin {branch}",
+        shell=True, capture_output=True
+    )
+
+    if result.returncode == 0:
+        print(" ✓ Pushed successfully")
+    else:
+        print(f" ✗ Push failed: {result.stderr.decode()}")
+        return
+
+    # Clean up local files
+    print(" Cleaning up local debug files...")
+    subprocess.run("rm -f debug_*.png debug_*.txt 2>/dev/null", shell=True)
+    subprocess.run("rm -f search_results/*.json 2>/dev/null", shell=True)
+    subprocess.run("rm -f videos/*.webm 2>/dev/null", shell=True)
+    print(" ✓ Local files cleaned")
+
+    print_header("READY FOR NEXT TEST")
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Run parallel flight search across multiple sources",
@@ -348,6 +405,11 @@ Examples:
         action="store_true",
         help="Don't save results to file"
     )
+    parser.add_argument(
+        "--push", "-p",
+        action="store_true",
+        help="Push results to GitHub after search completes"
+    )
 
     args = parser.parse_args()
 
@@ -375,6 +437,10 @@ Examples:
         quick=args.quick,
         save_results=not args.no_save,
     ))
+
+    # Push results if requested
+    if args.push:
+        push_results_to_github()
 
 
 if __name__ == "__main__":
