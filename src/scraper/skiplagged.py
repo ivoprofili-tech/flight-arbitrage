@@ -359,7 +359,9 @@ class SkiplaggedScraper:
                         // Mexico/Caribbean
                         "Aeromexico", "Volaris", "VivaAerobus", "Caribbean Airlines",
                         // Canada
-                        "Air Canada", "WestJet"
+                        "Air Canada", "WestJet",
+                        // Multi-airline trips
+                        "Multiple", "Multiple Airlines"
                     ];
                     const seen = new Set();
 
@@ -572,7 +574,9 @@ class SkiplaggedScraper:
                 # Mexico/Caribbean
                 "Aeromexico", "Volaris", "VivaAerobus", "Caribbean Airlines",
                 # Canada
-                "Air Canada", "WestJet"
+                "Air Canada", "WestJet",
+                # Multi-airline trips
+                "Multiple", "Multiple Airlines"
             ]
 
             # Build seen set from JS-extracted flights to avoid duplicates
