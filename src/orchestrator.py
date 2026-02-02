@@ -18,6 +18,13 @@ from typing import Optional
 from datetime import datetime
 
 from .scraper.google_flights import search_google_flights
+from .utils.layover_detection import (
+    get_city_variants,
+    check_layovers_list,
+    check_layover_in_text,
+    get_flight_text,
+    parse_price,
+)
 
 
 async def execute_targeted_skiplag_search(
@@ -69,7 +76,7 @@ async def execute_targeted_skiplag_search(
     failed_routes = []
 
     # Normalize destination_B for matching (handle various formats)
-    dest_b_variants = _get_city_variants(destination_B)
+    dest_b_variants = get_city_variants(destination_B)
 
     print("=" * 60)
     print("HIDDEN-CITY (SKIPLAGGING) SEARCH")
@@ -129,12 +136,12 @@ async def execute_targeted_skiplag_search(
                         print(f"    Checking flight {flight.get('price', 'N/A')}: layovers={layovers}")
 
                     # Check the layovers list for our target destination B
-                    has_b_layover = _check_layovers_list(layovers, dest_b_variants)
+                    has_b_layover = check_layovers_list(layovers, dest_b_variants)
 
                     # Fallback: check flight text if layovers list is empty
                     if not has_b_layover and not layovers:
-                        flight_text = _get_flight_text(flight)
-                        has_b_layover = _check_for_layover(flight_text, dest_b_variants)
+                        flight_text = get_flight_text(flight)
+                        has_b_layover = check_layover_in_text(flight_text, dest_b_variants)
                         if has_b_layover:
                             print(f"    Found {destination_B} in flight text (fallback)")
 
@@ -201,7 +208,7 @@ async def execute_targeted_skiplag_search(
             print(f"Task exception: {result}")
 
     # Sort deals by price
-    confirmed_deals.sort(key=lambda d: _parse_price(d.get('price', '$999999')))
+    confirmed_deals.sort(key=lambda d: parse_price(d.get('price', '$999999')))
 
     # Print summary
     print("\n" + "=" * 60)
@@ -225,156 +232,6 @@ async def execute_targeted_skiplag_search(
     print("=" * 60)
 
     return confirmed_deals
-
-
-def _get_city_variants(city: str) -> list[str]:
-    """
-    Get various name variants for a city to improve matching.
-
-    Args:
-        city: City name or airport code
-
-    Returns:
-        List of possible variants to search for
-    """
-    # Common city/airport mappings
-    city_mappings = {
-        'LAX': ['LAX', 'Los Angeles', 'LA'],
-        'JFK': ['JFK', 'New York', 'NYC', 'Kennedy'],
-        'ORD': ['ORD', 'Chicago', "O'Hare", 'OHare'],
-        'SFO': ['SFO', 'San Francisco', 'SF'],
-        'MIA': ['MIA', 'Miami'],
-        'BOS': ['BOS', 'Boston'],
-        'SEA': ['SEA', 'Seattle'],
-        'DEN': ['DEN', 'Denver'],
-        'ATL': ['ATL', 'Atlanta'],
-        'DFW': ['DFW', 'Dallas', 'Fort Worth'],
-        'PHX': ['PHX', 'Phoenix'],
-        'LAS': ['LAS', 'Las Vegas', 'Vegas'],
-        'SAN': ['SAN', 'San Diego'],
-        'PDX': ['PDX', 'Portland'],
-        'CLT': ['CLT', 'Charlotte'],
-        'DTW': ['DTW', 'Detroit'],
-        'MSP': ['MSP', 'Minneapolis'],
-        'MCO': ['MCO', 'Orlando'],
-        'EWR': ['EWR', 'Newark'],
-        'IAH': ['IAH', 'Houston'],
-        'AUS': ['AUS', 'Austin'],
-        'SLC': ['SLC', 'Salt Lake City'],
-    }
-
-    city_upper = city.upper().strip()
-
-    # If it's a known airport code, return all variants
-    if city_upper in city_mappings:
-        return city_mappings[city_upper]
-
-    # Check if the city name matches any mapping
-    city_lower = city.lower().strip()
-    for code, variants in city_mappings.items():
-        for variant in variants:
-            if variant.lower() == city_lower:
-                return city_mappings[code]
-
-    # Default: return the city and common variations
-    return [city, city.upper(), city.lower(), city.title()]
-
-
-def _get_flight_text(flight: dict) -> str:
-    """
-    Concatenate all flight info into searchable text.
-
-    Args:
-        flight: Flight dictionary
-
-    Returns:
-        Combined text from all flight fields
-    """
-    parts = []
-    for key, value in flight.items():
-        if value and isinstance(value, str):
-            parts.append(value)
-    return ' '.join(parts).lower()
-
-
-def _check_layovers_list(layovers: list[str], city_variants: list[str]) -> bool:
-    """
-    Check if any city variant appears in the layovers list.
-
-    This is the preferred method when the scraper has extracted explicit
-    layover airport codes from the flight details.
-
-    Args:
-        layovers: List of airport codes from the flight (e.g., ['LAX', 'DEN'])
-        city_variants: List of city name/code variants to search for
-
-    Returns:
-        True if a layover at the target city is detected
-    """
-    if not layovers:
-        return False
-
-    # Normalize layovers to uppercase for comparison
-    layovers_upper = [code.upper().strip() for code in layovers]
-
-    for variant in city_variants:
-        variant_upper = variant.upper().strip()
-        
-        # Direct match with airport code
-        if variant_upper in layovers_upper:
-            return True
-        
-        # Also check partial matches (for city names in layover data)
-        for layover in layovers_upper:
-            # Check if the 3-letter code matches
-            if len(variant_upper) == 3 and variant_upper == layover:
-                return True
-            # Check if city name contains the layover code or vice versa
-            if len(variant_upper) > 3:
-                if layover in variant_upper or variant_upper in layover:
-                    return True
-
-    return False
-
-
-def _check_for_layover(flight_text: str, city_variants: list[str]) -> bool:
-    """
-    Check if any city variant appears in the flight text.
-
-    This is a fallback method when explicit layover data is not available.
-
-    Args:
-        flight_text: Combined flight information text
-        city_variants: List of city name variants to search for
-
-    Returns:
-        True if a layover at the target city is detected
-    """
-    flight_lower = flight_text.lower()
-
-    for variant in city_variants:
-        if variant.lower() in flight_lower:
-            return True
-
-    return False
-
-
-def _parse_price(price_str: str) -> int:
-    """
-    Parse a price string to an integer for sorting.
-
-    Args:
-        price_str: Price string like "$299", "US$1,234", etc.
-
-    Returns:
-        Integer price value, or 999999 if parsing fails
-    """
-    try:
-        # Remove currency symbols, commas, spaces
-        cleaned = ''.join(c for c in price_str if c.isdigit())
-        return int(cleaned) if cleaned else 999999
-    except:
-        return 999999
 
 
 async def search_skiplag_deals(

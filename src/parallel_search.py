@@ -30,6 +30,9 @@ from src.scraper.google_flights import search_google_flights
 from src.scraper.skiplagged import search_skiplagged_flights
 from src.data.route_database import get_target_routes
 
+# Import shared layover detection utilities
+from src.utils.layover_detection import get_city_variants_set
+
 # Configure logging
 logger = logging.getLogger(__name__)
 
@@ -467,7 +470,7 @@ class ParallelFlightSearch:
         Checks if hidden_city_target (B) appears as a layover in each flight.
         """
         results: List[FlightResult] = []
-        target_variants = self._get_city_variants(hidden_city_target)
+        target_variants = get_city_variants_set(hidden_city_target)
 
         for flight in raw_flights:
             layovers = flight.get('layovers', [])
@@ -511,46 +514,6 @@ class ParallelFlightSearch:
                 results.append(normalized)
 
         return results
-
-    def _get_city_variants(self, airport_code: str) -> Set[str]:
-        """
-        Generate variants of an airport code for matching.
-
-        Examples:
-            "MCO" → {"MCO", "ORLANDO", "ORL"}
-            "JFK" → {"JFK", "NEW YORK", "NYC", "NEWYORK"}
-        """
-        code = airport_code.upper().strip()
-        variants = {code}
-
-        # Common airport code to city name mappings
-        city_mappings = {
-            "MCO": ["ORLANDO", "ORL"],
-            "JFK": ["NEW YORK", "NYC", "NEWYORK"],
-            "EWR": ["NEWARK", "NEW YORK", "NYC"],
-            "LGA": ["LAGUARDIA", "NEW YORK", "NYC"],
-            "LAX": ["LOS ANGELES", "LA"],
-            "SFO": ["SAN FRANCISCO", "SF"],
-            "ORD": ["CHICAGO", "CHI", "O'HARE"],
-            "DFW": ["DALLAS", "DAL", "FORT WORTH"],
-            "DEN": ["DENVER"],
-            "ATL": ["ATLANTA"],
-            "MIA": ["MIAMI"],
-            "FLL": ["FORT LAUDERDALE", "FT LAUDERDALE"],
-            "TPA": ["TAMPA"],
-            "PHX": ["PHOENIX"],
-            "SEA": ["SEATTLE"],
-            "BOS": ["BOSTON"],
-            "DCA": ["WASHINGTON", "DC", "REAGAN"],
-            "IAD": ["DULLES", "WASHINGTON", "DC"],
-            "GRU": ["SAO PAULO", "GUARULHOS"],
-            "GIG": ["RIO DE JANEIRO", "RIO", "GALEAO"],
-        }
-
-        if code in city_mappings:
-            variants.update(city_mappings[code])
-
-        return variants
 
     def _deduplicate_flights(self, flights: List[FlightResult]) -> List[FlightResult]:
         """
