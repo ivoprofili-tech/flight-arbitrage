@@ -34,8 +34,12 @@ import argparse
 import json
 import logging
 import sys
+import warnings
 from datetime import datetime, timedelta
 from pathlib import Path
+
+# Suppress asyncio event loop closed warnings (harmless cleanup noise)
+warnings.filterwarnings("ignore", message=".*Event loop is closed.*")
 
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -119,8 +123,9 @@ async def run_search(
     print(f" Date: {departure_date}")
     print(f" Sources: {', '.join(sources) if sources else 'all'}")
     print(f" Mode: {'headless' if headless else 'visible browser'}")
+    print(f" Concurrency: {max_concurrent} parallel searches")
 
-    # Show route info
+    # Show route info and calculate expected timeout
     targets, is_pair_specific = get_target_routes(destination, origin)
     if sources is None or "hidden_city" in sources:
         route_type = "pair-specific" if is_pair_specific else "default"
@@ -129,16 +134,25 @@ async def run_search(
         if quick and len(targets) > 3:
             print(f"   → Quick mode: limited to first 3 routes")
 
+        # Calculate and show expected timeout
+        batches = (target_count + max_concurrent - 1) // max_concurrent
+        base_timeout = 180  # 3 min for direct searches
+        hc_timeout = batches * 60  # ~60s per batch
+        total_timeout = base_timeout + hc_timeout
+        print(f" Expected timeout: {format_duration(total_timeout)} ({batches} batches × ~60s + base)")
+
     print_header("SEARCHING...", "-")
     start_time = datetime.now()
 
     try:
         # For quick mode, limit the routes
         if quick:
-            # Create a custom search with limited routes
+            # Create a custom search with limited routes (3 routes, shorter timeout)
+            num_routes = 3  # Quick mode uses 3 routes max
             search = ParallelFlightSearch(
                 max_concurrent_hidden_city=max_concurrent,
                 headless=headless,
+                num_hidden_city_routes=num_routes,
             )
 
             # Monkey-patch to limit routes
@@ -176,6 +190,7 @@ async def run_search(
                 sources=sources,
             )
         else:
+            # Full search - timeout auto-calculated based on route count
             results = await search_flights(
                 origin=origin,
                 destination=destination,
@@ -293,6 +308,7 @@ def get_default_date() -> str:
 def push_results_to_github():
     """Push debug files and results to GitHub, then clean up locally."""
     import subprocess
+    import time
 
     branch = "claude/parallel-scraper-consolidation-D2RiE"
 
@@ -317,24 +333,61 @@ def push_results_to_github():
         )
         print(" ✓ Committed new results")
 
-    # Pull and rebase
-    print(" Pulling latest changes...")
-    subprocess.run(
-        f"git pull --rebase origin {branch}",
-        shell=True, capture_output=True
-    )
+    # Fetch, rebase, and push with retry
+    max_retries = 4
+    delays = [2, 4, 8, 16]
 
-    # Push
-    print(" Pushing to GitHub...")
-    result = subprocess.run(
-        f"git push origin {branch}",
-        shell=True, capture_output=True
-    )
+    for attempt in range(max_retries):
+        # First fetch
+        print(" Fetching latest changes...")
+        fetch_result = subprocess.run(
+            f"git fetch origin {branch}",
+            shell=True, capture_output=True
+        )
 
-    if result.returncode == 0:
-        print(" ✓ Pushed successfully")
+        if fetch_result.returncode != 0:
+            print(f" ✗ Fetch failed: {fetch_result.stderr.decode()}")
+            if attempt < max_retries - 1:
+                print(f" Retrying in {delays[attempt]}s...")
+                time.sleep(delays[attempt])
+                continue
+            return
+
+        # Rebase onto fetched changes
+        print(" Rebasing onto latest...")
+        rebase_result = subprocess.run(
+            f"git rebase origin/{branch}",
+            shell=True, capture_output=True
+        )
+
+        if rebase_result.returncode != 0:
+            print(f" ✗ Rebase conflict - aborting rebase")
+            subprocess.run("git rebase --abort", shell=True, capture_output=True)
+            # Try to just push anyway - maybe we're ahead
+            pass
+
+        # Push
+        print(" Pushing to GitHub...")
+        result = subprocess.run(
+            f"git push origin {branch}",
+            shell=True, capture_output=True
+        )
+
+        if result.returncode == 0:
+            print(" ✓ Pushed successfully")
+            break
+        else:
+            error_msg = result.stderr.decode()
+            if "fetch first" in error_msg or "rejected" in error_msg:
+                print(f" ✗ Push rejected (remote has changes)")
+                if attempt < max_retries - 1:
+                    print(f" Retrying in {delays[attempt]}s...")
+                    time.sleep(delays[attempt])
+                    continue
+            print(f" ✗ Push failed: {error_msg}")
+            return
     else:
-        print(f" ✗ Push failed: {result.stderr.decode()}")
+        print(" ✗ Failed after all retries")
         return
 
     # Clean up local files
@@ -426,17 +479,25 @@ Examples:
     # Get date
     departure_date = args.date or get_default_date()
 
-    # Run search
-    asyncio.run(run_search(
-        origin=args.origin.upper(),
-        destination=args.destination.upper(),
-        departure_date=departure_date,
-        sources=sources,
-        headless=not args.visible,
-        max_concurrent=args.max_concurrent,
-        quick=args.quick,
-        save_results=not args.no_save,
-    ))
+    # Run search with proper cleanup handling
+    try:
+        asyncio.run(run_search(
+            origin=args.origin.upper(),
+            destination=args.destination.upper(),
+            departure_date=departure_date,
+            sources=sources,
+            headless=not args.visible,
+            max_concurrent=args.max_concurrent,
+            quick=args.quick,
+            save_results=not args.no_save,
+        ))
+    except RuntimeError as e:
+        # Ignore "Event loop is closed" errors during cleanup
+        if "Event loop is closed" not in str(e):
+            raise
+    except KeyboardInterrupt:
+        print("\n Search cancelled by user")
+        sys.exit(1)
 
     # Push results if requested
     if args.push:

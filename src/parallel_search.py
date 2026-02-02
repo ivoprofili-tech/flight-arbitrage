@@ -143,9 +143,10 @@ class ParallelFlightSearch:
     def __init__(
         self,
         max_concurrent_hidden_city: int = 2,
-        search_timeout_seconds: float = 300.0,
+        search_timeout_seconds: float = None,  # None = auto-calculate
         per_source_timeout_seconds: float = 120.0,
         headless: bool = True,
+        num_hidden_city_routes: int = 0,  # For auto-calculating timeout
     ):
         """
         Initialize the parallel search engine.
@@ -153,13 +154,32 @@ class ParallelFlightSearch:
         Args:
             max_concurrent_hidden_city: Max concurrent A→C searches in orchestrator
             search_timeout_seconds: Global timeout for entire search operation
+                                   If None, auto-calculates based on routes
             per_source_timeout_seconds: Timeout for each individual source
             headless: Whether to run browsers in headless mode
+            num_hidden_city_routes: Number of hidden city routes (for timeout calc)
         """
         self.max_concurrent_hidden_city = max_concurrent_hidden_city
-        self.search_timeout_seconds = search_timeout_seconds
         self.per_source_timeout_seconds = per_source_timeout_seconds
         self.headless = headless
+
+        # Auto-calculate timeout if not specified
+        if search_timeout_seconds is None:
+            # Base timeout for direct searches (Google + Skiplagged)
+            base_timeout = 180.0  # 3 minutes for direct searches
+
+            if num_hidden_city_routes > 0:
+                # Calculate hidden city timeout:
+                # (routes / concurrency) * seconds_per_batch + buffer
+                batches = (num_hidden_city_routes + max_concurrent_hidden_city - 1) // max_concurrent_hidden_city
+                hidden_city_timeout = batches * 60.0  # ~60s per batch
+                self.search_timeout_seconds = base_timeout + hidden_city_timeout
+            else:
+                self.search_timeout_seconds = base_timeout
+
+            logger.info(f"Auto-calculated timeout: {self.search_timeout_seconds}s for {num_hidden_city_routes} HC routes")
+        else:
+            self.search_timeout_seconds = search_timeout_seconds
 
     async def search_all(
         self,
@@ -610,6 +630,7 @@ async def search_flights(
     sources: Optional[List[str]] = None,
     max_concurrent: int = 2,
     headless: bool = True,
+    timeout_seconds: Optional[float] = None,
 ) -> ParallelSearchResult:
     """
     Convenience function to run a parallel flight search.
@@ -626,6 +647,7 @@ async def search_flights(
                  Options: ["google_flights", "skiplagged", "hidden_city"]
         max_concurrent: Max concurrent hidden city searches
         headless: Whether to run browsers in headless mode
+        timeout_seconds: Global timeout (None = auto-calculate based on routes)
 
     Returns:
         ParallelSearchResult with all flight data
@@ -646,9 +668,17 @@ async def search_flights(
             print(f"  Book: {results.best_hidden_city.search_route}")
             print(f"  Exit at: {results.best_hidden_city.hidden_city_target}")
     """
+    # Get route count for timeout calculation
+    num_routes = 0
+    if sources is None or "hidden_city" in [s.lower().replace("-", "_") for s in sources]:
+        routes, _ = get_target_routes(destination, origin=origin)
+        num_routes = len(routes)
+
     search = ParallelFlightSearch(
         max_concurrent_hidden_city=max_concurrent,
         headless=headless,
+        search_timeout_seconds=timeout_seconds,
+        num_hidden_city_routes=num_routes,
     )
 
     return await search.search_all(
