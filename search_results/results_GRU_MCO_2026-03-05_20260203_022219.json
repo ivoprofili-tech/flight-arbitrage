@@ -1,0 +1,779 @@
+{
+  "search_params": {
+    "origin": "GRU",
+    "destination": "MCO",
+    "departure_date": "2026-03-05",
+    "return_date": null
+  },
+  "timing": {
+    "search_timestamp": "2026-02-03T02:22:19.884147",
+    "total_search_time_seconds": 435.48
+  },
+  "summary": {
+    "total_flights_found": 69,
+    "sources_succeeded": [
+      "google_flights",
+      "skiplagged",
+      "hidden_city"
+    ],
+    "sources_failed": []
+  },
+  "best_deals": {
+    "direct": null,
+    "skiplagged": {
+      "airline": "Avianca",
+      "departure_time": "2:40am",
+      "arrival_time": "12:10pm",
+      "duration": "12h",
+      "stops": "1 stop",
+      "price": "$223",
+      "source": "skiplagged"
+    },
+    "hidden_city": null,
+    "overall": {
+      "airline": "Avianca",
+      "departure_time": "2:40\u202fAM",
+      "arrival_time": "12:10\u202fPM",
+      "duration": "11h 30m",
+      "stops": "1 stop",
+      "price": "$223",
+      "source": "google_flights",
+      "layovers": [
+        "BOG"
+      ]
+    }
+  },
+  "source_details": {
+    "google_flights": {
+      "status": "success",
+      "flights_found": 30,
+      "search_time_seconds": 117.48,
+      "error": null
+    },
+    "skiplagged": {
+      "status": "success",
+      "flights_found": 39,
+      "search_time_seconds": 99.53,
+      "error": null
+    },
+    "hidden_city": {
+      "status": "success",
+      "flights_found": 1,
+      "search_time_seconds": 435.48,
+      "error": null
+    }
+  },
+  "all_flights": [
+    {
+      "airline": "Avianca",
+      "departure_time": "2:40\u202fAM",
+      "arrival_time": "12:10\u202fPM",
+      "duration": "11h 30m",
+      "stops": "1 stop",
+      "price": "$223",
+      "source": "google_flights",
+      "layovers": [
+        "BOG"
+      ]
+    },
+    {
+      "airline": "American",
+      "departure_time": "2:40\u202fAM",
+      "arrival_time": "12:10\u202fPM",
+      "duration": "11h 30m",
+      "stops": "1 stop",
+      "price": "$223",
+      "source": "google_flights",
+      "layovers": [
+        "BOG"
+      ]
+    },
+    {
+      "airline": "Avianca",
+      "departure_time": "1:20\u202fAM",
+      "arrival_time": "12:10\u202fPM",
+      "duration": "12h 50m",
+      "stops": "1 stop",
+      "price": "$223",
+      "source": "google_flights",
+      "layovers": [
+        "BOG"
+      ]
+    },
+    {
+      "airline": "Avianca",
+      "departure_time": "1:20\u202fAM",
+      "arrival_time": "12:55\u202fPM",
+      "duration": "13h 35m",
+      "stops": "1 stop",
+      "price": "$223",
+      "source": "google_flights",
+      "layovers": [
+        "BOG"
+      ]
+    },
+    {
+      "airline": "Avianca",
+      "departure_time": "2:40\u202fAM",
+      "arrival_time": "12:55\u202fPM",
+      "duration": "12h 15m",
+      "stops": "1 stop",
+      "price": "$223",
+      "source": "google_flights",
+      "layovers": [
+        "BOG"
+      ]
+    },
+    {
+      "airline": "Avianca",
+      "departure_time": "5:25\u202fPM",
+      "arrival_time": "12:10\u202fPM",
+      "duration": "20h 45m",
+      "stops": "1 stop",
+      "price": "$223",
+      "source": "google_flights",
+      "layovers": [
+        "BOG"
+      ]
+    },
+    {
+      "airline": "Avianca",
+      "departure_time": "5:25\u202fPM",
+      "arrival_time": "12:55\u202fPM",
+      "duration": "21h 30m",
+      "stops": "1 stop",
+      "price": "$223",
+      "source": "google_flights",
+      "layovers": [
+        "BOG"
+      ]
+    },
+    {
+      "airline": "Avianca",
+      "departure_time": "2:40am",
+      "arrival_time": "12:10pm",
+      "duration": "12h",
+      "stops": "1 stop",
+      "price": "$223",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Avianca",
+      "departure_time": "2:40am",
+      "arrival_time": "12:55pm",
+      "duration": "12h",
+      "stops": "1 stop",
+      "price": "$223",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Avianca",
+      "departure_time": "1:20am",
+      "arrival_time": "12:10pm",
+      "duration": "13h",
+      "stops": "1 stop",
+      "price": "$223",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Avianca",
+      "departure_time": "1:20am",
+      "arrival_time": "12:55pm",
+      "duration": "14h",
+      "stops": "1 stop",
+      "price": "$223",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Avianca",
+      "departure_time": "5:25pm",
+      "arrival_time": "12:10pm",
+      "duration": "21h",
+      "stops": "1 stop",
+      "price": "$223",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Avianca",
+      "departure_time": "5:25pm",
+      "arrival_time": "12:55pm",
+      "duration": "22h",
+      "stops": "1 stop",
+      "price": "$223",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Various",
+      "departure_time": "5:25\u202fAM",
+      "arrival_time": "9:22\u202fPM",
+      "duration": "17h 57m",
+      "stops": "1 stop",
+      "price": "$224",
+      "source": "google_flights",
+      "layovers": [
+        "PTY"
+      ]
+    },
+    {
+      "airline": "Various",
+      "departure_time": "5:25\u202fAM",
+      "arrival_time": "10:08\u202fPM",
+      "duration": "18h 43m",
+      "stops": "1 stop",
+      "price": "$224",
+      "source": "google_flights",
+      "layovers": [
+        "PTY"
+      ]
+    },
+    {
+      "airline": "Copa",
+      "departure_time": "5:25am",
+      "arrival_time": "9:22pm",
+      "duration": "18h",
+      "stops": "1 stop",
+      "price": "$224",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Copa",
+      "departure_time": "5:25am",
+      "arrival_time": "10:08pm",
+      "duration": "19h",
+      "stops": "1 stop",
+      "price": "$224",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Various",
+      "departure_time": "1:40\u202fAM",
+      "arrival_time": "11:46\u202fAM",
+      "duration": "12h 6m",
+      "stops": "1 stop",
+      "price": "$244",
+      "source": "google_flights",
+      "layovers": [
+        "PTY"
+      ]
+    },
+    {
+      "airline": "American",
+      "departure_time": "2:40\u202fAM",
+      "arrival_time": "12:10\u202fPM",
+      "duration": "11h 30m",
+      "stops": "1 stop",
+      "price": "$244",
+      "source": "google_flights",
+      "layovers": [
+        "BOG"
+      ]
+    },
+    {
+      "airline": "Various",
+      "departure_time": "1:30\u202fAM",
+      "arrival_time": "11:46\u202fAM",
+      "duration": "12h 16m",
+      "stops": "1 stop",
+      "price": "$244",
+      "source": "google_flights",
+      "layovers": [
+        "PTY"
+      ]
+    },
+    {
+      "airline": "Various",
+      "departure_time": "1:30\u202fAM",
+      "arrival_time": "1:00\u202fPM",
+      "duration": "13h 30m",
+      "stops": "1 stop",
+      "price": "$244",
+      "source": "google_flights",
+      "layovers": [
+        "PTY"
+      ]
+    },
+    {
+      "airline": "Various",
+      "departure_time": "1:30\u202fAM",
+      "arrival_time": "1:10\u202fPM",
+      "duration": "13h 40m",
+      "stops": "1 stop",
+      "price": "$244",
+      "source": "google_flights",
+      "layovers": [
+        "PTY"
+      ]
+    },
+    {
+      "airline": "Various",
+      "departure_time": "1:30\u202fAM",
+      "arrival_time": "3:35\u202fPM",
+      "duration": "16h 5m",
+      "stops": "1 stop",
+      "price": "$244",
+      "source": "google_flights",
+      "layovers": [
+        "PTY"
+      ]
+    },
+    {
+      "airline": "Various",
+      "departure_time": "1:30\u202fAM",
+      "arrival_time": "9:22\u202fPM",
+      "duration": "21h 52m",
+      "stops": "1 stop",
+      "price": "$244",
+      "source": "google_flights",
+      "layovers": [
+        "PTY"
+      ]
+    },
+    {
+      "airline": "Various",
+      "departure_time": "1:30\u202fAM",
+      "arrival_time": "10:08\u202fPM",
+      "duration": "22h 38m",
+      "stops": "1 stop",
+      "price": "$244",
+      "source": "google_flights",
+      "layovers": [
+        "PTY"
+      ]
+    },
+    {
+      "airline": "Various",
+      "departure_time": "1:40\u202fAM",
+      "arrival_time": "1:00\u202fPM",
+      "duration": "13h 20m",
+      "stops": "1 stop",
+      "price": "$244",
+      "source": "google_flights",
+      "layovers": [
+        "PTY"
+      ]
+    },
+    {
+      "airline": "Various",
+      "departure_time": "1:40\u202fAM",
+      "arrival_time": "1:10\u202fPM",
+      "duration": "13h 30m",
+      "stops": "1 stop",
+      "price": "$244",
+      "source": "google_flights",
+      "layovers": [
+        "PTY"
+      ]
+    },
+    {
+      "airline": "Various",
+      "departure_time": "1:40\u202fAM",
+      "arrival_time": "3:35\u202fPM",
+      "duration": "15h 55m",
+      "stops": "1 stop",
+      "price": "$244",
+      "source": "google_flights",
+      "layovers": [
+        "PTY"
+      ]
+    },
+    {
+      "airline": "Various",
+      "departure_time": "1:40\u202fAM",
+      "arrival_time": "9:22\u202fPM",
+      "duration": "21h 42m",
+      "stops": "1 stop",
+      "price": "$244",
+      "source": "google_flights",
+      "layovers": [
+        "PTY"
+      ]
+    },
+    {
+      "airline": "Various",
+      "departure_time": "1:40\u202fAM",
+      "arrival_time": "10:08\u202fPM",
+      "duration": "22h 28m",
+      "stops": "1 stop",
+      "price": "$244",
+      "source": "google_flights",
+      "layovers": [
+        "PTY"
+      ]
+    },
+    {
+      "airline": "Various",
+      "departure_time": "5:25\u202fAM",
+      "arrival_time": "3:35\u202fPM",
+      "duration": "12h 10m",
+      "stops": "1 stop",
+      "price": "$244",
+      "source": "google_flights",
+      "layovers": [
+        "PTY"
+      ]
+    },
+    {
+      "airline": "Various",
+      "departure_time": "5:25\u202fAM",
+      "arrival_time": "11:46\u202fAM",
+      "duration": "32h 21m",
+      "stops": "1 stop",
+      "price": "$244",
+      "source": "google_flights",
+      "layovers": [
+        "PTY"
+      ]
+    },
+    {
+      "airline": "Various",
+      "departure_time": "11:10\u202fAM",
+      "arrival_time": "9:22\u202fPM",
+      "duration": "12h 12m",
+      "stops": "1 stop",
+      "price": "$244",
+      "source": "google_flights",
+      "layovers": [
+        "PTY"
+      ]
+    },
+    {
+      "airline": "Various",
+      "departure_time": "11:10\u202fAM",
+      "arrival_time": "10:08\u202fPM",
+      "duration": "12h 58m",
+      "stops": "1 stop",
+      "price": "$244",
+      "source": "google_flights",
+      "layovers": [
+        "PTY"
+      ]
+    },
+    {
+      "airline": "Various",
+      "departure_time": "11:10\u202fAM",
+      "arrival_time": "11:46\u202fAM",
+      "duration": "26h 36m",
+      "stops": "1 stop",
+      "price": "$244",
+      "source": "google_flights",
+      "layovers": [
+        "PTY"
+      ]
+    },
+    {
+      "airline": "Various",
+      "departure_time": "11:10\u202fAM",
+      "arrival_time": "1:00\u202fPM",
+      "duration": "27h 50m",
+      "stops": "1 stop",
+      "price": "$244",
+      "source": "google_flights",
+      "layovers": [
+        "PTY"
+      ]
+    },
+    {
+      "airline": "Various",
+      "departure_time": "11:10\u202fAM",
+      "arrival_time": "1:10\u202fPM",
+      "duration": "28h 0m",
+      "stops": "1 stop",
+      "price": "$244",
+      "source": "google_flights",
+      "layovers": [
+        "PTY"
+      ]
+    },
+    {
+      "airline": "Various",
+      "departure_time": "11:10\u202fAM",
+      "arrival_time": "3:35\u202fPM",
+      "duration": "30h 25m",
+      "stops": "1 stop",
+      "price": "$244",
+      "source": "google_flights",
+      "layovers": [
+        "PTY"
+      ]
+    },
+    {
+      "airline": "Copa",
+      "departure_time": "1:40am",
+      "arrival_time": "11:46am",
+      "duration": "12h",
+      "stops": "1 stop",
+      "price": "$244",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Copa",
+      "departure_time": "5:25am",
+      "arrival_time": "3:35pm",
+      "duration": "12h",
+      "stops": "1 stop",
+      "price": "$244",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Copa",
+      "departure_time": "11:10am",
+      "arrival_time": "9:22pm",
+      "duration": "12h",
+      "stops": "1 stop",
+      "price": "$244",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Copa",
+      "departure_time": "1:30am",
+      "arrival_time": "11:46am",
+      "duration": "12h",
+      "stops": "1 stop",
+      "price": "$244",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Copa",
+      "departure_time": "11:10am",
+      "arrival_time": "10:08pm",
+      "duration": "13h",
+      "stops": "1 stop",
+      "price": "$244",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Copa",
+      "departure_time": "1:40am",
+      "arrival_time": "1:00pm",
+      "duration": "13h",
+      "stops": "1 stop",
+      "price": "$244",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Copa",
+      "departure_time": "1:30am",
+      "arrival_time": "1:00pm",
+      "duration": "14h",
+      "stops": "1 stop",
+      "price": "$244",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Copa",
+      "departure_time": "1:40am",
+      "arrival_time": "1:10pm",
+      "duration": "14h",
+      "stops": "1 stop",
+      "price": "$244",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Copa",
+      "departure_time": "1:30am",
+      "arrival_time": "1:10pm",
+      "duration": "14h",
+      "stops": "1 stop",
+      "price": "$244",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Copa",
+      "departure_time": "1:40am",
+      "arrival_time": "3:35pm",
+      "duration": "16h",
+      "stops": "1 stop",
+      "price": "$244",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Copa",
+      "departure_time": "1:30am",
+      "arrival_time": "3:35pm",
+      "duration": "16h",
+      "stops": "1 stop",
+      "price": "$244",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Copa",
+      "departure_time": "1:40am",
+      "arrival_time": "9:22pm",
+      "duration": "22h",
+      "stops": "1 stop",
+      "price": "$244",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Copa",
+      "departure_time": "1:30am",
+      "arrival_time": "9:22pm",
+      "duration": "22h",
+      "stops": "1 stop",
+      "price": "$244",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Copa",
+      "departure_time": "1:40am",
+      "arrival_time": "10:08pm",
+      "duration": "22h",
+      "stops": "1 stop",
+      "price": "$244",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Copa",
+      "departure_time": "1:30am",
+      "arrival_time": "10:08pm",
+      "duration": "23h",
+      "stops": "1 stop",
+      "price": "$244",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Copa",
+      "departure_time": "11:10am",
+      "arrival_time": "11:46am",
+      "duration": "27h",
+      "stops": "1 stop",
+      "price": "$244",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Copa",
+      "departure_time": "11:10am",
+      "arrival_time": "1:00pm",
+      "duration": "28h",
+      "stops": "1 stop",
+      "price": "$244",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Copa",
+      "departure_time": "11:10am",
+      "arrival_time": "1:10pm",
+      "duration": "28h",
+      "stops": "1 stop",
+      "price": "$244",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Copa",
+      "departure_time": "11:10am",
+      "arrival_time": "3:35pm",
+      "duration": "30h",
+      "stops": "1 stop",
+      "price": "$244",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Copa",
+      "departure_time": "5:25am",
+      "arrival_time": "11:46am",
+      "duration": "32h",
+      "stops": "1 stop",
+      "price": "$244",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Avianca",
+      "departure_time": "7:35am",
+      "arrival_time": "12:10pm",
+      "duration": "31h",
+      "stops": "1 stop",
+      "price": "$247",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Avianca",
+      "departure_time": "7:35am",
+      "arrival_time": "12:55pm",
+      "duration": "31h",
+      "stops": "1 stop",
+      "price": "$247",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Copa",
+      "departure_time": "3:10am",
+      "arrival_time": "1:10pm",
+      "duration": "12h",
+      "stops": "1 stop",
+      "price": "$269",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Copa",
+      "departure_time": "3:10am",
+      "arrival_time": "10:08pm",
+      "duration": "21h",
+      "stops": "1 stop",
+      "price": "$269",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "Copa",
+      "departure_time": "3:10am",
+      "arrival_time": "1:00pm",
+      "duration": "12h",
+      "stops": "1 stop",
+      "price": "$270",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "United",
+      "departure_time": "9:45pm",
+      "arrival_time": "11:11am",
+      "duration": "15h",
+      "stops": "1 stop",
+      "price": "$273",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "United",
+      "departure_time": "9:45pm",
+      "arrival_time": "1:10pm",
+      "duration": "17h",
+      "stops": "1 stop",
+      "price": "$273",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "United",
+      "departure_time": "9:45pm",
+      "arrival_time": "2:36pm",
+      "duration": "19h",
+      "stops": "1 stop",
+      "price": "$273",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "United",
+      "departure_time": "9:45pm",
+      "arrival_time": "4:54pm",
+      "duration": "21h",
+      "stops": "1 stop",
+      "price": "$273",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "LATAM",
+      "departure_time": "4:35pm",
+      "arrival_time": "12:40pm",
+      "duration": "22h",
+      "stops": "2 stops",
+      "price": "$273",
+      "source": "skiplagged"
+    },
+    {
+      "airline": "United",
+      "departure_time": "9:45pm",
+      "arrival_time": "6:16pm",
+      "duration": "23h",
+      "stops": "1 stop",
+      "price": "$273",
+      "source": "skiplagged"
+    }
+  ]
+}
