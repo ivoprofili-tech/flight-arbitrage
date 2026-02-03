@@ -59,6 +59,60 @@ logger = logging.getLogger(__name__)
 logging.getLogger('playwright').setLevel(logging.WARNING)
 logging.getLogger('asyncio').setLevel(logging.WARNING)
 
+# Git branch for this feature
+GIT_BRANCH = "claude/parallel-scraper-consolidation-D2RiE"
+
+
+def sync_with_remote():
+    """Sync local repo with remote before running search. Fixes pull conflicts."""
+    import subprocess
+
+    print(" Syncing with remote...")
+
+    # Clean up any local debug files first
+    subprocess.run("rm -f debug_*.png debug_*.txt 2>/dev/null", shell=True)
+    subprocess.run("rm -f search_results/*.json 2>/dev/null", shell=True)
+    subprocess.run("rm -f videos/*.webm 2>/dev/null", shell=True)
+
+    # Fetch latest from remote
+    fetch_result = subprocess.run(
+        f"git fetch origin {GIT_BRANCH}",
+        shell=True, capture_output=True
+    )
+
+    if fetch_result.returncode != 0:
+        print(f" ⚠ Fetch failed (offline?): {fetch_result.stderr.decode()[:100]}")
+        return False
+
+    # Check if we have local changes
+    status_result = subprocess.run(
+        "git status --porcelain",
+        shell=True, capture_output=True, text=True
+    )
+
+    if status_result.stdout.strip():
+        # Has local changes - reset to remote
+        print(" Resetting to match remote...")
+        subprocess.run(
+            f"git reset --hard origin/{GIT_BRANCH}",
+            shell=True, capture_output=True
+        )
+    else:
+        # No local changes - just pull
+        pull_result = subprocess.run(
+            f"git pull origin {GIT_BRANCH} --ff-only",
+            shell=True, capture_output=True
+        )
+        if pull_result.returncode != 0:
+            # Fast-forward failed, reset instead
+            subprocess.run(
+                f"git reset --hard origin/{GIT_BRANCH}",
+                shell=True, capture_output=True
+            )
+
+    print(" ✓ Synced with remote")
+    return True
+
 
 def print_header(title: str, char: str = "="):
     """Print a formatted header."""
@@ -310,8 +364,6 @@ def push_results_to_github():
     import subprocess
     import time
 
-    branch = "claude/parallel-scraper-consolidation-D2RiE"
-
     print_header("PUSHING RESULTS TO GITHUB")
 
     # Add all debug/result files
@@ -341,7 +393,7 @@ def push_results_to_github():
         # First fetch
         print(" Fetching latest changes...")
         fetch_result = subprocess.run(
-            f"git fetch origin {branch}",
+            f"git fetch origin {GIT_BRANCH}",
             shell=True, capture_output=True
         )
 
@@ -356,7 +408,7 @@ def push_results_to_github():
         # Rebase onto fetched changes
         print(" Rebasing onto latest...")
         rebase_result = subprocess.run(
-            f"git rebase origin/{branch}",
+            f"git rebase origin/{GIT_BRANCH}",
             shell=True, capture_output=True
         )
 
@@ -369,7 +421,7 @@ def push_results_to_github():
         # Push
         print(" Pushing to GitHub...")
         result = subprocess.run(
-            f"git push origin {branch}",
+            f"git push origin {GIT_BRANCH}",
             shell=True, capture_output=True
         )
 
@@ -463,8 +515,17 @@ Examples:
         action="store_true",
         help="Push results to GitHub after search completes"
     )
+    parser.add_argument(
+        "--no-sync",
+        action="store_true",
+        help="Skip syncing with remote before search (use if offline)"
+    )
 
     args = parser.parse_args()
+
+    # Sync with remote before search (prevents pull conflicts)
+    if not args.no_sync:
+        sync_with_remote()
 
     # Parse sources
     sources = None
