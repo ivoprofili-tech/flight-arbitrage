@@ -1176,7 +1176,7 @@ class GoogleFlightsScraper:
                         return priceA - priceB;
                     });
 
-                    return flights.slice(0, 30);
+                    return flights.slice(0, 50);
                 }
             ''', layover_map)
 
@@ -1248,7 +1248,7 @@ class GoogleFlightsScraper:
                 text = await row.inner_text()
                 if '$' in text and ':' in text:  # Has price and time
                     valid_rows.append(row)
-            flight_rows = valid_rows[:30]
+            flight_rows = valid_rows[:50]
 
         print(f"  Found {len(flight_rows)} clickable flight rows")
 
