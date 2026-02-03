@@ -144,7 +144,7 @@ class ParallelFlightSearch:
         self,
         max_concurrent_hidden_city: int = 2,
         search_timeout_seconds: float = None,  # None = auto-calculate
-        per_source_timeout_seconds: float = 120.0,
+        per_source_timeout_seconds: float = 180.0,  # 3 min per source (GF can be slow)
         headless: bool = True,
         num_hidden_city_routes: int = 0,  # For auto-calculating timeout
     ):
