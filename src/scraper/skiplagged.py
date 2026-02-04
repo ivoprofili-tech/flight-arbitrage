@@ -22,20 +22,38 @@ class SkiplaggedScraper:
     A class to scrape flight data from Skiplagged.
     """
 
-    def __init__(self, headless: bool = True):
+    def __init__(
+        self,
+        headless: bool = True,
+        proxy: dict = None,
+        locale: str = None,
+        language: str = None,
+        timezone: str = None,
+        geo_location: str = None,
+    ):
         """
         Initialize the scraper.
 
         Args:
             headless: If True, browser runs invisibly in background.
+            proxy: Playwright proxy config dict with 'server', 'username', 'password'
+            locale: Browser locale (e.g., 'pt-BR', 'en-US', 'es-CO')
+            language: Accept-Language header value
+            timezone: Timezone ID (e.g., 'America/Sao_Paulo')
+            geo_location: Country code for tracking (e.g., 'BR', 'US')
         """
         self.headless = headless
+        self.proxy = proxy
+        self.locale = locale or "en-US"
+        self.language = language or "en-US,en;q=0.9"
+        self.timezone = timezone or "America/New_York"
+        self.geo_location = geo_location
         self.browser = None
         self.page = None
         self.context = None
 
     async def start_browser(self):
-        """Launch the browser with video recording enabled."""
+        """Launch the browser with video recording and optional proxy."""
         self._clear_old_videos()
 
         self.playwright = await async_playwright().start()
@@ -47,21 +65,36 @@ class SkiplaggedScraper:
 
         os.makedirs('videos', exist_ok=True)
 
-        self.context = await self.browser.new_context(
-            viewport={'width': 1280, 'height': 800},
-            record_video_dir='videos/',
-            record_video_size={'width': 1280, 'height': 800},
-            user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            locale='en-US',
-            timezone_id='America/New_York'
-        )
+        # Build browser languages list from locale
+        languages = self.language.split(',')[0].split(';')[0]  # Get primary language
+        lang_list = [languages, languages.split('-')[0]] if '-' in languages else [languages]
+
+        # Build context options
+        context_options = {
+            'viewport': {'width': 1280, 'height': 800},
+            'record_video_dir': 'videos/',
+            'record_video_size': {'width': 1280, 'height': 800},
+            'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'locale': self.locale,
+            'timezone_id': self.timezone,
+            'extra_http_headers': {
+                'Accept-Language': self.language,
+            },
+        }
+
+        # Add proxy if provided
+        if self.proxy:
+            context_options['proxy'] = self.proxy
+
+        self.context = await self.browser.new_context(**context_options)
 
         self.page = await self.context.new_page()
 
-        await self.page.add_init_script('''
-            Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
-            Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
-            Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
+        # Inject browser language settings
+        await self.page.add_init_script(f'''
+            Object.defineProperty(navigator, 'webdriver', {{ get: () => undefined }});
+            Object.defineProperty(navigator, 'plugins', {{ get: () => [1, 2, 3, 4, 5] }});
+            Object.defineProperty(navigator, 'languages', {{ get: () => {lang_list} }});
         ''')
 
         print("Browser started! Video recording enabled (saves to videos/ folder)")
@@ -715,10 +748,27 @@ async def search_skiplagged_flights(
     destination: str,
     departure_date: str,
     return_date: str = None,
-    headless: bool = True
+    headless: bool = True,
+    proxy: dict = None,
+    locale: str = None,
+    language: str = None,
+    timezone: str = None,
+    geo_location: str = None,
 ) -> list[dict]:
     """
     Convenience function to search Skiplagged flights.
+
+    Args:
+        origin: Departure airport code
+        destination: Arrival airport code
+        departure_date: Date in YYYY-MM-DD format
+        return_date: Optional return date
+        headless: Run browser invisibly (default True)
+        proxy: Playwright proxy config dict
+        locale: Browser locale (e.g., 'pt-BR')
+        language: Accept-Language header
+        timezone: Timezone ID
+        geo_location: Country code for tracking
 
     Example:
         flights = await search_skiplagged_flights(
@@ -726,8 +776,25 @@ async def search_skiplagged_flights(
             destination="LAX",
             departure_date="2025-02-15"
         )
+
+        # With geo-location
+        flights = await search_skiplagged_flights(
+            origin="GRU",
+            destination="MCO",
+            departure_date="2025-03-15",
+            proxy={"server": "http://proxy:8080"},
+            locale="pt-BR",
+            geo_location="BR"
+        )
     """
-    scraper = SkiplaggedScraper(headless=headless)
+    scraper = SkiplaggedScraper(
+        headless=headless,
+        proxy=proxy,
+        locale=locale,
+        language=language,
+        timezone=timezone,
+        geo_location=geo_location,
+    )
 
     try:
         await scraper.start_browser()

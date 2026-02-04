@@ -40,7 +40,15 @@ class GoogleFlightsScraper:
     state (like the browser instance) across multiple operations.
     """
 
-    def __init__(self, headless: bool = True, fast_mode: bool = True):
+    def __init__(
+        self,
+        headless: bool = True,
+        fast_mode: bool = True,
+        proxy: dict = None,
+        locale: str = None,
+        language: str = None,
+        geo_location: str = None,
+    ):
         """
         Initialize the scraper.
 
@@ -50,9 +58,17 @@ class GoogleFlightsScraper:
                       Set to False when debugging to see what's happening.
             fast_mode: If True, use shorter wait times for faster execution.
                        Target: ~30 seconds total. Default is True.
+            proxy: Playwright proxy config dict with 'server', 'username', 'password'
+            locale: Browser locale (e.g., 'pt-BR', 'en-US', 'es-CO')
+            language: Accept-Language header value
+            geo_location: Country code for tracking (e.g., 'BR', 'US')
         """
         self.headless = headless
         self.fast_mode = fast_mode
+        self.proxy = proxy
+        self.locale = locale or "en-US"
+        self.language = language or "en-US,en;q=0.9"
+        self.geo_location = geo_location
         self.browser = None
         self.page = None
         self.context = None
@@ -73,6 +89,9 @@ class GoogleFlightsScraper:
 
         We use Chromium (Chrome's open-source base) because it works well
         with Playwright and is what most people use for scraping.
+
+        If proxy settings are provided, the browser will route traffic
+        through the specified proxy server for geo-location arbitrage.
         """
         # Clear old videos from previous runs
         self._clear_old_videos()
@@ -80,24 +99,38 @@ class GoogleFlightsScraper:
         # Create a Playwright instance
         self.playwright = await async_playwright().start()
 
+        # Browser launch arguments
+        launch_args = ['--disable-blink-features=AutomationControlled']
+
+        # Add proxy to browser launch if provided
+        launch_kwargs = {
+            "headless": self.headless,
+            "args": launch_args,
+        }
+
         # Launch the browser
-        # - headless: Whether to show the browser window
-        # - args: Extra settings for the browser
-        self.browser = await self.playwright.chromium.launch(
-            headless=self.headless,
-            args=['--disable-blink-features=AutomationControlled']  # Helps avoid detection
-        )
+        self.browser = await self.playwright.chromium.launch(**launch_kwargs)
 
         # Ensure videos directory exists
         os.makedirs('videos', exist_ok=True)
 
-        # Create a browser context with video recording enabled
-        # Videos are saved to the 'videos' directory
-        self.context = await self.browser.new_context(
-            viewport={'width': 1280, 'height': 800},
-            record_video_dir='videos/',  # Directory to save videos
-            record_video_size={'width': 1280, 'height': 800}
-        )
+        # Build context options
+        context_options = {
+            'viewport': {'width': 1280, 'height': 800},
+            'record_video_dir': 'videos/',
+            'record_video_size': {'width': 1280, 'height': 800},
+            'locale': self.locale,
+            'extra_http_headers': {
+                'Accept-Language': self.language,
+            },
+        }
+
+        # Add proxy to context if provided
+        if self.proxy:
+            context_options['proxy'] = self.proxy
+
+        # Create a browser context with video recording and geo settings
+        self.context = await self.browser.new_context(**context_options)
 
         # Create a new page (like a browser tab)
         self.page = await self.context.new_page()
@@ -1378,7 +1411,11 @@ async def search_google_flights(
     departure_date: str,
     return_date: str = None,
     headless: bool = True,
-    fast_mode: bool = True
+    fast_mode: bool = True,
+    proxy: dict = None,
+    locale: str = None,
+    language: str = None,
+    geo_location: str = None,
 ) -> list[dict]:
     """
     Convenience function to search for flights without managing the scraper.
@@ -1392,6 +1429,10 @@ async def search_google_flights(
         return_date: Optional return date
         headless: Run browser invisibly (default True)
         fast_mode: Use shorter wait times for ~30s execution (default True)
+        proxy: Playwright proxy config dict with 'server', 'username', 'password'
+        locale: Browser locale (e.g., 'pt-BR', 'en-US', 'es-CO')
+        language: Accept-Language header value
+        geo_location: Country code for tracking (e.g., 'BR', 'US')
 
     Example:
         flights = await search_google_flights(
@@ -1399,8 +1440,25 @@ async def search_google_flights(
             destination="Los Angeles",
             departure_date="2025-02-15"
         )
+
+        # With geo-location settings
+        flights = await search_google_flights(
+            origin="GRU",
+            destination="MCO",
+            departure_date="2025-03-15",
+            proxy={"server": "http://proxy:8080", "username": "user", "password": "pass"},
+            locale="pt-BR",
+            geo_location="BR"
+        )
     """
-    scraper = GoogleFlightsScraper(headless=headless, fast_mode=fast_mode)
+    scraper = GoogleFlightsScraper(
+        headless=headless,
+        fast_mode=fast_mode,
+        proxy=proxy,
+        locale=locale,
+        language=language,
+        geo_location=geo_location,
+    )
 
     try:
         await scraper.start_browser()

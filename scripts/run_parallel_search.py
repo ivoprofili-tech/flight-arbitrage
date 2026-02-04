@@ -3,6 +3,7 @@
 Real-world parallel flight search script.
 
 Run actual searches against Google Flights, Skiplagged, and hidden city routes.
+Supports geo-location arbitrage to compare prices across different countries.
 
 Usage:
     # Default: GRU → MCO, 30 days from now
@@ -27,6 +28,11 @@ Usage:
 
     # Quick test with limited hidden city routes
     python scripts/run_parallel_search.py --quick
+
+    # GEO ARBITRAGE: Search from multiple locations
+    python scripts/run_parallel_search.py --geo                    # All 5 locations
+    python scripts/run_parallel_search.py --geo --locations BR,US  # Specific locations
+    python scripts/run_parallel_search.py --geo --locations BR,US,CO,PA,AR --push
 """
 
 import asyncio
@@ -46,6 +52,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.parallel_search import search_flights, ParallelFlightSearch
 from src.data.route_database import get_target_routes, get_destination_info
+from src.geo.geo_search import search_with_geo_arbitrage, GeoArbitrageResult
+from src.geo.proxy_config import LOCATIONS, init_proxy_provider
 
 # Configure logging
 logging.basicConfig(
@@ -359,6 +367,108 @@ def get_default_date() -> str:
     return future.strftime("%Y-%m-%d")
 
 
+async def run_geo_search(
+    origin: str,
+    destination: str,
+    departure_date: str,
+    locations: list[str],
+    headless: bool = True,
+    max_concurrent: int = 3,
+    save_results: bool = True,
+) -> GeoArbitrageResult:
+    """Run geo arbitrage search across multiple locations."""
+
+    print_header(f"GEO ARBITRAGE SEARCH: {origin} → {destination}")
+    print(f" Date: {departure_date}")
+    print(f" Locations: {', '.join(locations)}")
+    print(f" Mode: {'headless' if headless else 'visible browser'}")
+    print(f" Concurrency: {max_concurrent} parallel location searches")
+
+    print_header("SEARCHING FROM MULTIPLE LOCATIONS...", "-")
+    start_time = datetime.now()
+
+    try:
+        results = await search_with_geo_arbitrage(
+            origin=origin,
+            destination=destination,
+            departure_date=departure_date,
+            locations=locations,
+            max_concurrent=max_concurrent,
+            headless=headless,
+            sources=["google_flights"],  # Use Google Flights for geo (more reliable pricing)
+        )
+
+    except Exception as e:
+        logger.exception(f"Geo search failed: {e}")
+        return None
+
+    end_time = datetime.now()
+    total_duration = (end_time - start_time).total_seconds()
+
+    # Results summary
+    print_header("GEO ARBITRAGE RESULTS")
+    print(f" Total search time: {format_duration(total_duration)}")
+    print(f" Locations searched: {len(results.location_results)}")
+
+    # Price by location
+    print_header("PRICE COMPARISON BY LOCATION", "-")
+    if results.price_comparison:
+        sorted_prices = sorted(results.price_comparison.items(), key=lambda x: x[1])
+        for loc, price in sorted_prices:
+            loc_name = LOCATIONS.get(loc, type('obj', (object,), {'name': loc})()).name
+            marker = " ★ BEST" if loc == results.best_location else ""
+            print(f" {loc} ({loc_name}): ${price:.2f}{marker}")
+    else:
+        print(" No prices found")
+
+    # Savings analysis
+    if results.potential_savings_usd > 0:
+        print_header("POTENTIAL SAVINGS", "-")
+        print(f" Best location: {results.best_location} ({LOCATIONS.get(results.best_location, type('obj', (object,), {'name': results.best_location})()).name})")
+        print(f" Savings: ${results.potential_savings_usd:.2f} ({results.potential_savings_pct:.1f}%)")
+
+    # Best overall deal
+    if results.best_overall:
+        bo = results.best_overall
+        print_header("BEST OVERALL DEAL")
+        print(f" Price: ${bo.price_usd:.2f} ({bo.price_original})")
+        print(f" Airline: {bo.airline}")
+        print(f" Location: {bo.location} ({bo.location_name})")
+        print(f" Stops: {bo.stops}")
+        print(f" Duration: {bo.duration}")
+
+    # Location breakdown
+    print_header("LOCATION BREAKDOWN", "-")
+    for loc, result in results.location_results.items():
+        status_icon = "✓" if result.status == "success" else "✗"
+        time_str = format_duration(result.search_time_seconds)
+        count = len(result.flights)
+        price_str = f"${result.best_price_usd:.2f}" if result.best_price_usd else "N/A"
+
+        print(f" {status_icon} {loc}: {count} flights, best {price_str} ({time_str})")
+        if result.error_message:
+            error_preview = result.error_message[:50] + "..." if len(result.error_message) > 50 else result.error_message
+            print(f"    Error: {error_preview}")
+
+    # Save results
+    if save_results:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"geo_results_{origin}_{destination}_{departure_date}_{timestamp}.json"
+        output_dir = Path("search_results")
+        output_dir.mkdir(exist_ok=True)
+        output_path = output_dir / filename
+
+        with open(output_path, 'w') as f:
+            json.dump(results.to_dict(), f, indent=2)
+
+        print_header("OUTPUT", "-")
+        print(f" Results saved to: {output_path}")
+
+    print_header("GEO SEARCH COMPLETE")
+
+    return results
+
+
 def push_results_to_github():
     """Push debug files and results to GitHub, then clean up locally."""
     import subprocess
@@ -521,6 +631,34 @@ Examples:
         help="Skip syncing with remote before search (use if offline)"
     )
 
+    # Geo arbitrage arguments
+    parser.add_argument(
+        "--geo", "-g",
+        action="store_true",
+        help="Enable geo arbitrage: search from multiple locations to compare prices"
+    )
+    parser.add_argument(
+        "--locations", "-l",
+        type=str,
+        default="BR,US,CO,PA,AR",
+        help="Comma-separated location codes for geo search (default: BR,US,CO,PA,AR)"
+    )
+    parser.add_argument(
+        "--proxy-provider",
+        type=str,
+        help="Proxy provider: brightdata, oxylabs, smartproxy, or custom"
+    )
+    parser.add_argument(
+        "--proxy-user",
+        type=str,
+        help="Proxy username"
+    )
+    parser.add_argument(
+        "--proxy-pass",
+        type=str,
+        help="Proxy password"
+    )
+
     args = parser.parse_args()
 
     # Sync with remote before search (prevents pull conflicts)
@@ -540,25 +678,61 @@ Examples:
     # Get date
     departure_date = args.date or get_default_date()
 
-    # Run search with proper cleanup handling
-    try:
-        asyncio.run(run_search(
-            origin=args.origin.upper(),
-            destination=args.destination.upper(),
-            departure_date=departure_date,
-            sources=sources,
-            headless=not args.visible,
-            max_concurrent=args.max_concurrent,
-            quick=args.quick,
-            save_results=not args.no_save,
-        ))
-    except RuntimeError as e:
-        # Ignore "Event loop is closed" errors during cleanup
-        if "Event loop is closed" not in str(e):
-            raise
-    except KeyboardInterrupt:
-        print("\n Search cancelled by user")
-        sys.exit(1)
+    # Initialize proxy provider if credentials provided
+    if args.proxy_provider:
+        init_proxy_provider(
+            provider=args.proxy_provider,
+            username=args.proxy_user,
+            password=args.proxy_pass,
+        )
+
+    # Run geo search or regular search
+    if args.geo:
+        # Parse locations
+        locations = [loc.strip().upper() for loc in args.locations.split(",")]
+        valid_locations = set(LOCATIONS.keys())
+        for loc in locations:
+            if loc not in valid_locations:
+                print(f"Error: Invalid location '{loc}'. Valid options: {valid_locations}")
+                sys.exit(1)
+
+        # Run geo arbitrage search
+        try:
+            asyncio.run(run_geo_search(
+                origin=args.origin.upper(),
+                destination=args.destination.upper(),
+                departure_date=departure_date,
+                locations=locations,
+                headless=not args.visible,
+                max_concurrent=args.max_concurrent,
+                save_results=not args.no_save,
+            ))
+        except RuntimeError as e:
+            if "Event loop is closed" not in str(e):
+                raise
+        except KeyboardInterrupt:
+            print("\n Search cancelled by user")
+            sys.exit(1)
+    else:
+        # Run regular parallel search
+        try:
+            asyncio.run(run_search(
+                origin=args.origin.upper(),
+                destination=args.destination.upper(),
+                departure_date=departure_date,
+                sources=sources,
+                headless=not args.visible,
+                max_concurrent=args.max_concurrent,
+                quick=args.quick,
+                save_results=not args.no_save,
+            ))
+        except RuntimeError as e:
+            # Ignore "Event loop is closed" errors during cleanup
+            if "Event loop is closed" not in str(e):
+                raise
+        except KeyboardInterrupt:
+            print("\n Search cancelled by user")
+            sys.exit(1)
 
     # Push results if requested
     if args.push:
