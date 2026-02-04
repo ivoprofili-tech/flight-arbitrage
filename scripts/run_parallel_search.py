@@ -46,6 +46,7 @@ import asyncio
 import argparse
 import json
 import logging
+import os
 import sys
 import warnings
 from datetime import datetime, timedelta
@@ -56,6 +57,16 @@ warnings.filterwarnings("ignore", message=".*Event loop is closed.*")
 
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
+
+# Load .env file if it exists (for proxy credentials)
+_env_file = Path(__file__).parent.parent / ".env"
+if _env_file.exists():
+    with open(_env_file) as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                key, value = line.split("=", 1)
+                os.environ.setdefault(key.strip(), value.strip())
 
 from src.parallel_search import search_flights, ParallelFlightSearch
 from src.data.route_database import get_target_routes, get_destination_info
@@ -722,17 +733,17 @@ Examples:
     parser.add_argument(
         "--proxy-provider",
         type=str,
-        help="Proxy provider: brightdata, oxylabs, smartproxy, or custom"
+        help="Proxy provider: brightdata, oxylabs, smartproxy (or set PROXY_PROVIDER env var)"
     )
     parser.add_argument(
         "--proxy-user",
         type=str,
-        help="Proxy username"
+        help="Proxy username (or set PROXY_USERNAME env var)"
     )
     parser.add_argument(
         "--proxy-pass",
         type=str,
-        help="Proxy password"
+        help="Proxy password (or set PROXY_PASSWORD env var)"
     )
 
     args = parser.parse_args()
@@ -754,8 +765,9 @@ Examples:
     # Get date
     departure_date = args.date or get_default_date()
 
-    # Initialize proxy provider if credentials provided
-    if args.proxy_provider:
+    # Initialize proxy provider (from args or environment variables)
+    # Environment variables: PROXY_PROVIDER, PROXY_USERNAME, PROXY_PASSWORD
+    if args.geo:
         init_proxy_provider(
             provider=args.proxy_provider,
             username=args.proxy_user,
