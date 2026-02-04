@@ -4,8 +4,21 @@ Geo Arbitrage Search Orchestrator
 Runs parallel flight searches from multiple geographic locations
 and compares prices to find the best Point of Sale (POS).
 
+Supports two modes:
+1. Single route search - search one A→B route from multiple locations
+2. Hybrid search - first run full parallel search, then geo-compare direct + hidden city routes
+
 Usage:
+    # Simple single route
     results = await search_with_geo_arbitrage(
+        origin="GRU",
+        destination="MCO",
+        departure_date="2026-03-15",
+        locations=["BR", "US", "CO"],
+    )
+
+    # Hybrid: full search then geo arbitrage on discovered routes
+    results = await run_hybrid_geo_search(
         origin="GRU",
         destination="MCO",
         departure_date="2026-03-15",
@@ -17,7 +30,7 @@ import asyncio
 import logging
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Tuple
 from enum import Enum
 
 from src.geo.proxy_config import (
@@ -500,4 +513,328 @@ async def search_with_geo_arbitrage(
         destination=destination,
         departure_date=departure_date,
         return_date=return_date,
+    )
+
+
+# =============================================================================
+# HYBRID GEO SEARCH - Full parallel search + geo arbitrage on discovered routes
+# =============================================================================
+
+@dataclass
+class RouteInfo:
+    """Information about a route to geo-search."""
+    origin: str
+    destination: str
+    route_type: str  # "direct" or "hidden_city"
+    hidden_city_exit: Optional[str] = None  # Exit airport for hidden city
+    original_price: Optional[float] = None  # Price found in initial search
+
+
+@dataclass
+class MultiRouteGeoResult:
+    """Results from searching multiple routes across locations."""
+    # Search parameters
+    primary_origin: str
+    primary_destination: str
+    departure_date: str
+    timestamp: datetime
+    total_search_time_seconds: float
+
+    # Phase 1: Initial parallel search results
+    initial_search_time_seconds: float
+    direct_route_best_price: Optional[float] = None
+    hidden_city_routes_found: List[RouteInfo] = field(default_factory=list)
+
+    # Phase 2: Geo arbitrage results by route
+    # Key: "origin-destination" (e.g., "GRU-MCO" or "GRU-MIA" for hidden city)
+    route_results: Dict[str, GeoArbitrageResult] = field(default_factory=dict)
+
+    # Overall best deals
+    best_direct_deal: Optional[Dict[str, Any]] = None  # Best direct route + location
+    best_hidden_city_deals: List[Dict[str, Any]] = field(default_factory=list)  # Best HC by route
+
+    # Summary
+    total_routes_searched: int = 0
+    total_potential_savings_usd: float = 0.0
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "search_params": {
+                "primary_origin": self.primary_origin,
+                "primary_destination": self.primary_destination,
+                "departure_date": self.departure_date,
+            },
+            "timestamp": self.timestamp.isoformat(),
+            "total_search_time_seconds": round(self.total_search_time_seconds, 2),
+            "initial_search_time_seconds": round(self.initial_search_time_seconds, 2),
+            "summary": {
+                "direct_route_best_price": round(self.direct_route_best_price, 2) if self.direct_route_best_price else None,
+                "hidden_city_routes_found": len(self.hidden_city_routes_found),
+                "total_routes_searched": self.total_routes_searched,
+                "total_potential_savings_usd": round(self.total_potential_savings_usd, 2),
+            },
+            "hidden_city_routes": [
+                {
+                    "route": f"{r.origin}-{r.destination}",
+                    "exit_at": r.hidden_city_exit,
+                    "original_price": r.original_price,
+                }
+                for r in self.hidden_city_routes_found
+            ],
+            "best_direct_deal": self.best_direct_deal,
+            "best_hidden_city_deals": self.best_hidden_city_deals,
+            "route_results": {
+                route: result.to_dict() for route, result in self.route_results.items()
+            },
+        }
+
+
+def extract_hidden_city_routes(parallel_search_results) -> List[RouteInfo]:
+    """
+    Extract hidden city routes that have deals from parallel search results.
+
+    Args:
+        parallel_search_results: Results from ParallelFlightSearch.search_all()
+
+    Returns:
+        List of RouteInfo for hidden city routes worth geo-searching
+    """
+    hidden_city_routes = []
+
+    # Get all hidden city flights from results
+    for flight in parallel_search_results.all_flights:
+        if flight.deal_type.value == "hidden_city" and flight.hidden_city_target:
+            # The search_route is like "GRU→MIA" - parse it
+            if "→" in flight.search_route:
+                parts = flight.search_route.split("→")
+                if len(parts) == 2:
+                    origin = parts[0].strip()
+                    final_dest = parts[1].strip()
+
+                    route_info = RouteInfo(
+                        origin=origin,
+                        destination=final_dest,
+                        route_type="hidden_city",
+                        hidden_city_exit=flight.hidden_city_target,
+                        original_price=flight.price_numeric,
+                    )
+
+                    # Avoid duplicates (same origin-destination pair)
+                    route_key = f"{origin}-{final_dest}"
+                    existing_keys = [f"{r.origin}-{r.destination}" for r in hidden_city_routes]
+                    if route_key not in existing_keys:
+                        hidden_city_routes.append(route_info)
+
+    return hidden_city_routes
+
+
+async def run_hybrid_geo_search(
+    origin: str,
+    destination: str,
+    departure_date: str,
+    locations: List[str] = None,
+    max_concurrent: int = 3,
+    headless: bool = True,
+    initial_search_sources: List[str] = None,
+    initial_search_max_concurrent: int = 2,
+    initial_search_quick: bool = False,
+) -> MultiRouteGeoResult:
+    """
+    Run hybrid geo search: full parallel search first, then geo arbitrage on discovered routes.
+
+    This is more efficient than running full searches from each location because:
+    1. First discover which hidden city routes actually have deals
+    2. Then only geo-search those specific routes + the direct route
+
+    Args:
+        origin: Origin airport code (e.g., "GRU")
+        destination: Destination airport code (e.g., "MCO")
+        departure_date: Departure date (YYYY-MM-DD)
+        locations: Country codes for geo search (default: all configured)
+        max_concurrent: Max concurrent geo location searches
+        headless: Run browsers headless
+        initial_search_sources: Sources for initial search (default: all)
+        initial_search_max_concurrent: Concurrency for initial hidden city search
+        initial_search_quick: Use quick mode for initial search
+
+    Returns:
+        MultiRouteGeoResult with combined results
+    """
+    from src.parallel_search import search_flights, ParallelFlightSearch
+
+    start_time = datetime.now()
+    locations = locations or list(LOCATIONS.keys())
+
+    logger.info(f"Starting hybrid geo search: {origin} → {destination}")
+    logger.info(f"Phase 1: Running full parallel search to discover hidden city routes...")
+
+    # ==========================================================================
+    # PHASE 1: Run initial parallel search to discover hidden city routes
+    # ==========================================================================
+    phase1_start = datetime.now()
+
+    if initial_search_quick:
+        # Quick mode with limited routes
+        search = ParallelFlightSearch(
+            max_concurrent_hidden_city=initial_search_max_concurrent,
+            headless=headless,
+            num_hidden_city_routes=3,
+        )
+        initial_results = await search.search_all(
+            origin=origin,
+            destination=destination,
+            departure_date=departure_date,
+            sources=initial_search_sources,
+        )
+    else:
+        initial_results = await search_flights(
+            origin=origin,
+            destination=destination,
+            departure_date=departure_date,
+            sources=initial_search_sources,
+            max_concurrent=initial_search_max_concurrent,
+            headless=headless,
+        )
+
+    phase1_time = (datetime.now() - phase1_start).total_seconds()
+    logger.info(f"Phase 1 complete: {initial_results.total_flights_found} flights found in {phase1_time:.1f}s")
+
+    # Get best direct price
+    direct_best_price = None
+    if initial_results.best_direct:
+        direct_best_price = initial_results.best_direct.price_numeric
+
+    # Extract hidden city routes
+    hidden_city_routes = extract_hidden_city_routes(initial_results)
+    logger.info(f"Found {len(hidden_city_routes)} hidden city routes worth geo-searching")
+
+    # ==========================================================================
+    # PHASE 2: Geo arbitrage on direct route + hidden city routes
+    # ==========================================================================
+    logger.info(f"Phase 2: Running geo arbitrage across {len(locations)} locations...")
+
+    # Build list of routes to search
+    routes_to_search: List[RouteInfo] = []
+
+    # Always include the direct route
+    routes_to_search.append(RouteInfo(
+        origin=origin,
+        destination=destination,
+        route_type="direct",
+        original_price=direct_best_price,
+    ))
+
+    # Add hidden city routes
+    routes_to_search.extend(hidden_city_routes)
+
+    # Ensure exchange rates are loaded
+    converter = await ensure_rates_loaded()
+
+    # Create geo search instance
+    geo_search = GeoArbitrageSearch(
+        locations=locations,
+        max_concurrent=max_concurrent,
+        headless=headless,
+        sources=["google_flights"],  # Google Flights for geo (reliable pricing)
+    )
+    geo_search.converter = converter
+
+    # Search each route across all locations
+    route_results: Dict[str, GeoArbitrageResult] = {}
+
+    for route in routes_to_search:
+        route_key = f"{route.origin}-{route.destination}"
+        route_label = f"{route.origin}→{route.destination}"
+        if route.route_type == "hidden_city":
+            route_label += f" (exit@{route.hidden_city_exit})"
+
+        logger.info(f"Geo searching route: {route_label}")
+
+        try:
+            result = await geo_search.search(
+                origin=route.origin,
+                destination=route.destination,
+                departure_date=departure_date,
+            )
+            route_results[route_key] = result
+
+            if result.best_location and result.best_overall:
+                logger.info(
+                    f"  Best: ${result.best_overall.price_usd:.2f} from {result.best_location} "
+                    f"(saves ${result.potential_savings_usd:.2f})"
+                )
+        except Exception as e:
+            logger.error(f"Geo search failed for {route_key}: {e}")
+
+    # ==========================================================================
+    # PHASE 3: Analyze and compile results
+    # ==========================================================================
+    total_time = (datetime.now() - start_time).total_seconds()
+
+    # Find best direct deal
+    best_direct_deal = None
+    direct_key = f"{origin}-{destination}"
+    if direct_key in route_results:
+        direct_result = route_results[direct_key]
+        if direct_result.best_overall:
+            best_direct_deal = {
+                "route": direct_key,
+                "best_location": direct_result.best_location,
+                "best_price_usd": round(direct_result.best_overall.price_usd, 2),
+                "original_currency": direct_result.best_overall.currency,
+                "original_price": direct_result.best_overall.price_original,
+                "airline": direct_result.best_overall.airline,
+                "potential_savings_usd": round(direct_result.potential_savings_usd, 2),
+                "potential_savings_pct": round(direct_result.potential_savings_pct, 1),
+                "prices_by_location": {
+                    loc: round(price, 2)
+                    for loc, price in direct_result.price_comparison.items()
+                },
+            }
+
+    # Find best hidden city deals
+    best_hidden_city_deals = []
+    for route in hidden_city_routes:
+        route_key = f"{route.origin}-{route.destination}"
+        if route_key in route_results:
+            hc_result = route_results[route_key]
+            if hc_result.best_overall:
+                best_hidden_city_deals.append({
+                    "route": route_key,
+                    "exit_at": route.hidden_city_exit,
+                    "best_location": hc_result.best_location,
+                    "best_price_usd": round(hc_result.best_overall.price_usd, 2),
+                    "original_price_usd": route.original_price,
+                    "airline": hc_result.best_overall.airline,
+                    "potential_savings_usd": round(hc_result.potential_savings_usd, 2),
+                    "prices_by_location": {
+                        loc: round(price, 2)
+                        for loc, price in hc_result.price_comparison.items()
+                    },
+                })
+
+    # Sort hidden city deals by price
+    best_hidden_city_deals.sort(key=lambda x: x["best_price_usd"])
+
+    # Calculate total potential savings
+    total_savings = sum(
+        result.potential_savings_usd
+        for result in route_results.values()
+        if result.potential_savings_usd > 0
+    )
+
+    return MultiRouteGeoResult(
+        primary_origin=origin,
+        primary_destination=destination,
+        departure_date=departure_date,
+        timestamp=datetime.now(),
+        total_search_time_seconds=total_time,
+        initial_search_time_seconds=phase1_time,
+        direct_route_best_price=direct_best_price,
+        hidden_city_routes_found=hidden_city_routes,
+        route_results=route_results,
+        best_direct_deal=best_direct_deal,
+        best_hidden_city_deals=best_hidden_city_deals,
+        total_routes_searched=len(routes_to_search),
+        total_potential_savings_usd=total_savings,
     )

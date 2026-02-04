@@ -3,7 +3,7 @@
 Real-world parallel flight search script.
 
 Run actual searches against Google Flights, Skiplagged, and hidden city routes.
-Supports geo-location arbitrage to compare prices across different countries.
+Supports HYBRID geo-location arbitrage to compare prices across different countries.
 
 Usage:
     # Default: GRU → MCO, 30 days from now
@@ -29,10 +29,17 @@ Usage:
     # Quick test with limited hidden city routes
     python scripts/run_parallel_search.py --quick
 
-    # GEO ARBITRAGE: Search from multiple locations
+    # HYBRID GEO ARBITRAGE (recommended):
+    # Phase 1: Full parallel search to discover hidden city deals
+    # Phase 2: Geo-compare direct route + discovered hidden city routes
     python scripts/run_parallel_search.py --geo                    # All 5 locations
     python scripts/run_parallel_search.py --geo --locations BR,US  # Specific locations
-    python scripts/run_parallel_search.py --geo --locations BR,US,CO,PA,AR --push
+    python scripts/run_parallel_search.py --geo --quick            # Quick mode (3 HC routes)
+    python scripts/run_parallel_search.py --geo --push             # Push results to GitHub
+
+    # Geo with proxy (required for actual geo-targeting):
+    python scripts/run_parallel_search.py --geo --proxy-provider brightdata \\
+        --proxy-user YOUR_USER --proxy-pass YOUR_PASS
 """
 
 import asyncio
@@ -52,7 +59,12 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.parallel_search import search_flights, ParallelFlightSearch
 from src.data.route_database import get_target_routes, get_destination_info
-from src.geo.geo_search import search_with_geo_arbitrage, GeoArbitrageResult
+from src.geo.geo_search import (
+    search_with_geo_arbitrage,
+    run_hybrid_geo_search,
+    GeoArbitrageResult,
+    MultiRouteGeoResult,
+)
 from src.geo.proxy_config import LOCATIONS, init_proxy_provider
 
 # Configure logging
@@ -375,85 +387,149 @@ async def run_geo_search(
     headless: bool = True,
     max_concurrent: int = 3,
     save_results: bool = True,
-) -> GeoArbitrageResult:
-    """Run geo arbitrage search across multiple locations."""
+    quick: bool = False,
+) -> MultiRouteGeoResult:
+    """
+    Run HYBRID geo arbitrage search.
 
-    print_header(f"GEO ARBITRAGE SEARCH: {origin} → {destination}")
+    Phase 1: Run full parallel search (GF + Skiplagged + Hidden City)
+    Phase 2: Run geo arbitrage on direct route + discovered hidden city routes
+
+    This is more efficient than running full searches from each location.
+    """
+
+    print_header(f"HYBRID GEO ARBITRAGE: {origin} → {destination}")
     print(f" Date: {departure_date}")
     print(f" Locations: {', '.join(locations)}")
     print(f" Mode: {'headless' if headless else 'visible browser'}")
-    print(f" Concurrency: {max_concurrent} parallel location searches")
+    print(f" Geo concurrency: {max_concurrent} parallel location searches")
+    print()
+    print(" Strategy:")
+    print("   Phase 1: Run full parallel search to discover hidden city deals")
+    print("   Phase 2: Geo-search direct route + discovered hidden city routes")
 
-    print_header("SEARCHING FROM MULTIPLE LOCATIONS...", "-")
-    start_time = datetime.now()
+    print_header("PHASE 1: DISCOVERING HIDDEN CITY ROUTES...", "-")
 
     try:
-        results = await search_with_geo_arbitrage(
+        results = await run_hybrid_geo_search(
             origin=origin,
             destination=destination,
             departure_date=departure_date,
             locations=locations,
             max_concurrent=max_concurrent,
             headless=headless,
-            sources=["google_flights"],  # Use Google Flights for geo (more reliable pricing)
+            initial_search_quick=quick,
         )
 
     except Exception as e:
-        logger.exception(f"Geo search failed: {e}")
+        logger.exception(f"Hybrid geo search failed: {e}")
         return None
 
-    end_time = datetime.now()
-    total_duration = (end_time - start_time).total_seconds()
+    # Phase 1 summary
+    print_header("PHASE 1 RESULTS", "-")
+    print(f" Initial search time: {format_duration(results.initial_search_time_seconds)}")
+    if results.direct_route_best_price:
+        print(f" Direct route best price: ${results.direct_route_best_price:.2f}")
+    print(f" Hidden city routes found: {len(results.hidden_city_routes_found)}")
 
-    # Results summary
-    print_header("GEO ARBITRAGE RESULTS")
-    print(f" Total search time: {format_duration(total_duration)}")
-    print(f" Locations searched: {len(results.location_results)}")
+    if results.hidden_city_routes_found:
+        print()
+        for route in results.hidden_city_routes_found:
+            price_str = f"${route.original_price:.2f}" if route.original_price else "N/A"
+            print(f"   • {route.origin}→{route.destination} (exit@{route.hidden_city_exit}) - {price_str}")
 
-    # Price by location
-    print_header("PRICE COMPARISON BY LOCATION", "-")
-    if results.price_comparison:
-        sorted_prices = sorted(results.price_comparison.items(), key=lambda x: x[1])
+    # Phase 2 summary
+    print_header("PHASE 2: GEO ARBITRAGE RESULTS", "-")
+    print(f" Total search time: {format_duration(results.total_search_time_seconds)}")
+    print(f" Routes geo-searched: {results.total_routes_searched}")
+
+    # Direct route geo results
+    if results.best_direct_deal:
+        dd = results.best_direct_deal
+        print_header("DIRECT ROUTE GEO COMPARISON", "-")
+        print(f" Route: {dd['route']}")
+        print(f" Best location: {dd['best_location']} ({LOCATIONS.get(dd['best_location'], type('obj', (object,), {'name': dd['best_location']})()).name})")
+        print(f" Best price: ${dd['best_price_usd']:.2f} ({dd['original_price']})")
+        print(f" Airline: {dd['airline']}")
+
+        if dd['potential_savings_usd'] > 0:
+            print(f" Geo savings: ${dd['potential_savings_usd']:.2f} ({dd['potential_savings_pct']:.1f}%)")
+
+        print()
+        print(" Prices by location:")
+        sorted_prices = sorted(dd['prices_by_location'].items(), key=lambda x: x[1])
         for loc, price in sorted_prices:
             loc_name = LOCATIONS.get(loc, type('obj', (object,), {'name': loc})()).name
-            marker = " ★ BEST" if loc == results.best_location else ""
-            print(f" {loc} ({loc_name}): ${price:.2f}{marker}")
-    else:
-        print(" No prices found")
+            marker = " ★" if loc == dd['best_location'] else ""
+            print(f"   {loc} ({loc_name}): ${price:.2f}{marker}")
 
-    # Savings analysis
-    if results.potential_savings_usd > 0:
-        print_header("POTENTIAL SAVINGS", "-")
-        print(f" Best location: {results.best_location} ({LOCATIONS.get(results.best_location, type('obj', (object,), {'name': results.best_location})()).name})")
-        print(f" Savings: ${results.potential_savings_usd:.2f} ({results.potential_savings_pct:.1f}%)")
+    # Hidden city geo results
+    if results.best_hidden_city_deals:
+        print_header("HIDDEN CITY ROUTES GEO COMPARISON", "-")
 
-    # Best overall deal
-    if results.best_overall:
-        bo = results.best_overall
-        print_header("BEST OVERALL DEAL")
-        print(f" Price: ${bo.price_usd:.2f} ({bo.price_original})")
-        print(f" Airline: {bo.airline}")
-        print(f" Location: {bo.location} ({bo.location_name})")
-        print(f" Stops: {bo.stops}")
-        print(f" Duration: {bo.duration}")
+        for i, hc in enumerate(results.best_hidden_city_deals, 1):
+            print(f"\n {i}. {hc['route']} (exit@{hc['exit_at']})")
+            print(f"    Best location: {hc['best_location']}")
+            print(f"    Best price: ${hc['best_price_usd']:.2f}")
+            if hc.get('original_price_usd'):
+                print(f"    Original (US): ${hc['original_price_usd']:.2f}")
+            print(f"    Airline: {hc['airline']}")
 
-    # Location breakdown
-    print_header("LOCATION BREAKDOWN", "-")
-    for loc, result in results.location_results.items():
-        status_icon = "✓" if result.status == "success" else "✗"
-        time_str = format_duration(result.search_time_seconds)
-        count = len(result.flights)
-        price_str = f"${result.best_price_usd:.2f}" if result.best_price_usd else "N/A"
+            if hc['potential_savings_usd'] > 0:
+                print(f"    Geo savings: ${hc['potential_savings_usd']:.2f}")
 
-        print(f" {status_icon} {loc}: {count} flights, best {price_str} ({time_str})")
-        if result.error_message:
-            error_preview = result.error_message[:50] + "..." if len(result.error_message) > 50 else result.error_message
-            print(f"    Error: {error_preview}")
+            print("    Prices by location:")
+            sorted_prices = sorted(hc['prices_by_location'].items(), key=lambda x: x[1])
+            for loc, price in sorted_prices:
+                marker = " ★" if loc == hc['best_location'] else ""
+                print(f"      {loc}: ${price:.2f}{marker}")
+
+    # Overall best deal summary
+    print_header("BEST OVERALL DEALS", "-")
+
+    best_deals = []
+
+    # Add direct route
+    if results.best_direct_deal:
+        best_deals.append({
+            'type': 'Direct',
+            'route': results.best_direct_deal['route'],
+            'exit': None,
+            'price': results.best_direct_deal['best_price_usd'],
+            'location': results.best_direct_deal['best_location'],
+            'airline': results.best_direct_deal['airline'],
+        })
+
+    # Add hidden city routes
+    for hc in results.best_hidden_city_deals:
+        best_deals.append({
+            'type': 'Hidden City',
+            'route': hc['route'],
+            'exit': hc['exit_at'],
+            'price': hc['best_price_usd'],
+            'location': hc['best_location'],
+            'airline': hc['airline'],
+        })
+
+    # Sort by price
+    best_deals.sort(key=lambda x: x['price'])
+
+    for i, deal in enumerate(best_deals[:5], 1):
+        loc_name = LOCATIONS.get(deal['location'], type('obj', (object,), {'name': deal['location']})()).name
+        if deal['exit']:
+            print(f" {i}. ${deal['price']:.2f} | {deal['type']} | {deal['route']} exit@{deal['exit']} | {deal['location']} ({loc_name})")
+        else:
+            print(f" {i}. ${deal['price']:.2f} | {deal['type']} | {deal['route']} | {deal['location']} ({loc_name})")
+
+    # Total savings
+    if results.total_potential_savings_usd > 0:
+        print_header("TOTAL GEO ARBITRAGE SAVINGS", "-")
+        print(f" Total potential savings across all routes: ${results.total_potential_savings_usd:.2f}")
 
     # Save results
     if save_results:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"geo_results_{origin}_{destination}_{departure_date}_{timestamp}.json"
+        filename = f"geo_hybrid_{origin}_{destination}_{departure_date}_{timestamp}.json"
         output_dir = Path("search_results")
         output_dir.mkdir(exist_ok=True)
         output_path = output_dir / filename
@@ -464,7 +540,7 @@ async def run_geo_search(
         print_header("OUTPUT", "-")
         print(f" Results saved to: {output_path}")
 
-    print_header("GEO SEARCH COMPLETE")
+    print_header("HYBRID GEO SEARCH COMPLETE")
 
     return results
 
@@ -696,7 +772,9 @@ Examples:
                 print(f"Error: Invalid location '{loc}'. Valid options: {valid_locations}")
                 sys.exit(1)
 
-        # Run geo arbitrage search
+        # Run HYBRID geo arbitrage search
+        # Phase 1: Full parallel search (GF + Skiplagged + Hidden City)
+        # Phase 2: Geo arbitrage on direct + discovered hidden city routes
         try:
             asyncio.run(run_geo_search(
                 origin=args.origin.upper(),
@@ -706,6 +784,7 @@ Examples:
                 headless=not args.visible,
                 max_concurrent=args.max_concurrent,
                 save_results=not args.no_save,
+                quick=args.quick,
             ))
         except RuntimeError as e:
             if "Event loop is closed" not in str(e):
