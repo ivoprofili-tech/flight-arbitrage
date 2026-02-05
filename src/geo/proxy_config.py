@@ -155,6 +155,41 @@ class BrightDataProvider(ProxyProvider):
         )
 
 
+class BrightDataUnlockerProvider(ProxyProvider):
+    """
+    BrightData Web Unlocker provider.
+
+    Web Unlocker is designed for protected sites like Google that block
+    regular residential proxies. It handles CAPTCHAs, fingerprinting, etc.
+
+    Format: http://username-country-{country}:password@brd.superproxy.io:33335
+    """
+
+    def __init__(
+        self,
+        username: str,
+        password: str,
+        host: str = "brd.superproxy.io",
+        port: int = 33335,  # Web Unlocker port (different from residential 22225)
+    ):
+        self.username = username
+        self.password = password
+        self.host = host
+        self.port = port
+
+    def get_proxy(self, country_code: str) -> ProxyConfig:
+        # Web Unlocker uses same format as residential
+        user_with_country = f"{self.username}-country-{country_code.lower()}"
+        server = f"http://{self.host}:{self.port}"
+
+        return ProxyConfig(
+            server=server,
+            username=user_with_country,
+            password=self.password,
+            country=country_code,
+        )
+
+
 class OxylabsProvider(ProxyProvider):
     """
     Oxylabs proxy provider.
@@ -285,6 +320,16 @@ def init_proxy_provider(
         if port:
             kwargs["port"] = port
         _proxy_provider = BrightDataProvider(**kwargs)
+
+    elif provider in ("webunlocker", "brightdata_unlocker", "unlocker"):
+        # BrightData Web Unlocker - for protected sites like Google
+        kwargs = {"username": username, "password": password}
+        if host:
+            kwargs["host"] = host
+        if port:
+            kwargs["port"] = port
+        _proxy_provider = BrightDataUnlockerProvider(**kwargs)
+        logger.info("Using BrightData Web Unlocker (port 33335) for protected sites")
 
     elif provider == "oxylabs":
         kwargs = {"username": username, "password": password}
