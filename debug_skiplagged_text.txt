@@ -18,7 +18,7 @@ Discover our
 Skiplagged Guarantee
 If issues arise with your travels, we've got your back.  See details
 Price History  
-$221
+$222
  
 Now
 Create a Price Alert
@@ -62,8 +62,6 @@ GOL Linhas Aereas
 only
 LATAM Airlines
 only
-Porter Airlines
-only
 Sky Airline
 only
 Spirit Airlines
@@ -73,8 +71,6 @@ only
 Volaris
 only
 Volaris Costa Rica
-only
-WestJet
 only
 LAYOVER CITIES
 ATL - Atlanta
@@ -87,13 +83,13 @@ BSB - Brasília
 only
 AEP - Buenos Aires
 only
-CUN - Cancún
-only
 CLT - Charlotte
 only
 ORD - Chicago
 only
 MEX - Ciudad de México
+only
+MVD - Ciudad de la Costa
 only
 CWB - Curitiba
 only
@@ -118,8 +114,6 @@ only
 EWR - Newark
 only
 PHL - Philadelphia
-only
-PUJ - Punta Cana
 only
 GIG - Rio De Janeiro
 only
@@ -147,6 +141,27 @@ Price
 Duration
 Value
 Total Cost
+19h
+2 stops
+American
+12:15am
+GRU
+8h 30m
+6:45am
+3h 5m
+MIA
+9:50am
+2h 44m
+12:34pm
+2h
+DCA
+2:34pm
+2h 31m
+5:05pm
+MCO
+
+$279
+
 20h
 1 stop
 American
@@ -403,6 +418,27 @@ MCO
 
 $279
 
+46h
+2 stops
+LATAM
+4:35pm
+GRU
+4h 55m
+7:30pm
+15h 15m
+LIM
+10:45am
+3h 10m
+1:55pm
+18h 40m
+BOG
+8:35am
+4h 5m
+1:40pm
+MCO
+
+$281
+
 22h
 2 stops
 American
@@ -441,48 +477,6 @@ CLT
 7:01pm
 1h 45m
 8:46pm
-MCO
-
-$285
-
-23h
-2 stops
-American
-10:35pm
-GRU
-8h 20m
-5:55am
-2h 35m
-MIA
-8:30am
-2h 15m
-10:45am
-8h 16m
-CLT
-7:01pm
-1h 45m
-8:46pm
-MCO
-
-$285
-
-24h
-2 stops
-American
-12:15am
-GRU
-8h 30m
-6:45am
-2h 40m
-MIA
-9:25am
-2h 15m
-11:40am
-8h 35m
-CLT
-8:15pm
-1h 44m
-9:59pm
 MCO
 
 $285
