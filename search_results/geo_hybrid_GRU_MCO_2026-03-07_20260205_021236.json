@@ -1,0 +1,66 @@
+{
+  "search_params": {
+    "primary_origin": "GRU",
+    "primary_destination": "MCO",
+    "departure_date": "2026-03-07"
+  },
+  "timestamp": "2026-02-05T02:12:36.551986",
+  "total_search_time_seconds": 25.62,
+  "initial_search_time_seconds": 23.99,
+  "summary": {
+    "direct_route_best_price": null,
+    "hidden_city_routes_found": 0,
+    "total_routes_searched": 1,
+    "total_potential_savings_usd": 0
+  },
+  "hidden_city_routes": [],
+  "best_direct_deal": null,
+  "best_hidden_city_deals": [],
+  "route_results": {
+    "GRU-MCO": {
+      "search_params": {
+        "origin": "GRU",
+        "destination": "MCO",
+        "departure_date": "2026-03-07",
+        "return_date": null
+      },
+      "timestamp": "2026-02-05T02:12:36.551968",
+      "total_search_time_seconds": 1.63,
+      "summary": {
+        "locations_searched": [
+          "BR",
+          "US"
+        ],
+        "best_location": null,
+        "best_price_usd": null,
+        "potential_savings_usd": 0.0,
+        "potential_savings_pct": 0.0,
+        "price_by_location": {}
+      },
+      "best_overall": null,
+      "best_by_location": {},
+      "location_results": {
+        "BR": {
+          "location": "BR",
+          "location_name": "Brazil",
+          "status": "error",
+          "flights_found": 0,
+          "search_time_seconds": 1.62,
+          "error_message": "Page.goto: net::ERR_PROXY_CONNECTION_FAILED at https://www.google.com/travel/flights\nCall log:\n  - navigating to \"https://www.google.com/travel/flights\", waiting until \"domcontentloaded\"\n",
+          "best_price_usd": null,
+          "flights": []
+        },
+        "US": {
+          "location": "US",
+          "location_name": "United States",
+          "status": "error",
+          "flights_found": 0,
+          "search_time_seconds": 1.63,
+          "error_message": "Page.goto: net::ERR_PROXY_CONNECTION_FAILED at https://www.google.com/travel/flights\nCall log:\n  - navigating to \"https://www.google.com/travel/flights\", waiting until \"domcontentloaded\"\n",
+          "best_price_usd": null,
+          "flights": []
+        }
+      }
+    }
+  }
+}
