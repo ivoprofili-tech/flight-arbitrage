@@ -128,6 +128,8 @@ class GoogleFlightsScraper:
         # Add proxy to context if provided
         if self.proxy:
             context_options['proxy'] = self.proxy
+            # BrightData and other proxies use SSL interception - ignore cert errors
+            context_options['ignore_https_errors'] = True
 
         # Create a browser context with video recording and geo settings
         self.context = await self.browser.new_context(**context_options)

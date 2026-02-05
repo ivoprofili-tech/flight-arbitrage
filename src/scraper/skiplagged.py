@@ -85,6 +85,8 @@ class SkiplaggedScraper:
         # Add proxy if provided
         if self.proxy:
             context_options['proxy'] = self.proxy
+            # BrightData and other proxies use SSL interception - ignore cert errors
+            context_options['ignore_https_errors'] = True
 
         self.context = await self.browser.new_context(**context_options)
 
