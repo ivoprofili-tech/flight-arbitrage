@@ -13,7 +13,7 @@ One way
 1
 Economy
 São Paulo GRU
-Detroit DTW
+Houston IAH
 Filters
 All filters
 Stops
@@ -25,1324 +25,1365 @@ Emissions
 Connecting airports
 Duration
 Search results
-118 results returned.
+122 results returned.
 Best
 Cheapest
-from $633
+from $553
 Top flights
 Ranked based on price and conveniencePrices include required taxes + fees for 1 adult. Optional charges and bag fees may apply. Passenger assistance info.
 Sorted by top flights
-9:15 PM
+5:25 PM
  – 
-11:01 AM+1
-DeltaLATAM
-14 hr 46 min
-GRU–DTW
-1 stop
-3 hr 2 min ATL
-569 kg CO2e
-+11% emissions
-$658
-9:30 PM
+12:05 PM+1
+AviancaOperated by Taca International Airlines - Taca, Taca International Airlines - Taca
+20 hr 40 min
+GRU–IAH
+2 stops
+BOG, SAL
+628 kg CO2e
++17% emissions
+$553
+5:25 AM
  – 
-10:04 AM+1
-UnitedOperated by Mesa Airlines DBA United Express
-13 hr 34 min
-GRU–DTW
-1 stop
-1 hr 45 min IAD
-659 kg CO2e
-+29% emissions
-$658
-11:00 PM
- – 
-3:09 PM+1
-American
-17 hr 9 min
-GRU–DTW
-1 stop
-3 hr 51 min DFW
-577 kg CO2e
-+13% emissions
-$658
-10:55 PM
- – 
-11:06 AM+1
-LATAM, DeltaOperated by Latam Airlines Brasil, Delta Air Lines for Latam Airlines Group
-13 hr 11 min
-GRU–DTW
-1 stop
-1 hr 50 min MIA
-475 kg CO2e
--7% emissions
-$706
+5:59 PM
+COPA, United
+15 hr 34 min
+GRU–IAH
+2 stops
+PTY, SAL
+598 kg CO2e
++12% emissions
+$806
 Price insights
 Prices are currently typical
 View price history
 Track prices
-Track prices from São Paulo to Detroit departing 2026-03-07
+Track prices from São Paulo to Houston departing 2026-03-07
 Mar 7
-Track prices from São Paulo to Detroit - Any dates
+Track prices from São Paulo to Houston - Any dates
 Any dates
-Travel on Mar 6 for $467
-Change dates
 Date grid
 Price graph
 Other flights
-10:15 AM
- – 
-9:40 PM
-LATAM, DeltaOperated by Latam Airlines Brasil, Delta Air Lines for Latam Airlines Group
-13 hr 25 min
-GRU–DTW
-1 stop
-1 hr 41 min MIA
-497 kg CO2e
-Avg emissions
-$633
-10:15 AM
- – 
-12:44 AM+1
-LATAM, DeltaOperated by Latam Airlines Brasil, Delta Air Lines for Latam Airlines Group, Delta Air Lines for Latam Airlines Group
-16 hr 29 min
-GRU–DTW
-2 stops
-MIA, ATL
-576 kg CO2e
-+13% emissions
-$637
-12:15 AM
- – 
-2:57 PM
-American
-16 hr 42 min
-GRU–DTW
-2 stops
-MIA, CLT
-598 kg CO2e
-+17% emissions
-$658
-12:15 AM
- – 
-4:53 PM
-AmericanOperated by Envoy Air as American Eagle
-18 hr 38 min
-GRU–DTW
-2 stops
-MIA, ORD
-659 kg CO2e
-+29% emissions
-$658
-12:15 AM
- – 
-4:53 PM
-AmericanOperated by Envoy Air as American Eagle
-18 hr 38 min
-GRU–DTW
-2 stops
-MIA, ORD
-659 kg CO2e
-+29% emissions
-$658
-12:15 AM
- – 
-5:06 PM
-AmericanOperated by Republic Airways as American Eagle
-18 hr 51 min
-GRU–DTW
-1 stop
-6 hr 56 min MIA
-599 kg CO2e
-+17% emissions
-$658
-12:15 AM
- – 
-5:34 PM
-AmericanOperated by Piedmont Airlines as American Eagle
-19 hr 19 min
-GRU–DTW
-2 stops
-MIA, PHL
-666 kg CO2e
-+30% emissions
-$658
-12:15 AM
- – 
-5:38 PM
-AmericanOperated by Republic Airways as American Eagle
-19 hr 23 min
-GRU–DTW
-2 stops
-MIA, LGA
-695 kg CO2e
-+36% emissions
-$658
-12:15 AM
- – 
-5:41 PM
-American
-19 hr 26 min
-GRU–DTW
-2 stops
-MIA, CLT
-599 kg CO2e
-+17% emissions
-$658
-12:15 AM
- – 
-6:41 PM
-American
-20 hr 26 min
-GRU–DTW
-2 stops
-MIA, DFW
-684 kg CO2e
-+34% emissions
-$658
-12:15 AM
- – 
-6:41 PM
-American
-20 hr 26 min
-GRU–DTW
-2 stops
-MIA, DFW
-667 kg CO2e
-+31% emissions
-$658
-12:15 AM
- – 
-6:41 PM
-American
-20 hr 26 min
-GRU–DTW
-2 stops
-MIA, DFW
-692 kg CO2e
-+35% emissions
-$658
-12:15 AM
- – 
-9:26 PM
-AmericanOperated by SkyWest Airlines as American Eagle
-23 hr 11 min
-GRU–DTW
-2 stops
-MIA, ORD
-661 kg CO2e
-+29% emissions
-$658
-12:15 AM
- – 
-10:16 PM
-AmericanOperated by PSA Airlines as American Eagle
-24 hr 1 min
-GRU–DTW
-2 stops
-MIA, DCA
-642 kg CO2e
-+26% emissions
-$658
-12:15 AM
- – 
-10:16 PM
-AmericanOperated by PSA Airlines as American Eagle
-24 hr 1 min
-GRU–DTW
-2 stops
-MIA, DCA
-642 kg CO2e
-+26% emissions
-$658
-12:15 AM
- – 
-11:03 PM
-American
-24 hr 48 min
-GRU–DTW
-2 stops
-MIA, CLT
-580 kg CO2e
-+14% emissions
-$658
-12:15 AM
- – 
-11:03 PM
-American
-24 hr 48 min
-GRU–DTW
-2 stops
-MIA, CLT
-580 kg CO2e
-+14% emissions
-$658
-12:15 AM
- – 
-11:03 PM
-American
-24 hr 48 min
-GRU–DTW
-2 stops
-MIA, CLT
-564 kg CO2e
-+10% emissions
-$658
-12:15 AM
- – 
-11:33 PM
-AmericanOperated by PSA Airlines as American Eagle
-25 hr 18 min
-GRU–DTW
-2 stops
-MIA, PHL
-686 kg CO2e
-+34% emissions
-$658
-12:15 AM
- – 
-11:39 PM
-American
-25 hr 24 min
-GRU–DTW
-1 stop
-13 hr 35 min MIA
-541 kg CO2e
-+6% emissions
-$658
-9:00 PM
- – 
-1:09 PM+1
-DeltaOperated by Endeavor Air DBA Delta Connection, Endeavor Air DBA Delta Connection
-17 hr 9 min
-GRU–DTW
-2 stops
-JFK, CVG
-666 kg CO2e
-+30% emissions
-$658
-9:30 PM
- – 
-1:11 PM+1
-UnitedOperated by SkyWest DBA United Express
-16 hr 41 min
-GRU–DTW
-2 stops
-IAD, ORD
-712 kg CO2e
-+39% emissions
-$658
-9:30 PM
- – 
-11:57 PM+1
-UnitedOperated by Republic Airways DBA United Express
-27 hr 27 min
-GRU–DTW
-1 stop
-15 hr 30 min IAD
-659 kg CO2e
-+29% emissions
-$658
-9:45 PM
- – 
-11:58 PM+1
-United
-27 hr 13 min
-GRU–DTW
-1 stop
-14 hr 10 min IAH
-579 kg CO2e
-+13% emissions
-$658
-10:15 PM
- – 
-1:11 PM+1
-UnitedOperated by SkyWest DBA United Express
-15 hr 56 min
-GRU–DTW
-1 stop
-3 hr 37 min ORD
-500 kg CO2e
-Avg emissions
-$658
-10:15 PM
- – 
-5:05 PM+1
-United
-19 hr 50 min
-GRU–DTW
-1 stop
-7 hr 40 min ORD
-498 kg CO2e
-Avg emissions
-$658
-10:15 PM
- – 
-8:10 PM+1
-UnitedOperated by SkyWest DBA United Express
-22 hr 55 min
-GRU–DTW
-1 stop
-10 hr 45 min ORD
-500 kg CO2e
-Avg emissions
-$658
-10:15 PM
- – 
-10:10 PM+1
-United
-24 hr 55 min
-GRU–DTW
-1 stop
-12 hr 45 min ORD
-493 kg CO2e
-Avg emissions
-$658
-10:15 PM
- – 
-11:34 PM+1
-UnitedOperated by SkyWest DBA United Express
-26 hr 19 min
-GRU–DTW
-1 stop
-14 hr 5 min ORD
-500 kg CO2e
-Avg emissions
-$658
-10:25 PM
- – 
-11:56 PM+1
-UnitedOperated by Republic Airways DBA United Express
-26 hr 31 min
-GRU–DTW
-1 stop
-14 hr 26 min EWR
-682 kg CO2e
-+33% emissions
-$658
-10:35 PM
- – 
-1:48 PM+1
-AmericanOperated by Republic Airways as American Eagle
-16 hr 13 min
-GRU–DTW
-2 stops
-MIA, DCA
-632 kg CO2e
-+24% emissions
-$658
-10:35 PM
- – 
-2:57 PM+1
-American
-17 hr 22 min
-GRU–DTW
-2 stops
-MIA, CLT
-610 kg CO2e
-+19% emissions
-$658
-10:35 PM
- – 
-4:48 PM+1
-AmericanOperated by Republic Airways as American Eagle
-19 hr 13 min
-GRU–DTW
-1 stop
-Change of airport
-540 kg CO2e
-+6% emissions
-$658
-10:35 PM
- – 
-4:48 PM+1
-AmericanOperated by Republic Airways as American Eagle
-19 hr 13 min
-GRU–DTW
-2 stops
-MIA, LGA
-708 kg CO2e
-+39% emissions
-$658
-10:35 PM
- – 
-4:48 PM+1
-AmericanOperated by Republic Airways as American Eagle
-19 hr 13 min
-GRU–DTW
-2 stops
-MIA, LGA
-722 kg CO2e
-+41% emissions
-$658
-10:35 PM
- – 
-4:48 PM+1
-AmericanOperated by Republic Airways as American Eagle
-19 hr 13 min
-GRU–DTW
-2 stops
-MIA, LGA
-708 kg CO2e
-+39% emissions
-$658
-10:35 PM
- – 
-4:53 PM+1
-AmericanOperated by Envoy Air as American Eagle
-19 hr 18 min
-GRU–DTW
-2 stops
-JFK, ORD
-669 kg CO2e
-+31% emissions
-$658
-10:35 PM
- – 
-4:53 PM+1
-AmericanOperated by Envoy Air as American Eagle
-19 hr 18 min
-GRU–DTW
-2 stops
-MIA, ORD
-694 kg CO2e
-+36% emissions
-$658
-10:35 PM
- – 
-4:53 PM+1
-AmericanOperated by Envoy Air as American Eagle
-19 hr 18 min
-GRU–DTW
-2 stops
-MIA, ORD
-694 kg CO2e
-+36% emissions
-$658
-10:35 PM
- – 
-4:53 PM+1
-AmericanOperated by Republic Airways as American Eagle, Envoy Air as American Eagle
-19 hr 18 min
-GRU–DTW
-2 stops
-JFK, ORD
-727 kg CO2e
-+42% emissions
-$658
-10:35 PM
- – 
-6:40 PM+1
-American
-21 hr 5 min
-GRU–DTW
-2 stops
-MIA, DFW
-679 kg CO2e
-+33% emissions
-$658
-10:35 PM
- – 
-7:14 PM+1
-American
-21 hr 39 min
-GRU–DTW
-2 stops
-JFK, CLT
-620 kg CO2e
-+21% emissions
-$658
-10:35 PM
- – 
-7:14 PM+1
-American
-21 hr 39 min
-GRU–DTW
-2 stops
-MIA, CLT
-611 kg CO2e
-+20% emissions
-$658
-10:35 PM
- – 
-10:19 PM+1
-AmericanOperated by Republic Airways as American Eagle, PSA Airlines as American Eagle
-24 hr 44 min
-GRU–DTW
-2 stops
-JFK, DCA
-587 kg CO2e
-+15% emissions
-$658
-10:35 PM
- – 
-10:19 PM+1
-AmericanOperated by Republic Airways as American Eagle, PSA Airlines as American Eagle
-24 hr 44 min
-GRU–DTW
-2 stops
-JFK, DCA
-587 kg CO2e
-+15% emissions
-$658
-10:35 PM
- – 
-10:19 PM+1
-AmericanOperated by PSA Airlines as American Eagle
-24 hr 44 min
-GRU–DTW
-2 stops
-MIA, DCA
-654 kg CO2e
-+28% emissions
-$658
-10:35 PM
- – 
-11:03 PM+1
-American
-25 hr 28 min
-GRU–DTW
-2 stops
-MIA, CLT
-592 kg CO2e
-+16% emissions
-$658
-10:35 PM
- – 
-11:03 PM+1
-American
-25 hr 28 min
-GRU–DTW
-2 stops
-MIA, CLT
-576 kg CO2e
-+13% emissions
-$658
-10:35 PM
- – 
-11:10 PM+1
-AmericanOperated by Republic Airways as American Eagle
-25 hr 35 min
-GRU–DTW
-1 stop
-Change of airport
-540 kg CO2e
-+6% emissions
-$658
-10:35 PM
- – 
-11:59 PM+1
-American
-26 hr 24 min
-GRU–DTW
-1 stop
-14 hr 46 min MIA
-529 kg CO2e
-Avg emissions
-$658
-11:00 PM
- – 
-6:40 PM+1
-American
-20 hr 40 min
-GRU–DTW
-1 stop
-7 hr 22 min DFW
-577 kg CO2e
-+13% emissions
-$658
-11:00 PM
- – 
-7:58 PM+1
-American
-21 hr 58 min
-GRU–DTW
-1 stop
-8 hr 38 min DFW
-577 kg CO2e
-+13% emissions
-$658
-11:00 PM
- – 
-11:58 PM+1
-American
-25 hr 58 min
-GRU–DTW
-1 stop
-12 hr 37 min DFW
-577 kg CO2e
-+13% emissions
-$658
-11:30 PM
- – 
-4:48 PM+1
-AmericanOperated by Republic Airways as American Eagle
-18 hr 18 min
-GRU–DTW
-2 stops
-MIA, LGA
-717 kg CO2e
-+40% emissions
-$658
-11:30 PM
- – 
-4:48 PM+1
-AmericanOperated by Republic Airways as American Eagle
-18 hr 18 min
-GRU–DTW
-2 stops
-MIA, LGA
-731 kg CO2e
-+43% emissions
-$658
-11:30 PM
- – 
-4:53 PM+1
-AmericanOperated by Envoy Air as American Eagle
-18 hr 23 min
-GRU–DTW
-2 stops
-MIA, ORD
-704 kg CO2e
-+38% emissions
-$658
-11:30 PM
- – 
-6:40 PM+1
-American
-20 hr 10 min
-GRU–DTW
-2 stops
-MIA, DFW
-689 kg CO2e
-+35% emissions
-$658
-11:30 PM
- – 
-7:14 PM+1
-American
-20 hr 44 min
-GRU–DTW
-2 stops
-MIA, CLT
-621 kg CO2e
-+22% emissions
-$658
-11:30 PM
- – 
-10:19 PM+1
-AmericanOperated by PSA Airlines as American Eagle
-23 hr 49 min
-GRU–DTW
-2 stops
-MIA, DCA
-664 kg CO2e
-+30% emissions
-$658
-11:30 PM
- – 
-11:03 PM+1
-American
-24 hr 33 min
-GRU–DTW
-2 stops
-MIA, CLT
-602 kg CO2e
-+18% emissions
-$658
-11:30 PM
- – 
-11:03 PM+1
-American
-24 hr 33 min
-GRU–DTW
-2 stops
-MIA, CLT
-586 kg CO2e
-+15% emissions
-$658
-11:30 PM
- – 
-11:10 PM+1
-AmericanOperated by Republic Airways as American Eagle
-24 hr 40 min
-GRU–DTW
-2 stops
-MIA, LGA
-731 kg CO2e
-+43% emissions
-$658
-11:30 PM
- – 
-11:10 PM+1
-AmericanOperated by Republic Airways as American Eagle
-24 hr 40 min
-GRU–DTW
-2 stops
-MIA, LGA
-694 kg CO2e
-+36% emissions
-$658
-11:30 PM
- – 
-11:33 PM+1
-AmericanOperated by PSA Airlines as American Eagle
-25 hr 3 min
-GRU–DTW
-2 stops
-MIA, PHL
-708 kg CO2e
-+39% emissions
-$658
-11:30 PM
- – 
-11:59 PM+1
-American
-25 hr 29 min
-GRU–DTW
-1 stop
-13 hr 41 min MIA
-539 kg CO2e
-Avg emissions
-$658
-11:30 PM
- – 
-12:38 AM+2
-American
-26 hr 8 min
-GRU–DTW
-2 stops
-MIA, CLT
-621 kg CO2e
-+22% emissions
-$658
-11:30 PM
- – 
-12:38 AM+2
-American
-26 hr 8 min
-GRU–DTW
-2 stops
-MIA, CLT
-621 kg CO2e
-+22% emissions
-$658
-7:30 AM
- – 
-12:44 AM+1
-LATAM, DeltaOperated by Latam Airlines Brasil, Latam Airlines Peru, Delta Air Lines for Latam Airlines Group
-19 hr 14 min
-GRU–DTW
-2 stops
-LIM, ATL
-651 kg CO2e
-+27% emissions
-$662
-8:15 AM
- – 
-12:44 AM+1
-LATAM, DeltaOperated by Latam Airlines Colombia
-18 hr 29 min
-GRU–DTW
-2 stops
-BOG, ATL
-826 kg CO2e
-+62% emissions
-$662
-4:35 PM
- – 
-11:01 AM+1
-LATAM, DeltaOperated by Latam Airlines Peru, Delta Air Lines for Latam Airlines Group, Delta Air Lines for Latam Airlines Group
-19 hr 26 min
-GRU–DTW
-2 stops
-LIM, ATL
-635 kg CO2e
-+24% emissions
-$662
-12:15 AM
- – 
-5:41 PM
-American
-19 hr 26 min
-GRU–DTW
-2 stops
-MIA, CLT
-598 kg CO2e
-+17% emissions
-$664
-12:15 AM
- – 
-9:26 PM
-AmericanOperated by SkyWest Airlines as American Eagle
-23 hr 11 min
-GRU–DTW
-2 stops
-MIA, ORD
-686 kg CO2e
-+34% emissions
-$664
-12:15 AM
- – 
-10:16 PM
-AmericanOperated by PSA Airlines as American Eagle
-24 hr 1 min
-GRU–DTW
-2 stops
-MIA, DCA
-642 kg CO2e
-+26% emissions
-$664
-11:30 PM
- – 
-12:38 AM+2
-American
-26 hr 8 min
-GRU–DTW
-2 stops
-MIA, CLT
-621 kg CO2e
-+22% emissions
-$664
-11:30 PM
- – 
-12:38 AM+2
-American
-26 hr 8 min
-GRU–DTW
-2 stops
-MIA, CLT
-605 kg CO2e
-+18% emissions
-$664
-6:00 PM
- – 
-11:01 AM+1
-Gol, Delta
-18 hr 1 min
-GRU–DTW
-2 stops
-GIG, ATL
-603 kg CO2e
-+18% emissions
-$664
-3:10 PM
- – 
-11:01 AM+1
-LATAM, DeltaOperated by Latam Airlines Brasil, Delta Air Lines for Latam Airlines Group, Delta Air Lines for Latam Airlines Group
-20 hr 51 min
-GRU–DTW
-2 stops
-GIG, ATL
-603 kg CO2e
-+18% emissions
-$668
-11:30 PM
- – 
-12:38 AM+2
-American
-26 hr 8 min
-GRU–DTW
-2 stops
-MIA, CLT
-621 kg CO2e
-+22% emissions
-$683
-10:15 AM
- – 
-11:06 AM+1
-LATAM, DeltaOperated by Latam Airlines Brasil, Delta Air Lines for Latam Airlines Group
-25 hr 51 min
-GRU–DTW
-1 stop
-14 hr 15 min MIA
-497 kg CO2e
-Avg emissions
-$684
-9:30 PM
- – 
-5:35 PM+1
-Air CanadaOperated by Air Canada Express - Jazz
-21 hr 5 min
-GRU–DTW
-1 stop
-9 hr 20 min YYZ
-494 kg CO2e
-Avg emissions
-$699
-9:00 PM
- – 
-2:15 PM+1
-DeltaOperated by Endeavor Air DBA Delta Connection, Endeavor Air DBA Delta Connection
-18 hr 15 min
-GRU–DTW
-2 stops
-JFK, CVG
-666 kg CO2e
-+30% emissions
-$702
-9:00 PM
- – 
-4:17 PM+1
-DeltaOperated by Endeavor Air DBA Delta Connection, Endeavor Air DBA Delta Connection
-20 hr 17 min
-GRU–DTW
-2 stops
-JFK, CVG
-666 kg CO2e
-+30% emissions
-$702
-9:00 PM
- – 
-10:18 PM+1
-DeltaOperated by Endeavor Air DBA Delta Connection
-26 hr 18 min
-GRU–DTW
-1 stop
-14 hr 4 min JFK
-559 kg CO2e
-+9% emissions
-$702
-9:30 PM
- – 
-6:55 PM+1
-UnitedOperated by Republic Airways DBA United Express
-22 hr 25 min
-GRU–DTW
-1 stop
-10 hr 30 min IAD
-659 kg CO2e
-+29% emissions
-$702
-10:25 PM
- – 
-4:08 PM+1
-UnitedOperated by Republic Airways DBA United Express
-18 hr 43 min
-GRU–DTW
-1 stop
-6 hr 45 min EWR
-682 kg CO2e
-+33% emissions
-$702
-10:25 PM
- – 
-6:07 PM+1
-UnitedOperated by Republic Airways DBA United Express
-20 hr 42 min
-GRU–DTW
-1 stop
-8 hr 45 min EWR
-682 kg CO2e
-+33% emissions
-$702
-3:55 AM
- – 
-7:15 PM
-LATAM, DeltaOperated by Latam Airlines Brasil, Latam Airlines Peru, Delta Air Lines for Latam Airlines Group
-17 hr 20 min
-GRU–DTW
-2 stops
-LIM, MCO
-786 kg CO2e
-+54% emissions
-$706
-3:55 AM
- – 
-10:59 PM
-LATAM, DeltaOperated by Latam Airlines Brasil, Latam Airlines Peru, Delta Air Lines for Latam Airlines Group
-21 hr 4 min
-GRU–DTW
-2 stops
-LIM, MCO
-786 kg CO2e
-+54% emissions
-$706
-10:55 PM
- – 
-3:01 PM+1
-LATAM, DeltaOperated by Latam Airlines Brasil, Delta Air Lines for Latam Airlines Group, Endeavor Airdba Delta for Latam Airlines Group
-17 hr 6 min
-GRU–DTW
-2 stops
-MIA, JFK
-609 kg CO2e
-+19% emissions
-$711
-10:55 PM
- – 
-9:30 PM+1
-LATAM, DeltaOperated by Latam Airlines Brasil, Delta Air Lines for Latam Airlines Group
-23 hr 35 min
-GRU–DTW
-1 stop
-12 hr 3 min MIA
-475 kg CO2e
--7% emissions
-$728
-9:45 PM
- – 
-4:01 PM+1
-UnitedOperated by Mesa Airlines DBA United Express
-19 hr 16 min
-GRU–DTW
-1 stop
-6 hr 20 min IAH
-636 kg CO2e
-+24% emissions
-$750
-9:15 PM
- – 
-12:43 AM+2
-Delta
-28 hr 28 min
-GRU–DTW
-1 stop
-16 hr 40 min ATL
-619 kg CO2e
-+21% emissions
-$801
-11:45 PM
- – 
-8:01 PM+1
-Delta
-21 hr 16 min
-GRU–DTW
-1 stop
-9 hr 21 min ATL
-596 kg CO2e
-+17% emissions
-$801
-11:45 PM
- – 
-12:43 AM+2
-Delta
-25 hr 58 min
-GRU–DTW
-1 stop
-14 hr 5 min ATL
-623 kg CO2e
-+22% emissions
-$801
-10:55 PM
- – 
-3:12 PM+1
-LATAM, DeltaOperated by Latam Airlines Brasil, Delta Air Lines for Latam Airlines Group
-17 hr 17 min
-GRU–DTW
-1 stop
-5 hr 50 min MIA
-475 kg CO2e
--7% emissions
-$806
-10:50 PM
- – 
-3:01 PM+1
-LATAM, DeltaOperated by Latam Airlines Brasil, Endeavor Airdba Delta for Latam Airlines Group
-17 hr 11 min
-GRU–DTW
-1 stop
-5 hr 24 min JFK
-524 kg CO2e
-Avg emissions
-$827
-11:45 PM
- – 
-1:01 PM+1
-DeltaLATAM
-14 hr 16 min
-GRU–DTW
-1 stop
-2 hr 25 min ATL
-623 kg CO2e
-+22% emissions
-$907
-11:45 PM
- – 
-2:53 PM+1
-Delta
-16 hr 8 min
-GRU–DTW
-1 stop
-4 hr 20 min ATL
-588 kg CO2e
-+15% emissions
-$907
-11:45 PM
- – 
-4:41 PM+1
-Delta
-17 hr 56 min
-GRU–DTW
-1 stop
-6 hr 3 min ATL
-596 kg CO2e
-+17% emissions
-$907
-1:20 AM
- – 
-6:55 PM
-Avianca, UnitedOperated by Republic Airways DBA United Express
-19 hr 35 min
-GRU–DTW
-2 stops
-BOG, IAD
-715 kg CO2e
-+40% emissions
-$931
-2:40 AM
- – 
-6:55 PM
-Avianca, UnitedOperated by Republic Airways DBA United Express
-18 hr 15 min
-GRU–DTW
-2 stops
-BOG, IAD
-715 kg CO2e
-+40% emissions
-$931
-9:10 PM
- – 
-5:35 PM+1
-Air CanadaOperated by Air Canada Express - Jazz
-21 hr 25 min
-GRU–DTW
-2 stops
-YUL, YYZ
-562 kg CO2e
-+10% emissions
-$997
-9:10 PM
- – 
-5:35 PM+1
-Air CanadaOperated by Air Canada Express - Jazz
-21 hr 25 min
-GRU–DTW
-2 stops
-YUL, YYZ
-566 kg CO2e
-+11% emissions
-$997
-9:10 PM
- – 
-5:35 PM+1
-Air CanadaOperated by Air Canada Express - Jazz
-21 hr 25 min
-GRU–DTW
-2 stops
-YUL, YYZ
-561 kg CO2e
-+10% emissions
-$997
 5:25 PM
  – 
-10:04 AM+1
-Avianca, UnitedOperated by Mesa Airlines DBA United Express
-17 hr 39 min
-GRU–DTW
+4:10 PM+1
+AviancaOperated by Taca International Airlines - Taca, Taca International Airlines - Taca
+24 hr 45 min
+GRU–IAH
 2 stops
-BOG, IAD
-715 kg CO2e
-+40% emissions
-$1,057
-5:45 PM
- – 
-11:01 AM+1
-LATAM, DeltaOperated by Latam Airlines Brasil, Delta Air Lines for Latam Airlines Group, Delta Air Lines for Latam Airlines Group
-18 hr 16 min
-GRU–DTW
-2 stops
-GIG, ATL
-603 kg CO2e
-+18% emissions
-$1,087
-5:45 PM
- – 
-1:01 PM+1
-LATAM, DeltaOperated by Latam Airlines Brasil, Delta Air Lines for Latam Airlines Group, Delta Air Lines for Latam Airlines Group
-20 hr 16 min
-GRU–DTW
-2 stops
-GIG, ATL
+BOG, SAL
 653 kg CO2e
-+28% emissions
-$1,087
-9:10 PM
++22% emissions
+$553
+5:25 PM
  – 
-5:35 PM+1
-Air CanadaOperated by Air Canada Express - Jazz
-21 hr 25 min
-GRU–DTW
+4:10 PM+1
+AviancaOperated by Taca International Airlines - Taca
+24 hr 45 min
+GRU–IAH
 2 stops
-YUL, YYZ
-566 kg CO2e
-+11% emissions
-$1,123
-11:15 AM
+BOG, SAL
+653 kg CO2e
++22% emissions
+$553
+9:30 PM
  – 
-10:59 PM
-LATAM, DeltaOperated by Latam Airlines Brasil, Delta Air Lines for Latam Airlines Group
-13 hr 44 min
-GRU–DTW
+9:44 PM+1
+Air Canada
+26 hr 14 min
+GRU–IAH
 1 stop
-2 hr 20 min MCO
-533 kg CO2e
-Avg emissions
-$1,180
-11:15 AM
- – 
-12:44 AM+1
-LATAM, DeltaOperated by Latam Airlines Brasil, Delta Air Lines for Latam Airlines Group, Delta Air Lines for Latam Airlines Group
-15 hr 29 min
-GRU–DTW
-2 stops
-MCO, ATL
-568 kg CO2e
-+11% emissions
-$1,184
-1:30 AM
- – 
-6:55 PM
-COPA, UnitedOperated by Republic Airways DBA United Express
-19 hr 25 min
-GRU–DTW
-2 stops
-PTY, IAD
-705 kg CO2e
-+38% emissions
-$1,209
-1:40 AM
- – 
-6:55 PM
-COPA, UnitedOperated by Republic Airways DBA United Express
-19 hr 15 min
-GRU–DTW
-2 stops
-PTY, IAD
-705 kg CO2e
-+38% emissions
-$1,209
-3:10 AM
- – 
-6:55 PM
-COPA, UnitedOperated by Republic Airways DBA United Express
-17 hr 45 min
-GRU–DTW
-2 stops
-PTY, IAD
-705 kg CO2e
-+38% emissions
-$1,209
+11 hr 55 min YYZ
+637 kg CO2e
++19% emissions
+$592
 5:25 AM
  – 
-11:59 PM
+7:49 PM
 COPA, United
-20 hr 34 min
-GRU–DTW
+17 hr 24 min
+GRU–IAH
 2 stops
-PTY, IAH
-733 kg CO2e
-+43% emissions
-$1,966
+PTY, SAL
+598 kg CO2e
++12% emissions
+$806
+9:10 PM
+ – 
+9:39 PM+1
+Air Canada
+26 hr 29 min
+GRU–IAH
+1 stop
+11 hr 25 min YUL
+669 kg CO2e
++25% emissions
+$893
+1:20 AM
+ – 
+7:05 PM
+Avianca, United
+20 hr 45 min
+GRU–IAH
+2 stops
+BOG, FLL
+663 kg CO2e
++24% emissions
+$917
+2:40 AM
+ – 
+7:05 PM
+Avianca, United
+19 hr 25 min
+GRU–IAH
+2 stops
+BOG, FLL
+663 kg CO2e
++24% emissions
+$917
+5:25 PM
+ – 
+8:22 AM+1
+Avianca, United
+16 hr 57 min
+GRU–IAH
+2 stops
+BOG, MIA
+655 kg CO2e
++22% emissions
+$917
+1:30 AM
+ – 
+5:47 PM
+COPA, United
+19 hr 17 min
+GRU–IAH
+2 stops
+PTY, GUA
+603 kg CO2e
++13% emissions
+$931
+1:30 AM
+ – 
+5:47 PM
+COPA, United
+19 hr 17 min
+GRU–IAH
+2 stops
+PTY, GUA
+585 kg CO2e
++9% emissions
+$931
+1:30 AM
+ – 
+5:47 PM
+COPA, United
+19 hr 17 min
+GRU–IAH
+2 stops
+PTY, GUA
+608 kg CO2e
++14% emissions
+$931
+1:40 AM
+ – 
+5:47 PM
+COPA, United
+19 hr 7 min
+GRU–IAH
+2 stops
+PTY, GUA
+603 kg CO2e
++13% emissions
+$931
+1:40 AM
+ – 
+5:47 PM
+COPA, United
+19 hr 7 min
+GRU–IAH
+2 stops
+PTY, GUA
+585 kg CO2e
++9% emissions
+$931
+1:40 AM
+ – 
+5:47 PM
+COPA, United
+19 hr 7 min
+GRU–IAH
+2 stops
+PTY, GUA
+608 kg CO2e
++14% emissions
+$931
+3:10 AM
+ – 
+5:47 PM
+COPA, United
+17 hr 37 min
+GRU–IAH
+2 stops
+PTY, GUA
+603 kg CO2e
++13% emissions
+$931
+1:30 AM
+ – 
+5:59 PM
+COPA, United
+19 hr 29 min
+GRU–IAH
+2 stops
+PTY, SAL
+598 kg CO2e
++12% emissions
+$945
+1:30 AM
+ – 
+7:49 PM
+COPA, United
+21 hr 19 min
+GRU–IAH
+2 stops
+PTY, SAL
+598 kg CO2e
++12% emissions
+$945
+1:40 AM
+ – 
+5:59 PM
+COPA, United
+19 hr 19 min
+GRU–IAH
+2 stops
+PTY, SAL
+598 kg CO2e
++12% emissions
+$945
+1:40 AM
+ – 
+7:49 PM
+COPA, United
+21 hr 9 min
+GRU–IAH
+2 stops
+PTY, SAL
+598 kg CO2e
++12% emissions
+$945
+3:10 AM
+ – 
+5:59 PM
+COPA, United
+17 hr 49 min
+GRU–IAH
+2 stops
+PTY, SAL
+598 kg CO2e
++12% emissions
+$945
+3:10 AM
+ – 
+7:49 PM
+COPA, United
+19 hr 39 min
+GRU–IAH
+2 stops
+PTY, SAL
+598 kg CO2e
++12% emissions
+$945
+11:10 AM
+ – 
+5:04 AM+1
+COPA, United
+19 hr 54 min
+GRU–IAH
+2 stops
+PTY, GUA
+687 kg CO2e
++28% emissions
+$1,038
+11:10 AM
+ – 
+5:04 AM+1
+COPA, United
+19 hr 54 min
+GRU–IAH
+2 stops
+PTY, GUA
+687 kg CO2e
++28% emissions
+$1,038
+8:15 AM
+ – 
+12:11 AM+1
+LATAM, DeltaOperated by Latam Airlines Colombia
+18 hr 56 min
+GRU–IAH
+2 stops
+BOG, ATL
+834 kg CO2e
++56% emissions
+$1,274
+11:55 PM
+ – 
+5:49 PM+1
+LATAM, DeltaOperated by Latam Airlines Colombia
+19 hr 54 min
+GRU–IAH
+2 stops
+BOG, ATL
+834 kg CO2e
++56% emissions
+$1,274
+5:25 PM
+ – 
+10:24 AM+1
+Avianca, UnitedOperated by Avianca Costa Rica S.a.
+18 hr 59 min
+GRU–IAH
+2 stops
+BOG, SJO
+578 kg CO2e
++8% emissions
+$1,275
+5:25 PM
+ – 
+12:39 PM+1
+Avianca, UnitedOperated by Avianca Costa Rica S.a.
+21 hr 14 min
+GRU–IAH
+2 stops
+BOG, SJO
+578 kg CO2e
++8% emissions
+$1,275
+5:25 AM
+ – 
+5:50 PM
+COPA, United
+15 hr 25 min
+GRU–IAH
+2 stops
+PTY, MGA
+597 kg CO2e
++12% emissions
+$1,315
+5:25 AM
+ – 
+8:10 PM
+COPA, United
+17 hr 45 min
+GRU–IAH
+2 stops
+PTY, MEX
+718 kg CO2e
++34% emissions
+$1,333
+9:00 PM
+ – 
+11:51 AM+1
+Delta
+16 hr 51 min
+GRU–IAH
+1 stop
+2 hr 35 min JFK
+677 kg CO2e
++27% emissions
+$1,334
+9:15 PM
+ – 
+8:56 AM+1
+DeltaLATAM
+13 hr 41 min
+GRU–IAH
+1 stop
+1 hr 33 min ATL
+596 kg CO2e
++11% emissions
+$1,334
+9:15 PM
+ – 
+11:10 AM+1
+DeltaLATAM
+15 hr 55 min
+GRU–IAH
+1 stop
+3 hr 43 min ATL
+596 kg CO2e
++11% emissions
+$1,334
+9:15 PM
+ – 
+1:54 PM+1
+DeltaLATAM
+18 hr 39 min
+GRU–IAH
+1 stop
+6 hr 30 min ATL
+599 kg CO2e
++12% emissions
+$1,334
+9:15 PM
+ – 
+3:51 PM+1
+Delta
+20 hr 36 min
+GRU–IAH
+1 stop
+8 hr 26 min ATL
+599 kg CO2e
++12% emissions
+$1,334
+9:15 PM
+ – 
+5:49 PM+1
+DeltaLATAM
+22 hr 34 min
+GRU–IAH
+1 stop
+10 hr 25 min ATL
+599 kg CO2e
++12% emissions
+$1,334
+9:15 PM
+ – 
+9:09 PM+1
+DeltaLATAM
+25 hr 54 min
+GRU–IAH
+1 stop
+13 hr 48 min ATL
+599 kg CO2e
++12% emissions
+$1,334
+9:15 PM
+ – 
+11:59 PM+1
+DeltaLATAM
+28 hr 44 min
+GRU–IAH
+1 stop
+16 hr 35 min ATL
+599 kg CO2e
++12% emissions
+$1,334
+11:45 PM
+ – 
+1:54 PM+1
+DeltaLATAM
+16 hr 9 min
+GRU–IAH
+1 stop
+3 hr 55 min ATL
+604 kg CO2e
++13% emissions
+$1,334
+11:45 PM
+ – 
+3:51 PM+1
+DeltaLATAM
+18 hr 6 min
+GRU–IAH
+1 stop
+5 hr 51 min ATL
+604 kg CO2e
++13% emissions
+$1,334
+11:45 PM
+ – 
+5:49 PM+1
+DeltaLATAM
+20 hr 4 min
+GRU–IAH
+1 stop
+7 hr 50 min ATL
+604 kg CO2e
++13% emissions
+$1,334
+11:45 PM
+ – 
+9:09 PM+1
+DeltaLATAM
+23 hr 24 min
+GRU–IAH
+1 stop
+11 hr 13 min ATL
+604 kg CO2e
++13% emissions
+$1,334
+11:45 PM
+ – 
+11:59 PM+1
+DeltaLATAM
+26 hr 14 min
+GRU–IAH
+1 stop
+14 hr ATL
+604 kg CO2e
++13% emissions
+$1,334
+7:30 AM
+ – 
+12:11 AM+1
+LATAM, DeltaOperated by Latam Airlines Brasil, Latam Airlines Peru, Delta Air Lines for Latam Airlines Group
+19 hr 41 min
+GRU–IAH
+2 stops
+LIM, ATL
+658 kg CO2e
++23% emissions
+$1,338
+10:15 AM
+ – 
+12:11 AM+1
+LATAM, DeltaOperated by Latam Airlines Brasil, Delta Air Lines for Latam Airlines Group, Delta Air Lines for Latam Airlines Group
+16 hr 56 min
+GRU–IAH
+2 stops
+MIA, ATL
+583 kg CO2e
++9% emissions
+$1,343
+10:55 PM
+ – 
+1:54 PM+1
+LATAM, DeltaOperated by Latam Airlines Brasil, Delta Air Lines for Latam Airlines Group, Delta Air Lines for Latam Airlines Group
+16 hr 59 min
+GRU–IAH
+2 stops
+MIA, ATL
+561 kg CO2e
+Avg emissions
+$1,343
+10:55 PM
+ – 
+3:51 PM+1
+LATAM, DeltaOperated by Latam Airlines Brasil, Delta Air Lines for Latam Airlines Group, Delta Air Lines for Latam Airlines Group
+18 hr 56 min
+GRU–IAH
+2 stops
+MIA, ATL
+536 kg CO2e
+Avg emissions
+$1,343
+10:55 PM
+ – 
+5:49 PM+1
+LATAM, DeltaOperated by Latam Airlines Brasil, Delta Air Lines for Latam Airlines Group, Delta Air Lines for Latam Airlines Group
+20 hr 54 min
+GRU–IAH
+2 stops
+MIA, ATL
+510 kg CO2e
+Avg emissions
+$1,343
+10:55 PM
+ – 
+5:49 PM+1
+LATAM, DeltaOperated by Latam Airlines Brasil, Delta Air Lines for Latam Airlines Group, Delta Air Lines for Latam Airlines Group
+20 hr 54 min
+GRU–IAH
+2 stops
+MIA, ATL
+536 kg CO2e
+Avg emissions
+$1,343
+5:45 PM
+ – 
+11:10 AM+1
+LATAM, DeltaOperated by Latam Airlines Brasil, Delta Air Lines for Latam Airlines Group, Delta Air Lines for Latam Airlines Group
+19 hr 25 min
+GRU–IAH
+2 stops
+GIG, ATL
+630 kg CO2e
++18% emissions
+$1,344
+10:55 PM
+ – 
+5:49 PM+1
+LATAM, DeltaOperated by Latam Airlines Brasil, Delta Air Lines for Latam Airlines Group, Delta Air Lines for Latam Airlines Group
+20 hr 54 min
+GRU–IAH
+2 stops
+MIA, ATL
+536 kg CO2e
+Avg emissions
+$1,376
+3:10 AM
+ – 
+8:10 PM
+COPA, United
+20 hr
+GRU–IAH
+2 stops
+PTY, MEX
+718 kg CO2e
++34% emissions
+$1,395
+9:45 PM
+ – 
+5:50 AM+1
+United
+10 hr 5 min
+GRU–IAH
+Nonstop
+395 kg CO2e
+-26% emissions
+$1,400
+12:15 AM
+ – 
+1:39 PM
+AmericanOperated by Envoy Air as American Eagle
+16 hr 24 min
+GRU–IAH
+2 stops
+MIA, DFW
+595 kg CO2e
++11% emissions
+$1,406
+12:15 AM
+ – 
+2:15 PM
+American
+17 hr
+GRU–IAH
+2 stops
+MIA, CLT
+619 kg CO2e
++16% emissions
+$1,406
+12:15 AM
+ – 
+2:39 PM
+AmericanOperated by Republic Airways as American Eagle
+17 hr 24 min
+GRU–IAH
+1 stop
+5 hr 35 min MIA
+586 kg CO2e
++10% emissions
+$1,406
+12:15 AM
+ – 
+3:42 PM
+American
+18 hr 27 min
+GRU–IAH
+2 stops
+MIA, DFW
+583 kg CO2e
++9% emissions
+$1,406
+12:15 AM
+ – 
+3:42 PM
+American
+18 hr 27 min
+GRU–IAH
+2 stops
+MIA, DFW
+566 kg CO2e
++6% emissions
+$1,406
+12:15 AM
+ – 
+5:46 PM
+American
+20 hr 31 min
+GRU–IAH
+1 stop
+8 hr 51 min MIA
+543 kg CO2e
+Avg emissions
+$1,406
+12:15 AM
+ – 
+8:00 PM
+AmericanOperated by Envoy Air as American Eagle
+22 hr 45 min
+GRU–IAH
+2 stops
+MIA, ORD
+722 kg CO2e
++35% emissions
+$1,406
+12:15 AM
+ – 
+8:14 PM
+American
+22 hr 59 min
+GRU–IAH
+2 stops
+MIA, DFW
+603 kg CO2e
++13% emissions
+$1,406
+12:15 AM
+ – 
+8:40 PM
+American
+23 hr 25 min
+GRU–IAH
+2 stops
+MIA, CLT
+616 kg CO2e
++15% emissions
+$1,406
+12:15 AM
+ – 
+9:27 PM
+American
+24 hr 12 min
+GRU–IAH
+1 stop
+12 hr 35 min MIA
+529 kg CO2e
+Avg emissions
+$1,406
+12:15 AM
+ – 
+11:57 PM
+American
+26 hr 42 min
+GRU–IAH
+1 stop
+15 hr 5 min MIA
+529 kg CO2e
+Avg emissions
+$1,406
+9:30 PM
+ – 
+11:11 AM+1
+United
+15 hr 41 min
+GRU–IAH
+1 stop
+1 hr 50 min IAD
+726 kg CO2e
++36% emissions
+$1,406
+9:30 PM
+ – 
+1:40 PM+1
+United
+18 hr 10 min
+GRU–IAH
+1 stop
+Change of airport
+714 kg CO2e
++33% emissions
+$1,406
+9:30 PM
+ – 
+3:15 PM+1
+United
+19 hr 45 min
+GRU–IAH
+1 stop
+Change of airport
+743 kg CO2e
++39% emissions
+$1,406
+9:30 PM
+ – 
+3:31 PM+1
+United
+20 hr 1 min
+GRU–IAH
+1 stop
+6 hr 10 min IAD
+700 kg CO2e
++31% emissions
+$1,406
+9:30 PM
+ – 
+12:30 AM+2
+United
+29 hr
+GRU–IAH
+1 stop
+15 hr 25 min IAD
+697 kg CO2e
++30% emissions
+$1,406
+10:15 PM
+ – 
+12:00 PM+1
+United
+15 hr 45 min
+GRU–IAH
+1 stop
+1 hr 53 min ORD
+518 kg CO2e
+Avg emissions
+$1,406
+10:15 PM
+ – 
+1:40 PM+1
+United
+17 hr 25 min
+GRU–IAH
+1 stop
+3 hr 35 min ORD
+518 kg CO2e
+Avg emissions
+$1,406
+10:15 PM
+ – 
+3:48 PM+1
+United
+19 hr 33 min
+GRU–IAH
+1 stop
+5 hr 45 min ORD
+517 kg CO2e
+Avg emissions
+$1,406
+10:15 PM
+ – 
+8:27 PM+1
+United
+24 hr 12 min
+GRU–IAH
+1 stop
+10 hr 25 min ORD
+542 kg CO2e
+Avg emissions
+$1,406
+10:15 PM
+ – 
+12:09 AM+2
+United
+27 hr 54 min
+GRU–IAH
+1 stop
+14 hr 15 min ORD
+517 kg CO2e
+Avg emissions
+$1,406
+10:25 PM
+ – 
+1:40 PM+1
+United
+17 hr 15 min
+GRU–IAH
+1 stop
+3 hr 15 min EWR
+788 kg CO2e
++47% emissions
+$1,406
+10:25 PM
+ – 
+3:39 PM+1
+United
+19 hr 14 min
+GRU–IAH
+1 stop
+5 hr 15 min EWR
+687 kg CO2e
++28% emissions
+$1,406
+10:25 PM
+ – 
+5:15 PM+1
+United
+20 hr 50 min
+GRU–IAH
+1 stop
+6 hr 55 min EWR
+714 kg CO2e
++33% emissions
+$1,406
+10:25 PM
+ – 
+8:47 PM+1
+United
+24 hr 22 min
+GRU–IAH
+1 stop
+10 hr 21 min EWR
+687 kg CO2e
++28% emissions
+$1,406
+10:35 PM
+ – 
+4:36 PM+1
+American
+20 hr 1 min
+GRU–IAH
+1 stop
+8 hr 31 min MIA
+570 kg CO2e
++7% emissions
+$1,406
+11:00 PM
+ – 
+11:29 AM+1
+American
+14 hr 29 min
+GRU–IAH
+1 stop
+2 hr 33 min DFW
+484 kg CO2e
+-10% emissions
+$1,406
+11:00 PM
+ – 
+1:39 PM+1
+AmericanOperated by Envoy Air as American Eagle
+16 hr 39 min
+GRU–IAH
+1 stop
+4 hr 41 min DFW
+505 kg CO2e
+-6% emissions
+$1,406
+11:00 PM
+ – 
+4:01 PM+1
+American
+19 hr 1 min
+GRU–IAH
+1 stop
+7 hr 6 min DFW
+476 kg CO2e
+-11% emissions
+$1,406
+11:00 PM
+ – 
+8:10 PM+1
+American
+23 hr 10 min
+GRU–IAH
+1 stop
+11 hr 15 min DFW
+476 kg CO2e
+-11% emissions
+$1,406
+11:30 PM
+ – 
+4:36 PM+1
+American
+19 hr 6 min
+GRU–IAH
+1 stop
+7 hr 26 min MIA
+580 kg CO2e
++8% emissions
+$1,406
+11:30 PM
+ – 
+5:46 PM+1
+American
+20 hr 16 min
+GRU–IAH
+1 stop
+8 hr 36 min MIA
+565 kg CO2e
++6% emissions
+$1,406
+11:30 PM
+ – 
+9:33 PM+1
+American
+24 hr 3 min
+GRU–IAH
+1 stop
+12 hr 26 min MIA
+552 kg CO2e
+Avg emissions
+$1,406
+12:15 AM
+ – 
+8:14 PM
+American
+22 hr 59 min
+GRU–IAH
+2 stops
+MIA, DFW
+591 kg CO2e
++10% emissions
+$1,411
+12:15 AM
+ – 
+8:14 PM
+American
+22 hr 59 min
+GRU–IAH
+2 stops
+MIA, DFW
+583 kg CO2e
++9% emissions
+$1,411
+12:15 AM
+ – 
+8:14 PM
+American
+22 hr 59 min
+GRU–IAH
+2 stops
+MIA, DFW
+566 kg CO2e
++6% emissions
+$1,411
+5:25 PM
+ – 
+11:12 AM+1
+Avianca, United
+19 hr 47 min
+GRU–IAH
+2 stops
+BOG, MIA
+627 kg CO2e
++17% emissions
+$1,462
+1:30 AM
+ – 
+12:14 PM
+COPA, United
+13 hr 44 min
+GRU–IAH
+1 stop
+2 hr 40 min PTY
+548 kg CO2e
+Avg emissions
+$1,491
+1:30 AM
+ – 
+2:54 PM
+COPA, United
+16 hr 24 min
+GRU–IAH
+1 stop
+5 hr 20 min PTY
+548 kg CO2e
+Avg emissions
+$1,491
+1:30 AM
+ – 
+8:10 PM
+COPA, United
+21 hr 40 min
+GRU–IAH
+1 stop
+10 hr 26 min PTY
+588 kg CO2e
++10% emissions
+$1,491
+1:40 AM
+ – 
+12:14 PM
+COPA, United
+13 hr 34 min
+GRU–IAH
+1 stop
+2 hr 31 min PTY
+548 kg CO2e
+Avg emissions
+$1,491
+1:40 AM
+ – 
+2:54 PM
+COPA, United
+16 hr 14 min
+GRU–IAH
+1 stop
+5 hr 11 min PTY
+548 kg CO2e
+Avg emissions
+$1,491
+1:40 AM
+ – 
+8:10 PM
+COPA, United
+21 hr 30 min
+GRU–IAH
+1 stop
+10 hr 17 min PTY
+588 kg CO2e
++10% emissions
+$1,491
+3:10 AM
+ – 
+12:14 PM
+COPA, United
+12 hr 4 min
+GRU–IAH
+1 stop
+1 hr 1 min PTY
+548 kg CO2e
+Avg emissions
+$1,491
+3:10 AM
+ – 
+2:54 PM
+COPA, United
+14 hr 44 min
+GRU–IAH
+1 stop
+3 hr 41 min PTY
+548 kg CO2e
+Avg emissions
+$1,491
+3:10 AM
+ – 
+8:10 PM
+COPA, United
+20 hr
+GRU–IAH
+1 stop
+8 hr 47 min PTY
+588 kg CO2e
++10% emissions
+$1,491
+5:25 AM
+ – 
+2:54 PM
+COPA, United
+12 hr 29 min
+GRU–IAH
+1 stop
+1 hr 23 min PTY
+548 kg CO2e
+Avg emissions
+$1,491
+5:25 AM
+ – 
+8:10 PM
+COPA, United
+17 hr 45 min
+GRU–IAH
+1 stop
+6 hr 29 min PTY
+588 kg CO2e
++10% emissions
+$1,491
+11:10 AM
+ – 
+8:10 PM
+COPA, United
+12 hr
+GRU–IAH
+1 stop
+40 min PTY
+672 kg CO2e
++26% emissions
+$1,491
+11:15 AM
+ – 
+12:11 AM+1
+LATAM, DeltaOperated by Latam Airlines Brasil, Delta Air Lines for Latam Airlines Group, Delta Air Lines for Latam Airlines Group
+15 hr 56 min
+GRU–IAH
+2 stops
+MCO, ATL
+575 kg CO2e
++7% emissions
+$1,584
+5:25 AM
+ – 
+4:39 PM
+COPA, United
+14 hr 14 min
+GRU–IAH
+2 stops
+PTY, SAP
+580 kg CO2e
++8% emissions
+$1,607
+11:10 AM
+ – 
+12:14 PM+1
+COPA, United
+27 hr 4 min
+GRU–IAH
+1 stop
+15 hr 54 min PTY
+632 kg CO2e
++18% emissions
+$1,641
+6:00 PM
+ – 
+11:29 AM+1
+Gol, American
+19 hr 29 min
+GRU–IAH
+2 stops
+GIG, DFW
+651 kg CO2e
++22% emissions
+$1,724
+12:15 PM
+ – 
+5:20 AM+1
+Air Canada, United
+19 hr 5 min
+GRU–IAH
+1 stop
+5 hr 55 min EZE
+651 kg CO2e
++22% emissions
+$1,793
+12:15 PM
+ – 
+7:10 AM+1
+Air Canada, United
+20 hr 55 min
+GRU–IAH
+1 stop
+7 hr 45 min EZE
+651 kg CO2e
++22% emissions
+$1,793
+2:40 AM
+ – 
+6:45 AM+1
+Avianca, United
+30 hr 5 min
+GRU–IAH
+1 stop
+18 hr 55 min BOG
+550 kg CO2e
+Avg emissions
+$2,039
+7:35 AM
+ – 
+6:45 AM+1
+Avianca, United
+25 hr 10 min
+GRU–IAH
+1 stop
+14 hr 5 min BOG
+586 kg CO2e
++10% emissions
+$2,039
+5:25 PM
+ – 
+6:45 AM+1
+Avianca, United
+15 hr 20 min
+GRU–IAH
+1 stop
+4 hr 5 min BOG
+550 kg CO2e
+Avg emissions
+$2,039
+10:40 AM
+ – 
+11:12 AM+1
+Aerolineas Argentinas, United
+26 hr 32 min
+GRU–IAH
+2 stops
+Change of airport
+944 kg CO2e
++76% emissions
+$2,563
+2:20 PM
+ – 
+11:12 AM+1
+Gol, Aerolineas Argentinas, United
+22 hr 52 min
+GRU–IAH
+2 stops
+Change of airport
+894 kg CO2e
++67% emissions
+$3,164
+2:20 PM
+ – 
+12:34 PM+1
+Gol, Aerolineas Argentinas, United
+24 hr 14 min
+GRU–IAH
+2 stops
+Change of airport
+919 kg CO2e
++72% emissions
+$3,164
+9:50 AM
+ – 
+5:45 AM+1
+Gol, United
+21 hr 55 min
+GRU–IAH
+1 stop
+10 hr GIG
+592 kg CO2e
++11% emissions
+$3,265
+12:55 PM
+ – 
+5:45 AM+1
+Azul, United
+18 hr 50 min
+GRU–IAH
+2 stops
+POA, GIG
+761 kg CO2e
++42% emissions
+$3,265
+2:35 PM
+ – 
+5:45 AM+1
+Azul, United
+17 hr 10 min
+GRU–IAH
+2 stops
+CNF, GIG
+671 kg CO2e
++25% emissions
+$3,265
+6:00 PM
+ – 
+5:45 AM+1
+Gol, United
+13 hr 45 min
+GRU–IAH
+1 stop
+1 hr 45 min GIG
+592 kg CO2e
++11% emissions
+$3,265
+11:05 AM
+ – 
+10:02 AM+1
+AeromexicoOperated by Aerolitoral DBA Aeromexico Connect
+24 hr 57 min
+GRU–IAH
+1 stop
+13 hr 15 min MEX
+621 kg CO2e
++16% emissions
+$6,548
+11:05 AM
+ – 
+7:20 PM+1
+AeromexicoOperated by Aerolitoral DBA Aeromexico Connect
+34 hr 15 min
+GRU–IAH
+1 stop
+22 hr 35 min MEX
+621 kg CO2e
++16% emissions
+$6,572
+3:10 PM
+ – 
+5:45 AM+1
+LATAM, UnitedOperated by Latam Airlines Brasil
+16 hr 35 min
+GRU–IAH
+1 stop
+4 hr 45 min GIG
+2,210 kg CO2e
++313% emissions
+$8,901
 View fewer flights
 Language​English (United States)
 Location​United States
