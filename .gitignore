@@ -41,3 +41,7 @@ Thumbs.db
 data/*.db
 *.log
 .env
+
+# Test artifacts
+search_results/
+videos/
