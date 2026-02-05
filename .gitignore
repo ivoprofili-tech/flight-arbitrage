@@ -42,6 +42,5 @@ data/*.db
 *.log
 .env
 
-# Test artifacts
-search_results/
+# Test artifacts (videos only - search_results are pushed)
 videos/
