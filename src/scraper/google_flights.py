@@ -256,15 +256,31 @@ class GoogleFlightsScraper:
         print(f"\nSearching flights: {origin} → {destination}")
         print(f"Departure: {departure_date}" + (f", Return: {return_date}" if return_date else " (one-way)"))
 
-        # Step 1: Open Google Flights with retry logic
-        # Use ?hl=en to force English UI regardless of proxy location
-        print("\n[Step 1] Opening Google Flights (English)...")
+        # Build search URL directly instead of filling form
+        # Format: https://www.google.com/travel/flights?q=Flights+to+MCO+from+GRU+on+2026-03-08+oneway&hl=en
+        query_parts = [
+            f"Flights to {destination}",
+            f"from {origin}",
+            f"on {departure_date}",
+        ]
+        if not return_date:
+            query_parts.append("oneway")
+        else:
+            query_parts.append(f"return {return_date}")
+
+        query = " ".join(query_parts)
+        from urllib.parse import quote
+        search_url = f"https://www.google.com/travel/flights?q={quote(query)}&hl=en"
+
+        print(f"\n[Step 1] Opening Google Flights search URL...")
+        print(f"  URL: {search_url[:80]}...")
+
         max_retries = 4
-        retry_delays = [2, 4, 8, 16]  # Exponential backoff in seconds
+        retry_delays = [2, 4, 8, 16]
 
         for attempt in range(max_retries):
             try:
-                await self.page.goto('https://www.google.com/travel/flights?hl=en', wait_until='domcontentloaded', timeout=60000)
+                await self.page.goto(search_url, wait_until='domcontentloaded', timeout=60000)
                 print("  ✓ Page loaded successfully")
                 break
             except PlaywrightTimeout as e:
@@ -281,394 +297,23 @@ class GoogleFlightsScraper:
         # Handle cookie consent if needed
         await self.handle_cookie_consent()
 
-        # Step 2: Set one-way if no return date
-        # IMPORTANT: Must set trip type BEFORE selecting dates!
-        # Round trip mode expects 2 dates before showing "Done" button
-        if not return_date:
-            print("[Step 2] Setting trip type to one-way...")
-            try:
-                # With ?hl=en, UI is always English
-                round_trip_locator = self.page.locator('text="Round trip"').first
-                await round_trip_locator.click(timeout=2000)
-                print("  ✓ Clicked Round trip dropdown")
+        # URL-based search - Google Flights processes the query and shows results directly
+        # No need to fill form fields manually
+        print("[Step 2] Waiting for Google to process search query...")
+        await self.page.wait_for_timeout(self.wait_long * 2)
 
-                await self.page.wait_for_timeout(self.wait_medium)
+        # Take debug screenshot
+        await self.page.screenshot(path='debug_screenshot.png')
 
-                # Click "One way" from dropdown
-                one_way_locator = self.page.locator('text="One way"').first
-                await one_way_locator.click(timeout=2000)
-                print("  ✓ Selected One way")
-
-                # Wait for form to re-render after changing trip type
-                await self.page.wait_for_timeout(self.wait_long)
-            except Exception as e:
-                print(f"  ⚠ Could not set one-way via locator: {e}")
-                # Fallback: try JavaScript
-                try:
-                    await self.page.evaluate('''
-                        () => {
-                            // Find and click "Round trip" text
-                            const elements = document.querySelectorAll('*');
-                            for (const el of elements) {
-                                if (el.textContent === 'Round trip' && el.offsetParent !== null) {
-                                    el.click();
-                                    return true;
-                                }
-                            }
-                            return false;
-                        }
-                    ''')
-                    await self.page.wait_for_timeout(self.wait_short)
-                    await self.page.evaluate('''
-                        () => {
-                            const elements = document.querySelectorAll('li, [role="option"]');
-                            for (const el of elements) {
-                                if (el.textContent.includes('One way')) {
-                                    el.click();
-                                    return true;
-                                }
-                            }
-                            return false;
-                        }
-                    ''')
-                    print("  ✓ Set one-way via JavaScript")
-                except Exception as e2:
-                    print(f"  ⚠ JavaScript fallback also failed: {e2}")
-
-        # Step 3: Click the "from" field and enter origin
-        print(f"[Step 3] Clicking 'from' field and entering {origin}...")
-        try:
-            # Try multiple strategies to click the origin field
-            from_clicked = await self.page.evaluate('''
-                () => {
-                    // Strategy 1: Find by aria-label containing "from"
-                    const fromByAria = document.querySelector('[aria-label*="from" i], [aria-label*="Where from" i]');
-                    if (fromByAria) {
-                        fromByAria.click();
-                        return 'aria-label';
-                    }
-                    // Strategy 2: Find by placeholder
-                    const fromByPlaceholder = document.querySelector('[placeholder*="from" i], [placeholder*="Where from" i]');
-                    if (fromByPlaceholder) {
-                        fromByPlaceholder.click();
-                        return 'placeholder';
-                    }
-                    // Strategy 3: Find input inside first combobox
-                    const comboboxes = document.querySelectorAll('[role="combobox"]');
-                    if (comboboxes.length > 0) {
-                        const input = comboboxes[0].querySelector('input');
-                        if (input) {
-                            input.click();
-                            input.focus();
-                            return 'combobox-input';
-                        }
-                        comboboxes[0].click();
-                        return 'combobox';
-                    }
-                    // Strategy 4: Find by data attribute or class patterns
-                    const fromByData = document.querySelector('[data-placeholder*="from" i]');
-                    if (fromByData) {
-                        fromByData.click();
-                        return 'data-placeholder';
-                    }
-                    return null;
-                }
-            ''')
-            if from_clicked:
-                print(f"  ✓ Clicked from field via {from_clicked}")
-            else:
-                print("  ⚠ Could not find from field")
-
-            await self.page.wait_for_timeout(self.wait_medium)
-
-            # After clicking combobox, an input should be focused - type directly
-            await self.page.keyboard.type(origin, delay=50)
-            print(f"  ✓ Typed origin: {origin}")
-            await self.page.wait_for_timeout(self.wait_long)
-
-            # Select from dropdown - click first suggestion or press Enter
-            try:
-                suggestion = await self.page.wait_for_selector('ul[role="listbox"] li:first-child', timeout=1500)
-                if suggestion:
-                    await suggestion.click()
-                    print(f"  ✓ Selected {origin} from dropdown")
-            except:
-                await self.page.keyboard.press('Enter')
-                print(f"  ✓ Pressed Enter for {origin}")
-
-            await self.page.wait_for_timeout(self.wait_short)
-        except Exception as e:
-            print(f"  ⚠ Error setting origin: {e}")
-
-        # Step 4: Click the "to" field and enter destination
-        print(f"[Step 4] Clicking 'to' field and entering {destination}...")
-        try:
-            # Try multiple strategies to click the destination field
-            to_clicked = await self.page.evaluate('''
-                () => {
-                    // Strategy 1: Find by aria-label containing "to" or "destination"
-                    const toByAria = document.querySelector('[aria-label*="Where to" i], [aria-label*="destination" i]');
-                    if (toByAria) {
-                        toByAria.click();
-                        return 'aria-label';
-                    }
-                    // Strategy 2: Find by placeholder
-                    const toByPlaceholder = document.querySelector('[placeholder*="Where to" i], [placeholder*="destination" i]');
-                    if (toByPlaceholder) {
-                        toByPlaceholder.click();
-                        return 'placeholder';
-                    }
-                    // Strategy 3: Find second combobox (or one without airport code)
-                    const comboboxes = document.querySelectorAll('[role="combobox"]');
-                    if (comboboxes.length > 1) {
-                        const input = comboboxes[1].querySelector('input');
-                        if (input) {
-                            input.click();
-                            input.focus();
-                            return 'combobox[1]-input';
-                        }
-                        comboboxes[1].click();
-                        return 'combobox[1]';
-                    }
-                    // Strategy 4: Find by data attribute
-                    const toByData = document.querySelector('[data-placeholder*="to" i]');
-                    if (toByData) {
-                        toByData.click();
-                        return 'data-placeholder';
-                    }
-                    return null;
-                }
-            ''')
-            if to_clicked:
-                print(f"  ✓ Clicked to field via {to_clicked}")
-
-            await self.page.wait_for_timeout(self.wait_medium)
-
-            # After clicking combobox, an input should be focused - type directly
-            await self.page.keyboard.type(destination, delay=50)
-            print(f"  ✓ Typed destination: {destination}")
-            await self.page.wait_for_timeout(self.wait_long)
-
-            # Select from dropdown
-            try:
-                suggestion = await self.page.wait_for_selector('ul[role="listbox"] li:first-child', timeout=1500)
-                if suggestion:
-                    await suggestion.click()
-                    print(f"  ✓ Selected {destination} from dropdown")
-            except:
-                await self.page.keyboard.press('Enter')
-                print(f"  ✓ Pressed Enter for {destination}")
-
-            await self.page.wait_for_timeout(self.wait_short)
-        except Exception as e:
-            print(f"  ⚠ Error setting destination: {e}")
-
-        # Step 5: Click date field, select date, click Done
-        print(f"[Step 5] Setting departure date: {departure_date}...")
-        try:
-            # Click on the departure date field
-            date_field = await self.page.query_selector('input[aria-label*="Departure"], div[data-placeholder="Departure"]')
-            if date_field:
-                await date_field.click()
-            else:
-                await self.page.click('text="Departure"')
-
-            await self.page.wait_for_timeout(self.wait_medium)
-
-            # Parse date
-            target_date = datetime.strptime(departure_date, '%Y-%m-%d')
-            day = target_date.day
-            month_name = target_date.strftime('%B')
-            target_year = target_date.year
-
-            # Navigate to the correct month using Python loop (allows proper waits)
-            for attempt in range(12):
-                # Check if target month is visible
-                month_visible = await self.page.evaluate('''
-                    (args) => {
-                        const targetMonth = args.monthName;
-                        const targetYear = args.year;
-                        const targetDay = args.day;
-
-                        // Check headings for month/year
-                        const headings = document.querySelectorAll('h2, [role="heading"], div[class*="header"]');
-                        for (const h of headings) {
-                            const text = h.textContent || '';
-                            if (text.includes(targetMonth) && text.includes(String(targetYear))) {
-                                return true;
-                            }
-                        }
-                        // Check if date cell exists
-                        const selector = '[aria-label*="' + targetMonth + ' ' + targetDay + '"]';
-                        if (document.querySelector(selector)) return true;
-                        return false;
-                    }
-                ''', {"monthName": month_name, "year": target_year, "day": day})
-
-                if month_visible:
-                    print(f"  ✓ Found {month_name} {target_year} in calendar")
-                    break
-
-                # Click next month button
-                clicked = await self.page.evaluate('''
-                    () => {
-                        // Try aria-label
-                        const nextByLabel = document.querySelector('[aria-label*="Next"]');
-                        if (nextByLabel) {
-                            nextByLabel.click();
-                            return true;
-                        }
-                        // Try SVG buttons
-                        const allButtons = Array.from(document.querySelectorAll('button'));
-                        const svgButtons = allButtons.filter(b => b.querySelector('svg'));
-                        if (svgButtons.length >= 2) {
-                            svgButtons[1].click();
-                            return true;
-                        } else if (svgButtons.length === 1) {
-                            svgButtons[0].click();
-                            return true;
-                        }
-                        return false;
-                    }
-                ''')
-
-                if clicked:
-                    print(f"  → Navigating to next month...")
-                    await self.page.wait_for_timeout(self.wait_medium)
-                else:
-                    print(f"  ⚠ Could not find next month button")
-                    break
-
-            await self.page.wait_for_timeout(self.wait_short)
-
-            # Now click the date
-            date_result = await self.page.evaluate('''
-                (args) => {
-                    const targetDay = args.day;
-                    const targetMonth = args.monthName;
-                    const isoDate = args.isoDate;
-
-                    // Strategy 1: aria-label with month and day
-                    const labelSelector = '[aria-label*="' + targetMonth + ' ' + targetDay + '"]';
-                    const dateByLabel = document.querySelector(labelSelector);
-                    if (dateByLabel) {
-                        dateByLabel.click();
-                        return { success: true, method: 'aria-label' };
-                    }
-
-                    // Strategy 2: data-iso attribute
-                    const isoSelector = '[data-iso="' + isoDate + '"]';
-                    const dateByIso = document.querySelector(isoSelector);
-                    if (dateByIso) {
-                        dateByIso.click();
-                        return { success: true, method: 'data-iso' };
-                    }
-
-                    // Strategy 3: Find by day number in calendar grid
-                    const allCells = document.querySelectorAll('[role="gridcell"], td, [role="button"]');
-                    for (const cell of allCells) {
-                        const text = cell.textContent.trim();
-                        if (text === String(targetDay) || text.startsWith(targetDay + '$') || text.startsWith(targetDay + '\\n')) {
-                            cell.click();
-                            return { success: true, method: 'grid-cell' };
-                        }
-                    }
-
-                    return { success: false, error: 'Could not find date cell' };
-                }
-            ''', {"day": day, "monthName": month_name, "isoDate": departure_date})
-
-            if date_result.get('success'):
-                print(f"  ✓ Selected date {departure_date} via {date_result.get('method')}")
-            else:
-                print(f"  ⚠ Date selection issue: {date_result.get('error')}")
-
-            await self.page.wait_for_timeout(self.wait_short)
-
-            # Click Done button - use JavaScript directly (faster and more reliable)
-            # Multi-language: "Done" (EN), "Concluído" (PT-BR), "Listo" (ES)
-            done_clicked = False
-            try:
-                result = await self.page.evaluate('''
-                    () => {
-                        // Multi-language Done button texts
-                        const doneTexts = ['Done', 'Concluído', 'Listo', 'OK', 'Aceptar'];
-
-                        // Find all buttons with Done text in any language
-                        const buttons = document.querySelectorAll('button');
-                        for (const btn of buttons) {
-                            const text = btn.textContent.trim();
-                            const innerText = btn.innerText.trim();
-                            const spanText = btn.querySelector('span')?.textContent?.trim();
-                            for (const doneText of doneTexts) {
-                                if (text === doneText || innerText === doneText || spanText === doneText) {
-                                    btn.scrollIntoView({ behavior: 'instant', block: 'center' });
-                                    btn.click();
-                                    return 'clicked_button_' + doneText;
-                                }
-                            }
-                        }
-                        // Try finding span with Done text
-                        const spans = document.querySelectorAll('span');
-                        for (const span of spans) {
-                            for (const doneText of doneTexts) {
-                                if (span.textContent.trim() === doneText) {
-                                    const btn = span.closest('button');
-                                    if (btn) {
-                                        btn.scrollIntoView({ behavior: 'instant', block: 'center' });
-                                        btn.click();
-                                        return 'clicked_span_parent_' + doneText;
-                                    }
-                                    // Click span directly
-                                    span.click();
-                                    return 'clicked_span_' + doneText;
-                                }
-                            }
-                        }
-                        return 'not_found';
-                    }
-                ''')
-                if result != 'not_found':
-                    done_clicked = True
-                    print(f"  ✓ Clicked Done button ({result})")
-                else:
-                    print("  ⚠ Done button not found via JavaScript")
-            except Exception as e:
-                print(f"  ⚠ JavaScript Done click failed: {e}")
-
-            # Fallback: press Escape to close the date picker
-            if not done_clicked:
-                print("  → Pressing Escape to close calendar...")
-                await self.page.keyboard.press('Escape')
-
-            await self.page.wait_for_timeout(self.wait_short)
-        except Exception as e:
-            print(f"  ⚠ Error setting date: {e}")
-
-        # Step 6: Click Search (multi-language)
-        print("[Step 6] Clicking Search...")
-        try:
-            # Try multiple language variants for Search button
-            search_texts = ["Search", "Pesquisar", "Buscar", "Explore", "Explorar"]
-            search_clicked = False
-            for text in search_texts:
-                search_btn = await self.page.query_selector(f'button:has-text("{text}")')
-                if search_btn:
-                    await search_btn.click()
-                    print(f"  ✓ Clicked Search button ({text})")
-                    search_clicked = True
-                    break
-
-            if not search_clicked:
-                await self.page.keyboard.press('Enter')
-                print("  ✓ Pressed Enter")
-        except Exception as e:
-            print(f"  ⚠ Error clicking search: {e}")
-
-        # Wait for results to load
-        print("[Step 7] Waiting for results...")
+        # Skip directly to Step 7 - waiting for results
+        print("[Step 7] Waiting for results to load...")
         await self.page.wait_for_timeout(self.wait_long * 2 if not self.fast_mode else self.wait_long)
         await self.page.screenshot(path='debug_step7_results.png')
+
+        # Save page text for debugging
+        page_text = await self.page.evaluate('() => document.body.innerText')
+        with open('debug_page_text.txt', 'w') as f:
+            f.write(page_text)
 
         current_url = self.page.url
         print(f"  Current URL: {current_url[:80]}...")
