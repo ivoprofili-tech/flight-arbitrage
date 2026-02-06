@@ -196,14 +196,22 @@ class GoogleFlightsScraper:
 
         Google shows different popups depending on your location.
         We try to find and click common "Accept" or "Reject" buttons.
+        Multi-language support: English, Portuguese, Spanish
         """
         try:
             # Try different selectors for cookie buttons (no initial wait needed)
+            # Multi-language support
             cookie_selectors = [
                 'button:has-text("Accept all")',      # English
                 'button:has-text("Accept")',          # Shorter version
                 'button:has-text("Reject all")',      # Privacy-friendly option
                 'button:has-text("I agree")',         # Alternative text
+                'button:has-text("Aceitar tudo")',    # Portuguese
+                'button:has-text("Aceitar")',         # Portuguese short
+                'button:has-text("Rejeitar tudo")',   # Portuguese reject
+                'button:has-text("Aceptar todo")',    # Spanish
+                'button:has-text("Aceptar")',         # Spanish short
+                'button:has-text("Rechazar todo")',   # Spanish reject
                 '[aria-label="Accept all"]',          # Using aria-label attribute
             ]
 
@@ -276,18 +284,39 @@ class GoogleFlightsScraper:
         if not return_date:
             print("[Step 2] Setting trip type to one-way...")
             try:
-                # Use locator to find and click "Round trip" text directly
-                # This is more reliable than complex CSS selectors
-                round_trip_locator = self.page.locator('text="Round trip"').first
-                await round_trip_locator.click(timeout=2000)
-                print("  ✓ Clicked Round trip dropdown")
+                # Multi-language support for "Round trip" dropdown
+                round_trip_texts = ["Round trip", "Ida e volta", "Ida y vuelta", "Viaje de ida y vuelta"]
+                round_trip_clicked = False
+                for text in round_trip_texts:
+                    try:
+                        round_trip_locator = self.page.locator(f'text="{text}"').first
+                        await round_trip_locator.click(timeout=1500)
+                        print(f"  ✓ Clicked Round trip dropdown ({text})")
+                        round_trip_clicked = True
+                        break
+                    except:
+                        continue
+
+                if not round_trip_clicked:
+                    print("  ⚠ Could not find Round trip dropdown")
 
                 await self.page.wait_for_timeout(self.wait_short)
 
-                # Now click "One way" from the dropdown menu
-                one_way_locator = self.page.locator('text="One way"').first
-                await one_way_locator.click(timeout=2000)
-                print("  ✓ Selected One way")
+                # Multi-language support for "One way" option
+                one_way_texts = ["One way", "Só ida", "Solo ida"]
+                one_way_clicked = False
+                for text in one_way_texts:
+                    try:
+                        one_way_locator = self.page.locator(f'text="{text}"').first
+                        await one_way_locator.click(timeout=1500)
+                        print(f"  ✓ Selected One way ({text})")
+                        one_way_clicked = True
+                        break
+                    except:
+                        continue
+
+                if not one_way_clicked:
+                    print("  ⚠ Could not find One way option")
 
                 await self.page.wait_for_timeout(self.wait_short)
             except Exception as e:
@@ -327,9 +356,9 @@ class GoogleFlightsScraper:
         # Step 3: Click the "from" field and enter origin
         print(f"[Step 3] Clicking 'from' field and entering {origin}...")
         try:
-            # The origin field shows the auto-detected city (e.g., "San Francisco")
+            # The origin field shows the auto-detected city (multi-language)
             # We need to click on it - it's the first input/combobox area
-            from_field = await self.page.query_selector('input[aria-label*="Where from"], input[placeholder*="Where from"]')
+            from_field = await self.page.query_selector('input[aria-label*="Where from"], input[placeholder*="Where from"], input[aria-label*="De onde"], input[placeholder*="De onde"], input[aria-label*="De dónde"], input[placeholder*="De dónde"]')
             if from_field:
                 await from_field.click()
             else:
@@ -360,13 +389,24 @@ class GoogleFlightsScraper:
         # Step 4: Click the "to" field and enter destination
         print(f"[Step 4] Clicking 'to' field and entering {destination}...")
         try:
-            # The destination field shows "Where to?"
-            to_field = await self.page.query_selector('input[aria-label*="Where to"], input[placeholder*="Where to"]')
+            # The destination field shows "Where to?" (multi-language)
+            to_field = await self.page.query_selector('input[aria-label*="Where to"], input[placeholder*="Where to"], input[aria-label*="Para onde"], input[placeholder*="Para onde"], input[aria-label*="Adónde"], input[placeholder*="Adónde"]')
             if to_field:
                 await to_field.click()
             else:
-                # Try clicking on "Where to?" text
-                await self.page.click('text="Where to?"')
+                # Try clicking on "Where to?" text (multi-language)
+                where_to_texts = ["Where to?", "Para onde?", "¿Adónde?"]
+                clicked = False
+                for text in where_to_texts:
+                    try:
+                        await self.page.click(f'text="{text}"', timeout=1500)
+                        clicked = True
+                        break
+                    except:
+                        continue
+                if not clicked:
+                    # Fallback: click second combobox
+                    await self.page.click('div[role="combobox"]:nth-of-type(2)')
 
             await self.page.wait_for_timeout(self.wait_short)
 
@@ -511,35 +551,43 @@ class GoogleFlightsScraper:
             await self.page.wait_for_timeout(self.wait_short)
 
             # Click Done button - use JavaScript directly (faster and more reliable)
+            # Multi-language: "Done" (EN), "Concluído" (PT-BR), "Listo" (ES)
             done_clicked = False
             try:
                 result = await self.page.evaluate('''
                     () => {
-                        // Find all buttons with "Done" text
+                        // Multi-language Done button texts
+                        const doneTexts = ['Done', 'Concluído', 'Listo', 'OK', 'Aceptar'];
+
+                        // Find all buttons with Done text in any language
                         const buttons = document.querySelectorAll('button');
                         for (const btn of buttons) {
                             const text = btn.textContent.trim();
                             const innerText = btn.innerText.trim();
                             const spanText = btn.querySelector('span')?.textContent?.trim();
-                            if (text === 'Done' || innerText === 'Done' || spanText === 'Done') {
-                                btn.scrollIntoView({ behavior: 'instant', block: 'center' });
-                                btn.click();
-                                return 'clicked_button';
+                            for (const doneText of doneTexts) {
+                                if (text === doneText || innerText === doneText || spanText === doneText) {
+                                    btn.scrollIntoView({ behavior: 'instant', block: 'center' });
+                                    btn.click();
+                                    return 'clicked_button_' + doneText;
+                                }
                             }
                         }
                         // Try finding span with Done text
                         const spans = document.querySelectorAll('span');
                         for (const span of spans) {
-                            if (span.textContent.trim() === 'Done') {
-                                const btn = span.closest('button');
-                                if (btn) {
-                                    btn.scrollIntoView({ behavior: 'instant', block: 'center' });
-                                    btn.click();
-                                    return 'clicked_span_parent';
+                            for (const doneText of doneTexts) {
+                                if (span.textContent.trim() === doneText) {
+                                    const btn = span.closest('button');
+                                    if (btn) {
+                                        btn.scrollIntoView({ behavior: 'instant', block: 'center' });
+                                        btn.click();
+                                        return 'clicked_span_parent_' + doneText;
+                                    }
+                                    // Click span directly
+                                    span.click();
+                                    return 'clicked_span_' + doneText;
                                 }
-                                // Click span directly
-                                span.click();
-                                return 'clicked_span';
                             }
                         }
                         return 'not_found';
@@ -562,22 +610,23 @@ class GoogleFlightsScraper:
         except Exception as e:
             print(f"  ⚠ Error setting date: {e}")
 
-        # Step 6: Click Search
+        # Step 6: Click Search (multi-language)
         print("[Step 6] Clicking Search...")
         try:
-            search_btn = await self.page.query_selector('button:has-text("Search")')
-            if search_btn:
-                await search_btn.click()
-                print("  ✓ Clicked Search button")
-            else:
-                # Try Explore button as fallback
-                explore_btn = await self.page.query_selector('button:has-text("Explore")')
-                if explore_btn:
-                    await explore_btn.click()
-                    print("  ✓ Clicked Explore button")
-                else:
-                    await self.page.keyboard.press('Enter')
-                    print("  ✓ Pressed Enter")
+            # Try multiple language variants for Search button
+            search_texts = ["Search", "Pesquisar", "Buscar", "Explore", "Explorar"]
+            search_clicked = False
+            for text in search_texts:
+                search_btn = await self.page.query_selector(f'button:has-text("{text}")')
+                if search_btn:
+                    await search_btn.click()
+                    print(f"  ✓ Clicked Search button ({text})")
+                    search_clicked = True
+                    break
+
+            if not search_clicked:
+                await self.page.keyboard.press('Enter')
+                print("  ✓ Pressed Enter")
         except Exception as e:
             print(f"  ⚠ Error clicking search: {e}")
 
