@@ -338,22 +338,38 @@ class GoogleFlightsScraper:
         # Step 3: Click the "from" field and enter origin
         print(f"[Step 3] Clicking 'from' field and entering {origin}...")
         try:
-            # With ?hl=en, UI is always English - find "Where from?" text
+            # Try multiple strategies to click the origin field
             from_clicked = await self.page.evaluate('''
                 () => {
-                    // Strategy 1: Find "Where from?" text
-                    const allElements = document.querySelectorAll('div, span, input');
-                    for (const el of allElements) {
-                        if (el.textContent.trim() === 'Where from?') {
-                            el.click();
-                            return 'text';
-                        }
+                    // Strategy 1: Find by aria-label containing "from"
+                    const fromByAria = document.querySelector('[aria-label*="from" i], [aria-label*="Where from" i]');
+                    if (fromByAria) {
+                        fromByAria.click();
+                        return 'aria-label';
                     }
-                    // Strategy 2: Find first combobox
+                    // Strategy 2: Find by placeholder
+                    const fromByPlaceholder = document.querySelector('[placeholder*="from" i], [placeholder*="Where from" i]');
+                    if (fromByPlaceholder) {
+                        fromByPlaceholder.click();
+                        return 'placeholder';
+                    }
+                    // Strategy 3: Find input inside first combobox
                     const comboboxes = document.querySelectorAll('[role="combobox"]');
                     if (comboboxes.length > 0) {
+                        const input = comboboxes[0].querySelector('input');
+                        if (input) {
+                            input.click();
+                            input.focus();
+                            return 'combobox-input';
+                        }
                         comboboxes[0].click();
                         return 'combobox';
+                    }
+                    // Strategy 4: Find by data attribute or class patterns
+                    const fromByData = document.querySelector('[data-placeholder*="from" i]');
+                    if (fromByData) {
+                        fromByData.click();
+                        return 'data-placeholder';
                     }
                     return null;
                 }
@@ -387,25 +403,38 @@ class GoogleFlightsScraper:
         # Step 4: Click the "to" field and enter destination
         print(f"[Step 4] Clicking 'to' field and entering {destination}...")
         try:
-            # With ?hl=en, UI is always English - find "Where to?" text
+            # Try multiple strategies to click the destination field
             to_clicked = await self.page.evaluate('''
                 () => {
-                    // Strategy 1: Find "Where to?" text
-                    const allElements = document.querySelectorAll('div, span, input');
-                    for (const el of allElements) {
-                        if (el.textContent.trim() === 'Where to?') {
-                            el.click();
-                            return 'text';
-                        }
+                    // Strategy 1: Find by aria-label containing "to" or "destination"
+                    const toByAria = document.querySelector('[aria-label*="Where to" i], [aria-label*="destination" i]');
+                    if (toByAria) {
+                        toByAria.click();
+                        return 'aria-label';
                     }
-                    // Strategy 2: Find combobox without airport code (destination is empty)
+                    // Strategy 2: Find by placeholder
+                    const toByPlaceholder = document.querySelector('[placeholder*="Where to" i], [placeholder*="destination" i]');
+                    if (toByPlaceholder) {
+                        toByPlaceholder.click();
+                        return 'placeholder';
+                    }
+                    // Strategy 3: Find second combobox (or one without airport code)
                     const comboboxes = document.querySelectorAll('[role="combobox"]');
-                    for (const cb of comboboxes) {
-                        const text = cb.textContent.trim();
-                        if (!text.match(/[A-Z]{3}/)) {
-                            cb.click();
-                            return 'combobox-empty';
+                    if (comboboxes.length > 1) {
+                        const input = comboboxes[1].querySelector('input');
+                        if (input) {
+                            input.click();
+                            input.focus();
+                            return 'combobox[1]-input';
                         }
+                        comboboxes[1].click();
+                        return 'combobox[1]';
+                    }
+                    // Strategy 4: Find by data attribute
+                    const toByData = document.querySelector('[data-placeholder*="to" i]');
+                    if (toByData) {
+                        toByData.click();
+                        return 'data-placeholder';
                     }
                     return null;
                 }
