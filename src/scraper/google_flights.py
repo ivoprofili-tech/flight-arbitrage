@@ -115,13 +115,15 @@ class GoogleFlightsScraper:
         os.makedirs('videos', exist_ok=True)
 
         # Build context options
+        # Always use English locale/language - we use ?hl=en in the URL
+        # This ensures consistent UI regardless of proxy location
         context_options = {
             'viewport': {'width': 1280, 'height': 800},
             'record_video_dir': 'videos/',
             'record_video_size': {'width': 1280, 'height': 800},
-            'locale': self.locale,
+            'locale': 'en-US',  # Force English regardless of self.locale
             'extra_http_headers': {
-                'Accept-Language': self.language,
+                'Accept-Language': 'en-US,en;q=0.9',  # Force English
             },
         }
 
