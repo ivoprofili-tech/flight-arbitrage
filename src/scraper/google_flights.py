@@ -414,24 +414,48 @@ class GoogleFlightsScraper:
         # Step 4: Click the "to" field and enter destination
         print(f"[Step 4] Clicking 'to' field and entering {destination}...")
         try:
-            # Google Flights uses custom comboboxes - click to reveal input, then type
+            # Google Flights destination field - need to find it specifically
+            # The combobox approach may not work if indices change, so try multiple strategies
             to_clicked = await self.page.evaluate('''
                 () => {
-                    // Find the second combobox (destination field)
-                    // Note: In one-way mode, there might only be 2 comboboxes (origin, destination)
+                    // Strategy 1: Find by "Where to" placeholder text (multi-language)
+                    const toTexts = ['Where to?', 'Para onde?', '¿Adónde?'];
+                    const allElements = document.querySelectorAll('div, span, input');
+                    for (const el of allElements) {
+                        const text = el.textContent.trim();
+                        for (const toText of toTexts) {
+                            if (text === toText) {
+                                el.click();
+                                return 'text:' + toText;
+                            }
+                        }
+                    }
+                    // Strategy 2: Find input with "to" in aria-label
+                    const inputs = document.querySelectorAll('input');
+                    for (const input of inputs) {
+                        const label = (input.getAttribute('aria-label') || '').toLowerCase();
+                        const placeholder = (input.getAttribute('placeholder') || '').toLowerCase();
+                        if (label.includes('to') || label.includes('onde') || label.includes('dónde') ||
+                            placeholder.includes('to') || placeholder.includes('onde') || placeholder.includes('dónde')) {
+                            input.click();
+                            input.focus();
+                            return 'input';
+                        }
+                    }
+                    // Strategy 3: Find combobox that's NOT the origin (doesn't contain airport code)
                     const comboboxes = document.querySelectorAll('[role="combobox"]');
+                    for (const cb of comboboxes) {
+                        const text = cb.textContent.trim();
+                        // Skip if it looks like an origin field (contains 3-letter code)
+                        if (!/^[A-Z]{3}$/.test(text) && !text.match(/[A-Z]{3}/)) {
+                            cb.click();
+                            return 'combobox-empty';
+                        }
+                    }
+                    // Fallback: second combobox
                     if (comboboxes.length > 1) {
                         comboboxes[1].click();
                         return 'combobox[1]';
-                    }
-                    // Fallback: Find by placeholder text
-                    const allElements = document.querySelectorAll('*');
-                    for (const el of allElements) {
-                        const text = el.textContent.trim();
-                        if (text === 'Para onde?' || text === 'Where to?' || text === '¿Adónde?') {
-                            el.click();
-                            return 'text';
-                        }
                     }
                     return null;
                 }
