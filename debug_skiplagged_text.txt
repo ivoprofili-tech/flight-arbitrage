@@ -145,6 +145,22 @@ Price
 Duration
 Value
 Total Cost
+32h
+1 stop
+Copa
+5:25am
+GRU
+6h 47m
+10:12am
+22h 4m
+PTY
+8:16am
+3h 30m
+12:46pm
+MCO
+
+$244
+
 12h
 1 stop
 Copa
@@ -445,27 +461,6 @@ MIA
 3:50pm
 1h 15m
 5:05pm
-MCO
-
-$278
-
-18h
-2 stops
-American
-10:35pm
-GRU
-9h 40m
-7:15am
-3h 44m
-JFK
-10:59am
-2h 5m
-1:04pm
-41m
-CLT
-1:45pm
-1h 48m
-3:33pm
 MCO
 
 $278
