@@ -255,13 +255,14 @@ class GoogleFlightsScraper:
         print(f"Departure: {departure_date}" + (f", Return: {return_date}" if return_date else " (one-way)"))
 
         # Step 1: Open Google Flights with retry logic
-        print("\n[Step 1] Opening Google Flights...")
+        # Use ?hl=en to force English UI regardless of proxy location
+        print("\n[Step 1] Opening Google Flights (English)...")
         max_retries = 4
         retry_delays = [2, 4, 8, 16]  # Exponential backoff in seconds
 
         for attempt in range(max_retries):
             try:
-                await self.page.goto('https://www.google.com/travel/flights', wait_until='domcontentloaded', timeout=60000)
+                await self.page.goto('https://www.google.com/travel/flights?hl=en', wait_until='domcontentloaded', timeout=60000)
                 print("  ✓ Page loaded successfully")
                 break
             except PlaywrightTimeout as e:
@@ -284,47 +285,17 @@ class GoogleFlightsScraper:
         if not return_date:
             print("[Step 2] Setting trip type to one-way...")
             try:
-                # Multi-language support for "Round trip" dropdown
-                round_trip_texts = ["Round trip", "Ida e volta", "Ida y vuelta", "Viaje de ida y vuelta"]
-                round_trip_clicked = False
-                for text in round_trip_texts:
-                    try:
-                        round_trip_locator = self.page.locator(f'text="{text}"').first
-                        await round_trip_locator.click(timeout=1500)
-                        print(f"  ✓ Clicked Round trip dropdown ({text})")
-                        round_trip_clicked = True
-                        break
-                    except:
-                        continue
+                # With ?hl=en, UI is always English
+                round_trip_locator = self.page.locator('text="Round trip"').first
+                await round_trip_locator.click(timeout=2000)
+                print("  ✓ Clicked Round trip dropdown")
 
-                if not round_trip_clicked:
-                    print("  ⚠ Could not find Round trip dropdown")
+                await self.page.wait_for_timeout(self.wait_medium)
 
-                await self.page.wait_for_timeout(self.wait_medium)  # Wait for dropdown to open
-
-                # Multi-language support for "One way" option - use JavaScript for reliability
-                one_way_clicked = await self.page.evaluate('''
-                    () => {
-                        const oneWayTexts = ['One way', 'Só ida', 'Solo ida'];
-                        // Look for list items, menu items, or any clickable element
-                        const elements = document.querySelectorAll('li, [role="option"], [role="menuitem"], span, div');
-                        for (const el of elements) {
-                            const text = el.textContent.trim();
-                            for (const oneWayText of oneWayTexts) {
-                                if (text === oneWayText) {
-                                    el.click();
-                                    return oneWayText;
-                                }
-                            }
-                        }
-                        return null;
-                    }
-                ''')
-
-                if one_way_clicked:
-                    print(f"  ✓ Selected One way ({one_way_clicked})")
-                else:
-                    print("  ⚠ Could not find One way option")
+                # Click "One way" from dropdown
+                one_way_locator = self.page.locator('text="One way"').first
+                await one_way_locator.click(timeout=2000)
+                print("  ✓ Selected One way")
 
                 # Wait for form to re-render after changing trip type
                 await self.page.wait_for_timeout(self.wait_long)
@@ -365,36 +336,22 @@ class GoogleFlightsScraper:
         # Step 3: Click the "from" field and enter origin
         print(f"[Step 3] Clicking 'from' field and entering {origin}...")
         try:
-            # Google Flights uses custom components - try multiple strategies
+            # With ?hl=en, UI is always English - find "Where from?" text
             from_clicked = await self.page.evaluate('''
                 () => {
-                    // Strategy 1: Find by placeholder text (most reliable for localized pages)
-                    const fromTexts = ['De onde?', 'Where from?', '¿De dónde?'];
+                    // Strategy 1: Find "Where from?" text
                     const allElements = document.querySelectorAll('div, span, input');
                     for (const el of allElements) {
-                        const text = el.textContent.trim();
-                        for (const fromText of fromTexts) {
-                            if (text === fromText) {
-                                el.click();
-                                return 'text:' + fromText;
-                            }
+                        if (el.textContent.trim() === 'Where from?') {
+                            el.click();
+                            return 'text';
                         }
                     }
-                    // Strategy 2: Find combobox role
+                    // Strategy 2: Find first combobox
                     const comboboxes = document.querySelectorAll('[role="combobox"]');
                     if (comboboxes.length > 0) {
                         comboboxes[0].click();
                         return 'combobox';
-                    }
-                    // Strategy 3: Find input fields
-                    const inputs = document.querySelectorAll('input');
-                    for (const input of inputs) {
-                        const label = (input.getAttribute('aria-label') || '').toLowerCase();
-                        if (label.includes('from') || label.includes('onde') || label.includes('dónde')) {
-                            input.click();
-                            input.focus();
-                            return 'input';
-                        }
                     }
                     return null;
                 }
@@ -428,48 +385,25 @@ class GoogleFlightsScraper:
         # Step 4: Click the "to" field and enter destination
         print(f"[Step 4] Clicking 'to' field and entering {destination}...")
         try:
-            # Google Flights destination field - need to find it specifically
-            # The combobox approach may not work if indices change, so try multiple strategies
+            # With ?hl=en, UI is always English - find "Where to?" text
             to_clicked = await self.page.evaluate('''
                 () => {
-                    // Strategy 1: Find by "Where to" placeholder text (multi-language)
-                    const toTexts = ['Where to?', 'Para onde?', '¿Adónde?'];
+                    // Strategy 1: Find "Where to?" text
                     const allElements = document.querySelectorAll('div, span, input');
                     for (const el of allElements) {
-                        const text = el.textContent.trim();
-                        for (const toText of toTexts) {
-                            if (text === toText) {
-                                el.click();
-                                return 'text:' + toText;
-                            }
+                        if (el.textContent.trim() === 'Where to?') {
+                            el.click();
+                            return 'text';
                         }
                     }
-                    // Strategy 2: Find input with "to" in aria-label
-                    const inputs = document.querySelectorAll('input');
-                    for (const input of inputs) {
-                        const label = (input.getAttribute('aria-label') || '').toLowerCase();
-                        const placeholder = (input.getAttribute('placeholder') || '').toLowerCase();
-                        if (label.includes('to') || label.includes('onde') || label.includes('dónde') ||
-                            placeholder.includes('to') || placeholder.includes('onde') || placeholder.includes('dónde')) {
-                            input.click();
-                            input.focus();
-                            return 'input';
-                        }
-                    }
-                    // Strategy 3: Find combobox that's NOT the origin (doesn't contain airport code)
+                    // Strategy 2: Find combobox without airport code (destination is empty)
                     const comboboxes = document.querySelectorAll('[role="combobox"]');
                     for (const cb of comboboxes) {
                         const text = cb.textContent.trim();
-                        // Skip if it looks like an origin field (contains 3-letter code)
-                        if (!/^[A-Z]{3}$/.test(text) && !text.match(/[A-Z]{3}/)) {
+                        if (!text.match(/[A-Z]{3}/)) {
                             cb.click();
                             return 'combobox-empty';
                         }
-                    }
-                    // Fallback: second combobox
-                    if (comboboxes.length > 1) {
-                        comboboxes[1].click();
-                        return 'combobox[1]';
                     }
                     return null;
                 }
