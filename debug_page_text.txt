@@ -8,9 +8,13 @@ Aluguel por temporada
 Mudar a aparência
 Fazer login
 Voos
-Ida e volta
+Só ida
 1
 Econômica
+De onde?
+Para onde?
+De onde?
+Selecionar vários aeroportos
 Pesquisar
 Tem flexibilidade? Use IA para descobrir as melhores ofertas de voos NOVO
 Descreva sua viagem ideal e deixe que o Google Voos encontre as melhores ofertas para você
