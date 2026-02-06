@@ -300,22 +300,30 @@ class GoogleFlightsScraper:
                 if not round_trip_clicked:
                     print("  ⚠ Could not find Round trip dropdown")
 
-                await self.page.wait_for_timeout(self.wait_short)
+                await self.page.wait_for_timeout(self.wait_medium)  # Wait for dropdown to open
 
-                # Multi-language support for "One way" option
-                one_way_texts = ["One way", "Só ida", "Solo ida"]
-                one_way_clicked = False
-                for text in one_way_texts:
-                    try:
-                        one_way_locator = self.page.locator(f'text="{text}"').first
-                        await one_way_locator.click(timeout=1500)
-                        print(f"  ✓ Selected One way ({text})")
-                        one_way_clicked = True
-                        break
-                    except:
-                        continue
+                # Multi-language support for "One way" option - use JavaScript for reliability
+                one_way_clicked = await self.page.evaluate('''
+                    () => {
+                        const oneWayTexts = ['One way', 'Só ida', 'Solo ida'];
+                        // Look for list items, menu items, or any clickable element
+                        const elements = document.querySelectorAll('li, [role="option"], [role="menuitem"], span, div');
+                        for (const el of elements) {
+                            const text = el.textContent.trim();
+                            for (const oneWayText of oneWayTexts) {
+                                if (text === oneWayText) {
+                                    el.click();
+                                    return oneWayText;
+                                }
+                            }
+                        }
+                        return null;
+                    }
+                ''')
 
-                if not one_way_clicked:
+                if one_way_clicked:
+                    print(f"  ✓ Selected One way ({one_way_clicked})")
+                else:
                     print("  ⚠ Could not find One way option")
 
                 await self.page.wait_for_timeout(self.wait_short)
@@ -356,14 +364,42 @@ class GoogleFlightsScraper:
         # Step 3: Click the "from" field and enter origin
         print(f"[Step 3] Clicking 'from' field and entering {origin}...")
         try:
-            # The origin field shows the auto-detected city (multi-language)
-            # We need to click on it - it's the first input/combobox area
-            from_field = await self.page.query_selector('input[aria-label*="Where from"], input[placeholder*="Where from"], input[aria-label*="De onde"], input[placeholder*="De onde"], input[aria-label*="De dónde"], input[placeholder*="De dónde"]')
-            if from_field:
-                await from_field.click()
-            else:
-                # Try clicking on the displayed city text in the first combobox
-                await self.page.click('div[role="combobox"]:first-of-type')
+            # Use JavaScript to find and click the origin field (more reliable for localized pages)
+            from_clicked = await self.page.evaluate('''
+                () => {
+                    // Strategy 1: Find input by aria-label or placeholder (multi-language)
+                    const fromLabels = ['Where from', 'De onde', 'De dónde', '¿De dónde'];
+                    const inputs = document.querySelectorAll('input');
+                    for (const input of inputs) {
+                        const label = input.getAttribute('aria-label') || '';
+                        const placeholder = input.getAttribute('placeholder') || '';
+                        for (const fromLabel of fromLabels) {
+                            if (label.includes(fromLabel) || placeholder.includes(fromLabel)) {
+                                input.click();
+                                input.focus();
+                                return 'input';
+                            }
+                        }
+                    }
+                    // Strategy 2: Find the first combobox (origin is always first)
+                    const comboboxes = document.querySelectorAll('[role="combobox"]');
+                    if (comboboxes.length > 0) {
+                        comboboxes[0].click();
+                        return 'combobox';
+                    }
+                    // Strategy 3: Find by placeholder text in any element
+                    const allElements = document.querySelectorAll('*');
+                    for (const el of allElements) {
+                        if (el.textContent.trim() === 'De onde?' || el.textContent.trim() === 'Where from?') {
+                            el.click();
+                            return 'text';
+                        }
+                    }
+                    return null;
+                }
+            ''')
+            if from_clicked:
+                print(f"  ✓ Clicked from field via {from_clicked}")
 
             await self.page.wait_for_timeout(self.wait_short)
 
@@ -389,24 +425,42 @@ class GoogleFlightsScraper:
         # Step 4: Click the "to" field and enter destination
         print(f"[Step 4] Clicking 'to' field and entering {destination}...")
         try:
-            # The destination field shows "Where to?" (multi-language)
-            to_field = await self.page.query_selector('input[aria-label*="Where to"], input[placeholder*="Where to"], input[aria-label*="Para onde"], input[placeholder*="Para onde"], input[aria-label*="Adónde"], input[placeholder*="Adónde"]')
-            if to_field:
-                await to_field.click()
-            else:
-                # Try clicking on "Where to?" text (multi-language)
-                where_to_texts = ["Where to?", "Para onde?", "¿Adónde?"]
-                clicked = False
-                for text in where_to_texts:
-                    try:
-                        await self.page.click(f'text="{text}"', timeout=1500)
-                        clicked = True
-                        break
-                    except:
-                        continue
-                if not clicked:
-                    # Fallback: click second combobox
-                    await self.page.click('div[role="combobox"]:nth-of-type(2)')
+            # Use JavaScript to find and click the destination field (more reliable for localized pages)
+            to_clicked = await self.page.evaluate('''
+                () => {
+                    // Strategy 1: Find input by aria-label or placeholder (multi-language)
+                    const toLabels = ['Where to', 'Para onde', 'Adónde', '¿Adónde'];
+                    const inputs = document.querySelectorAll('input');
+                    for (const input of inputs) {
+                        const label = input.getAttribute('aria-label') || '';
+                        const placeholder = input.getAttribute('placeholder') || '';
+                        for (const toLabel of toLabels) {
+                            if (label.includes(toLabel) || placeholder.includes(toLabel)) {
+                                input.click();
+                                input.focus();
+                                return 'input';
+                            }
+                        }
+                    }
+                    // Strategy 2: Find the second combobox (destination is second)
+                    const comboboxes = document.querySelectorAll('[role="combobox"]');
+                    if (comboboxes.length > 1) {
+                        comboboxes[1].click();
+                        return 'combobox';
+                    }
+                    // Strategy 3: Find by placeholder text in any element
+                    const allElements = document.querySelectorAll('*');
+                    for (const el of allElements) {
+                        if (el.textContent.trim() === 'Para onde?' || el.textContent.trim() === 'Where to?') {
+                            el.click();
+                            return 'text';
+                        }
+                    }
+                    return null;
+                }
+            ''')
+            if to_clicked:
+                print(f"  ✓ Clicked to field via {to_clicked}")
 
             await self.page.wait_for_timeout(self.wait_short)
 
