@@ -326,7 +326,8 @@ class GoogleFlightsScraper:
                 else:
                     print("  ⚠ Could not find One way option")
 
-                await self.page.wait_for_timeout(self.wait_short)
+                # Wait for form to re-render after changing trip type
+                await self.page.wait_for_timeout(self.wait_long)
             except Exception as e:
                 print(f"  ⚠ Could not set one-way via locator: {e}")
                 # Fallback: try JavaScript
@@ -364,33 +365,21 @@ class GoogleFlightsScraper:
         # Step 3: Click the "from" field and enter origin
         print(f"[Step 3] Clicking 'from' field and entering {origin}...")
         try:
-            # Use JavaScript to find and click the origin field (more reliable for localized pages)
+            # Google Flights uses custom comboboxes - click to reveal input, then type
+            # Strategy: Click the combobox container, wait for input to appear, then type
             from_clicked = await self.page.evaluate('''
                 () => {
-                    // Strategy 1: Find input by aria-label or placeholder (multi-language)
-                    const fromLabels = ['Where from', 'De onde', 'De dónde', '¿De dónde'];
-                    const inputs = document.querySelectorAll('input');
-                    for (const input of inputs) {
-                        const label = input.getAttribute('aria-label') || '';
-                        const placeholder = input.getAttribute('placeholder') || '';
-                        for (const fromLabel of fromLabels) {
-                            if (label.includes(fromLabel) || placeholder.includes(fromLabel)) {
-                                input.click();
-                                input.focus();
-                                return 'input';
-                            }
-                        }
-                    }
-                    // Strategy 2: Find the first combobox (origin is always first)
+                    // Find the first combobox (origin field)
                     const comboboxes = document.querySelectorAll('[role="combobox"]');
                     if (comboboxes.length > 0) {
                         comboboxes[0].click();
                         return 'combobox';
                     }
-                    // Strategy 3: Find by placeholder text in any element
+                    // Fallback: Find by placeholder text
                     const allElements = document.querySelectorAll('*');
                     for (const el of allElements) {
-                        if (el.textContent.trim() === 'De onde?' || el.textContent.trim() === 'Where from?') {
+                        const text = el.textContent.trim();
+                        if (text === 'De onde?' || text === 'Where from?' || text === '¿De dónde?') {
                             el.click();
                             return 'text';
                         }
@@ -401,11 +390,11 @@ class GoogleFlightsScraper:
             if from_clicked:
                 print(f"  ✓ Clicked from field via {from_clicked}")
 
-            await self.page.wait_for_timeout(self.wait_short)
+            await self.page.wait_for_timeout(self.wait_medium)
 
-            # Clear existing text and type new origin
-            await self.page.keyboard.press('Control+a')
+            # After clicking combobox, an input should be focused - type directly
             await self.page.keyboard.type(origin, delay=50)
+            print(f"  ✓ Typed origin: {origin}")
             await self.page.wait_for_timeout(self.wait_long)
 
             # Select from dropdown - click first suggestion or press Enter
@@ -425,33 +414,21 @@ class GoogleFlightsScraper:
         # Step 4: Click the "to" field and enter destination
         print(f"[Step 4] Clicking 'to' field and entering {destination}...")
         try:
-            # Use JavaScript to find and click the destination field (more reliable for localized pages)
+            # Google Flights uses custom comboboxes - click to reveal input, then type
             to_clicked = await self.page.evaluate('''
                 () => {
-                    // Strategy 1: Find input by aria-label or placeholder (multi-language)
-                    const toLabels = ['Where to', 'Para onde', 'Adónde', '¿Adónde'];
-                    const inputs = document.querySelectorAll('input');
-                    for (const input of inputs) {
-                        const label = input.getAttribute('aria-label') || '';
-                        const placeholder = input.getAttribute('placeholder') || '';
-                        for (const toLabel of toLabels) {
-                            if (label.includes(toLabel) || placeholder.includes(toLabel)) {
-                                input.click();
-                                input.focus();
-                                return 'input';
-                            }
-                        }
-                    }
-                    // Strategy 2: Find the second combobox (destination is second)
+                    // Find the second combobox (destination field)
+                    // Note: In one-way mode, there might only be 2 comboboxes (origin, destination)
                     const comboboxes = document.querySelectorAll('[role="combobox"]');
                     if (comboboxes.length > 1) {
                         comboboxes[1].click();
-                        return 'combobox';
+                        return 'combobox[1]';
                     }
-                    // Strategy 3: Find by placeholder text in any element
+                    // Fallback: Find by placeholder text
                     const allElements = document.querySelectorAll('*');
                     for (const el of allElements) {
-                        if (el.textContent.trim() === 'Para onde?' || el.textContent.trim() === 'Where to?') {
+                        const text = el.textContent.trim();
+                        if (text === 'Para onde?' || text === 'Where to?' || text === '¿Adónde?') {
                             el.click();
                             return 'text';
                         }
@@ -462,10 +439,11 @@ class GoogleFlightsScraper:
             if to_clicked:
                 print(f"  ✓ Clicked to field via {to_clicked}")
 
-            await self.page.wait_for_timeout(self.wait_short)
+            await self.page.wait_for_timeout(self.wait_medium)
 
-            # Type destination
+            # After clicking combobox, an input should be focused - type directly
             await self.page.keyboard.type(destination, delay=50)
+            print(f"  ✓ Typed destination: {destination}")
             await self.page.wait_for_timeout(self.wait_long)
 
             # Select from dropdown
