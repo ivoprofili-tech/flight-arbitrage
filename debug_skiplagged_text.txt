@@ -10,7 +10,7 @@ Guarulhos - Governador André Franco Montoro Intl, São Paulo, Brazil
 Orlando Intl, Orlando, Florida
 Search Flights
 LINE GRAPH PRICES ARE NOT REAL-TIME
-$223
+$224
 Sun, Mar 8
 Share
 New
@@ -18,7 +18,7 @@ Discover our
 Skiplagged Guarantee
 If issues arise with your travels, we've got your back.  See details
 Price History  
-$223
+$224
  
 Now
 Create a Price Alert
@@ -67,8 +67,6 @@ only
 Spirit Airlines
 only
 United Airlines
-only
-Volaris Costa Rica
 only
 WestJet
 only
@@ -259,6 +257,27 @@ MCO
 
 $273
 
+16h
+2 stops
+Multiple
+10:15am
+GRU
+8h 30m
+5:45pm
+1h 48m
+MIA
+7:33pm
+2h 21m
+9:54pm
+1h 46m
+ATL
+11:40pm
+1h 24m
+1:04am
+MCO
+
+$276
+
 12h
 1 stop
 American
@@ -447,27 +466,6 @@ MIA
 3:50pm
 1h 15m
 5:05pm
-MCO
-
-$278
-
-18h
-2 stops
-American
-10:35pm
-GRU
-9h 40m
-7:15am
-3h 44m
-JFK
-10:59am
-2h 5m
-1:04pm
-41m
-CLT
-1:45pm
-1h 48m
-3:33pm
 MCO
 
 $278
