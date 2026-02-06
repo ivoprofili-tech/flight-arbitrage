@@ -10,15 +10,15 @@ Guarulhos - Governador André Franco Montoro Intl, São Paulo, Brazil
 Orlando Intl, Orlando, Florida
 Search Flights
 LINE GRAPH PRICES ARE NOT REAL-TIME
-$224
-Sat, Mar 7
+$223
+Sun, Mar 8
 Share
 New
 Discover our
 Skiplagged Guarantee
 If issues arise with your travels, we've got your back.  See details
 Price History  
-$222
+$223
  
 Now
 Create a Price Alert
@@ -36,17 +36,19 @@ LANDING
 12:00am
 11:59pm
 FLIGHT DURATION
-4h 55m
-10h 45m
+4h 10m
+10h 40m
 LAYOVER DURATION
 None
-22h 55m
+23h 20m
 AIRLINES
 Aeromexico
 only
 Air Canada
 only
 American Airlines
+only
+Arajet
 only
 Avianca
 only
@@ -56,21 +58,17 @@ Copa Airlines
 only
 Delta Air Lines
 only
-Frontier Airlines
-only
 GOL Linhas Aereas
 only
-LATAM Airlines
+JetBlue Airways
 only
-Sky Airline
+LATAM Airlines
 only
 Spirit Airlines
 only
 United Airlines
 only
-Volaris
-only
-Volaris Costa Rica
+WestJet
 only
 LAYOVER CITIES
 ATL - Atlanta
@@ -78,6 +76,8 @@ only
 CNF - Belo Horizonte
 only
 BOG - Bogota
+only
+BOS - Boston
 only
 BSB - Brasília
 only
@@ -87,11 +87,9 @@ CLT - Charlotte
 only
 ORD - Chicago
 only
+CVG - Cincinnati / Covington
+only
 MEX - Ciudad de México
-only
-MVD - Ciudad de la Costa
-only
-CWB - Curitiba
 only
 DFW - Dallas-Fort Worth
 only
@@ -103,29 +101,35 @@ IAH - Houston
 only
 LIM - Lima
 only
+MAO - Manaus
+only
 MDE - Medellín
 only
 MIA - Miami
 only
-JFK - New York
+YUL - Montréal
 only
-LGA - New York
+JFK - New York
 only
 EWR - Newark
 only
 PHL - Philadelphia
 only
+PUJ - Punta Cana
+only
+RDU - Raleigh/Durham
+only
+REC - Recife
+only
 GIG - Rio De Janeiro
 only
-SDU - Rio de Janeiro
+SSA - Salvador
 only
 SJO - San José Alajuela
 only
 SJU - San Juan
 only
 SCL - Santiago
-only
-THE - Teresina
 only
 PTY - Tocumen
 only
@@ -141,326 +145,311 @@ Price
 Duration
 Value
 Total Cost
-19h
-2 stops
+12h
+1 stop
+Copa
+3:10am
+GRU
+6h 44m
+7:54am
+1h 36m
+PTY
+9:30am
+3h 30m
+2:00pm
+MCO
+
+$269
+
+12h
+1 stop
+Copa
+3:10am
+GRU
+6h 44m
+7:54am
+1h 46m
+PTY
+9:40am
+3h 30m
+2:10pm
+MCO
+
+$269
+
+23h
+1 stop
+United
+9:30pm
+GRU
+10h 10m
+6:40am
+10h 30m
+IAD
+5:10pm
+2h 30m
+7:40pm
+MCO
+
+$273
+
+24h
+1 stop
+United
+9:30pm
+GRU
+10h 10m
+6:40am
+11h 15m
+IAD
+5:55pm
+2h 30m
+8:25pm
+MCO
+
+$273
+
+25h
+1 stop
+United
+9:45pm
+GRU
+10h 5m
+5:50am
+12h 45m
+IAH
+6:35pm
+2h 24m
+9:59pm
+MCO
+
+$273
+
+27h
+1 stop
+United
+9:45pm
+GRU
+10h 5m
+5:50am
+14h 5m
+IAH
+7:55pm
+2h 24m
+11:19pm
+MCO
+
+$273
+
+28h
+1 stop
+United
+9:30pm
+GRU
+10h 10m
+6:40am
+15h 25m
+IAD
+10:05pm
+2h 28m
+12:33am
+MCO
+
+$273
+
+12h
+1 stop
+American
+11:30pm
+GRU
+8h 30m
+7:00am
+1h 49m
+MIA
+8:49am
+1h 16m
+10:05am
+MCO
+
+$278
+
+13h
+1 stop
+Delta
+10:40am
+GRU
+9h 50m
+7:30pm
+2h 5m
+ATL
+9:35pm
+1h 27m
+11:02pm
+MCO
+
+$278
+
+13h
+1 stop
+Delta
+11:45pm
+GRU
+9h 55m
+8:40am
+1h 45m
+ATL
+10:25am
+1h 36m
+12:01pm
+MCO
+
+$278
+
+14h
+1 stop
+Delta
+10:40am
+GRU
+9h 50m
+7:30pm
+3h 10m
+ATL
+10:40pm
+1h 26m
+12:06am
+MCO
+
+$278
+
+14h
+1 stop
+Delta
+11:45pm
+GRU
+9h 55m
+8:40am
+2h 55m
+ATL
+11:35am
+1h 26m
+1:01pm
+MCO
+
+$278
+
+15h
+1 stop
+Delta
+10:40am
+GRU
+9h 50m
+7:30pm
+4h 10m
+ATL
+11:40pm
+1h 24m
+1:04am
+MCO
+
+$278
+
+16h
+1 stop
 American
 12:15am
 GRU
 8h 30m
-6:45am
-3h 5m
+7:45am
+6h 1m
 MIA
-9:50am
-2h 44m
-12:34pm
-2h
-DCA
-2:34pm
-2h 31m
-5:05pm
+1:46pm
+1h 16m
+3:02pm
 MCO
 
-$279
+$278
 
-20h
+16h
+1 stop
+Delta
+9:00pm
+GRU
+9h 55m
+5:55am
+3h 5m
+JFK
+9:00am
+2h 57m
+11:57am
+MCO
+
+$278
+
+16h
+1 stop
+Delta
+11:45pm
+GRU
+9h 55m
+8:40am
+5h 5m
+ATL
+1:45pm
+1h 25m
+3:10pm
+MCO
+
+$278
+
+17h
 1 stop
 American
-10:35pm
+11:30pm
 GRU
-8h 20m
-5:55am
+8h 30m
+7:00am
+6h 46m
+MIA
+1:46pm
+1h 16m
+3:02pm
+MCO
+
+$278
+
+18h
+1 stop
+Delta
+11:45pm
+GRU
 9h 55m
+8:40am
+6h 10m
+ATL
+2:50pm
+1h 27m
+4:17pm
+MCO
+
+$278
+
+18h
+1 stop
+American
+12:15am
+GRU
+8h 30m
+7:45am
+8h 5m
 MIA
 3:50pm
 1h 15m
 5:05pm
 MCO
 
-$279
+$278
 
-20h
-1 stop
-American
-11:30pm
-GRU
-8h 30m
-7:00am
-9h 50m
-MIA
-4:50pm
-1h 19m
-6:09pm
-MCO
-
-$279
-
-20h
-1 stop
-American
-12:15am
-GRU
-8h 30m
-6:45am
-10h 4m
-MIA
-4:49pm
-1h 19m
-6:08pm
-MCO
-
-$279
-
-21h
-1 stop
-American
-10:35pm
-GRU
-8h 20m
-5:55am
-10h 55m
-MIA
-4:50pm
-1h 19m
-6:09pm
-MCO
-
-$279
-
-21h
-1 stop
-American
-11:30pm
-GRU
-8h 30m
-7:00am
-11h 4m
-MIA
-6:04pm
-1h 21m
-7:25pm
-MCO
-
-$279
-
-21h
-1 stop
-American
-12:15am
-GRU
-8h 30m
-6:45am
-11h 19m
-MIA
-6:04pm
-1h 21m
-7:25pm
-MCO
-
-$279
-
-22h
-1 stop
-American
-10:35pm
-GRU
-8h 20m
-5:55am
-12h 9m
-MIA
-6:04pm
-1h 21m
-7:25pm
-MCO
-
-$279
-
-22h
-1 stop
-American
-11:30pm
-GRU
-8h 30m
-7:00am
-12h 19m
-MIA
-7:19pm
-1h 21m
-8:40pm
-MCO
-
-$279
-
-22h
-1 stop
-American
-12:15am
-GRU
-8h 30m
-6:45am
-12h 30m
-MIA
-7:15pm
-1h 22m
-8:37pm
-MCO
-
-$279
-
-23h
-1 stop
-American
-10:35pm
-GRU
-8h 20m
-5:55am
-13h 24m
-MIA
-7:19pm
-1h 21m
-8:40pm
-MCO
-
-$279
-
-24h
-1 stop
-American
-11:30pm
-GRU
-8h 30m
-7:00am
-13h 38m
-MIA
-8:38pm
-1h 22m
-10:00pm
-MCO
-
-$279
-
-24h
-1 stop
-American
-12:15am
-GRU
-8h 30m
-6:45am
-13h 53m
-MIA
-8:38pm
-1h 22m
-10:00pm
-MCO
-
-$279
-
-24h
-1 stop
-American
-10:35pm
-GRU
-8h 20m
-5:55am
-14h 43m
-MIA
-8:38pm
-1h 22m
-10:00pm
-MCO
-
-$279
-
-25h
-1 stop
-American
-11:30pm
-GRU
-8h 30m
-7:00am
-15h 15m
-MIA
-10:15pm
-1h 13m
-11:28pm
-MCO
-
-$279
-
-25h
-1 stop
-American
-12:15am
-GRU
-8h 30m
-6:45am
-15h 30m
-MIA
-10:15pm
-1h 13m
-11:28pm
-MCO
-
-$279
-
-26h
-1 stop
-American
-10:35pm
-GRU
-8h 20m
-5:55am
-16h 20m
-MIA
-10:15pm
-1h 13m
-11:28pm
-MCO
-
-$279
-
-46h
-2 stops
-LATAM
-4:35pm
-GRU
-4h 55m
-7:30pm
-15h 15m
-LIM
-10:45am
-3h 10m
-1:55pm
-18h 40m
-BOG
-8:35am
-4h 5m
-1:40pm
-MCO
-
-$281
-
-22h
-2 stops
-American
-12:15am
-GRU
-8h 30m
-6:45am
-3h 5m
-MIA
-9:50am
-2h 44m
-12:34pm
-5h 8m
-DCA
-5:42pm
-2h 34m
-8:16pm
-MCO
-
-$285
-
-23h
+18h
 2 stops
 American
 10:35pm
@@ -472,14 +461,14 @@ JFK
 10:59am
 2h 5m
 1:04pm
-5h 57m
+41m
 CLT
-7:01pm
-1h 45m
-8:46pm
+1:45pm
+1h 48m
+3:33pm
 MCO
 
-$285
+$278
 
   skiplagged
 Company
