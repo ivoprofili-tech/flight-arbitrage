@@ -68,6 +68,8 @@ Spirit Airlines
 only
 United Airlines
 only
+Volaris Costa Rica
+only
 WestJet
 only
 LAYOVER CITIES
