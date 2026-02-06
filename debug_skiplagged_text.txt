@@ -111,6 +111,8 @@ YUL - Montréal
 only
 JFK - New York
 only
+LGA - New York
+only
 EWR - Newark
 only
 PHL - Philadelphia
