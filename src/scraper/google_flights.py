@@ -365,23 +365,35 @@ class GoogleFlightsScraper:
         # Step 3: Click the "from" field and enter origin
         print(f"[Step 3] Clicking 'from' field and entering {origin}...")
         try:
-            # Google Flights uses custom comboboxes - click to reveal input, then type
-            # Strategy: Click the combobox container, wait for input to appear, then type
+            # Google Flights uses custom components - try multiple strategies
             from_clicked = await self.page.evaluate('''
                 () => {
-                    // Find the first combobox (origin field)
+                    // Strategy 1: Find by placeholder text (most reliable for localized pages)
+                    const fromTexts = ['De onde?', 'Where from?', '¿De dónde?'];
+                    const allElements = document.querySelectorAll('div, span, input');
+                    for (const el of allElements) {
+                        const text = el.textContent.trim();
+                        for (const fromText of fromTexts) {
+                            if (text === fromText) {
+                                el.click();
+                                return 'text:' + fromText;
+                            }
+                        }
+                    }
+                    // Strategy 2: Find combobox role
                     const comboboxes = document.querySelectorAll('[role="combobox"]');
                     if (comboboxes.length > 0) {
                         comboboxes[0].click();
                         return 'combobox';
                     }
-                    // Fallback: Find by placeholder text
-                    const allElements = document.querySelectorAll('*');
-                    for (const el of allElements) {
-                        const text = el.textContent.trim();
-                        if (text === 'De onde?' || text === 'Where from?' || text === '¿De dónde?') {
-                            el.click();
-                            return 'text';
+                    // Strategy 3: Find input fields
+                    const inputs = document.querySelectorAll('input');
+                    for (const input of inputs) {
+                        const label = (input.getAttribute('aria-label') || '').toLowerCase();
+                        if (label.includes('from') || label.includes('onde') || label.includes('dónde')) {
+                            input.click();
+                            input.focus();
+                            return 'input';
                         }
                     }
                     return null;
@@ -389,6 +401,8 @@ class GoogleFlightsScraper:
             ''')
             if from_clicked:
                 print(f"  ✓ Clicked from field via {from_clicked}")
+            else:
+                print("  ⚠ Could not find from field")
 
             await self.page.wait_for_timeout(self.wait_medium)
 
