@@ -68,14 +68,9 @@ if _env_file.exists():
                 key, value = line.split("=", 1)
                 os.environ.setdefault(key.strip(), value.strip())
 
-from src.parallel_search import search_flights, ParallelFlightSearch
-from src.data.route_database import get_target_routes, get_destination_info
-from src.geo.geo_search import (
-    search_with_geo_arbitrage,
-    run_hybrid_geo_search,
-    GeoArbitrageResult,
-    MultiRouteGeoResult,
-)
+# NOTE: Heavy imports (src.parallel_search, src.geo.*) are done lazily
+# inside run_search() and run_geo_search() so that sync_with_remote()
+# can update files on disk BEFORE the modules are loaded into memory.
 from src.geo.proxy_config import LOCATIONS, init_proxy_provider
 
 # Configure logging
@@ -186,6 +181,8 @@ async def run_search(
     save_results: bool = True,
 ):
     """Run a real parallel flight search."""
+    from src.parallel_search import search_flights, ParallelFlightSearch
+    from src.data.route_database import get_target_routes, get_destination_info
 
     print_header(f"FLIGHT SEARCH: {origin} → {destination}")
     print(f" Date: {departure_date}")
@@ -382,7 +379,7 @@ async def run_geo_search(
     max_concurrent: int = 3,
     save_results: bool = True,
     quick: bool = False,
-) -> MultiRouteGeoResult:
+):
     """
     Run HYBRID geo arbitrage search.
 
@@ -391,6 +388,7 @@ async def run_geo_search(
 
     This is more efficient than running full searches from each location.
     """
+    from src.geo.geo_search import run_hybrid_geo_search, MultiRouteGeoResult
 
     print_header(f"HYBRID GEO ARBITRAGE: {origin} → {destination}")
     print(f" Date: {departure_date}")
