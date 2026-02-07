@@ -291,7 +291,7 @@ async def search_google_flights(
     flights = []
     for raw in all_raw:
         parsed = _parse_flight(raw, currency)
-        if parsed:
+        if parsed and parsed["price"] != "$0":
             flights.append(parsed)
 
     logger.info(f"SerpApi returned {len(flights)} flights for {origin} → {destination}")
