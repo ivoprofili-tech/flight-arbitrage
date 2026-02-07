@@ -4,9 +4,9 @@
     "primary_destination": "MCO",
     "departure_date": "2026-03-09"
   },
-  "timestamp": "2026-02-07T19:21:25.990437",
-  "total_search_time_seconds": 19.48,
-  "initial_search_time_seconds": 19.37,
+  "timestamp": "2026-02-07T19:52:01.738879",
+  "total_search_time_seconds": 24.41,
+  "initial_search_time_seconds": 22.83,
   "summary": {
     "direct_route_best_price": 485,
     "hidden_city_routes_found": 0,
@@ -42,8 +42,8 @@
         "departure_date": "2026-03-09",
         "return_date": null
       },
-      "timestamp": "2026-02-07T19:21:25.990314",
-      "total_search_time_seconds": 0.1,
+      "timestamp": "2026-02-07T19:52:01.738780",
+      "total_search_time_seconds": 1.56,
       "summary": {
         "locations_searched": [
           "BR",
@@ -132,7 +132,7 @@
           "location_name": "Brazil",
           "status": "success",
           "flights_found": 131,
-          "search_time_seconds": 0.06,
+          "search_time_seconds": 1.18,
           "error_message": null,
           "best_price_usd": 224.14,
           "flights": [
@@ -943,6 +943,40 @@
               ]
             },
             {
+              "airline": "American",
+              "departure_time": "12:15 AM",
+              "arrival_time": "12:34 AM",
+              "duration": "25h 19m",
+              "stops": "2 stops",
+              "price_original": "BRL 1464",
+              "price_usd": 278.33,
+              "currency": "BRL",
+              "location": "BR",
+              "location_name": "Brazil",
+              "source": "google_flights",
+              "layovers": [
+                "MIA",
+                "CLT"
+              ]
+            },
+            {
+              "airline": "American",
+              "departure_time": "12:15 AM",
+              "arrival_time": "12:34 AM",
+              "duration": "25h 19m",
+              "stops": "2 stops",
+              "price_original": "BRL 1464",
+              "price_usd": 278.33,
+              "currency": "BRL",
+              "location": "BR",
+              "location_name": "Brazil",
+              "source": "google_flights",
+              "layovers": [
+                "MIA",
+                "CLT"
+              ]
+            },
+            {
               "airline": "Delta",
               "departure_time": "10:40 AM",
               "arrival_time": "11:02 PM",
@@ -1398,10 +1432,10 @@
               ]
             },
             {
-              "airline": "Gol, Delta",
-              "departure_time": "2:00 PM",
-              "arrival_time": "9:46 AM",
-              "duration": "20h 46m",
+              "airline": "American",
+              "departure_time": "12:15 AM",
+              "arrival_time": "12:34 AM",
+              "duration": "25h 19m",
               "stops": "2 stops",
               "price_original": "BRL 1493",
               "price_usd": 283.84,
@@ -1410,15 +1444,15 @@
               "location_name": "Brazil",
               "source": "google_flights",
               "layovers": [
-                "GIG",
-                "ATL"
+                "MIA",
+                "CLT"
               ]
             },
             {
-              "airline": "Gol, Delta",
-              "departure_time": "2:00 PM",
-              "arrival_time": "10:18 AM",
-              "duration": "21h 18m",
+              "airline": "American",
+              "departure_time": "12:15 AM",
+              "arrival_time": "12:34 AM",
+              "duration": "25h 19m",
               "stops": "2 stops",
               "price_original": "BRL 1493",
               "price_usd": 283.84,
@@ -1427,8 +1461,8 @@
               "location_name": "Brazil",
               "source": "google_flights",
               "layovers": [
-                "GIG",
-                "ATL"
+                "MIA",
+                "CLT"
               ]
             },
             {
@@ -1487,40 +1521,6 @@
               "departure_time": "6:00 PM",
               "arrival_time": "12:01 PM",
               "duration": "19h 1m",
-              "stops": "2 stops",
-              "price_original": "BRL 1493",
-              "price_usd": 283.84,
-              "currency": "BRL",
-              "location": "BR",
-              "location_name": "Brazil",
-              "source": "google_flights",
-              "layovers": [
-                "GIG",
-                "ATL"
-              ]
-            },
-            {
-              "airline": "Gol, Delta",
-              "departure_time": "6:00 PM",
-              "arrival_time": "1:01 PM",
-              "duration": "20h 1m",
-              "stops": "2 stops",
-              "price_original": "BRL 1493",
-              "price_usd": 283.84,
-              "currency": "BRL",
-              "location": "BR",
-              "location_name": "Brazil",
-              "source": "google_flights",
-              "layovers": [
-                "GIG",
-                "ATL"
-              ]
-            },
-            {
-              "airline": "Gol, Delta",
-              "departure_time": "6:00 PM",
-              "arrival_time": "2:04 PM",
-              "duration": "21h 4m",
               "stops": "2 stops",
               "price_original": "BRL 1493",
               "price_usd": 283.84,
@@ -1918,6 +1918,23 @@
               ]
             },
             {
+              "airline": "LATAM",
+              "departure_time": "4:30 PM",
+              "arrival_time": "1:40 PM",
+              "duration": "22h 10m",
+              "stops": "2 stops",
+              "price_original": "BRL 1790",
+              "price_usd": 340.3,
+              "currency": "BRL",
+              "location": "BR",
+              "location_name": "Brazil",
+              "source": "google_flights",
+              "layovers": [
+                "LIM",
+                "BOG"
+              ]
+            },
+            {
               "airline": "Avianca",
               "departure_time": "5:25 PM",
               "arrival_time": "1:10 PM",
@@ -1987,8 +2004,8 @@
               "arrival_time": "12:05 PM",
               "duration": "14h 40m",
               "stops": "1 stop",
-              "price_original": "BRL 2149",
-              "price_usd": 408.56,
+              "price_original": "BRL 2134",
+              "price_usd": 405.7,
               "currency": "BRL",
               "location": "BR",
               "location_name": "Brazil",
@@ -2062,6 +2079,23 @@
               ]
             },
             {
+              "airline": "LATAM, Delta",
+              "departure_time": "4:40 PM",
+              "arrival_time": "9:46 AM",
+              "duration": "18h 6m",
+              "stops": "2 stops",
+              "price_original": "BRL 2396",
+              "price_usd": 455.51,
+              "currency": "BRL",
+              "location": "BR",
+              "location_name": "Brazil",
+              "source": "google_flights",
+              "layovers": [
+                "GIG",
+                "ATL"
+              ]
+            },
+            {
               "airline": "LATAM",
               "departure_time": "11:45 AM",
               "arrival_time": "7:30 PM",
@@ -2093,43 +2127,9 @@
             },
             {
               "airline": "LATAM, Delta",
-              "departure_time": "8:15 AM",
-              "arrival_time": "1:04 AM",
-              "duration": "17h 49m",
-              "stops": "2 stops",
-              "price_original": "BRL 2830",
-              "price_usd": 538.02,
-              "currency": "BRL",
-              "location": "BR",
-              "location_name": "Brazil",
-              "source": "google_flights",
-              "layovers": [
-                "BOG",
-                "ATL"
-              ]
-            },
-            {
-              "airline": "LATAM, Delta",
               "departure_time": "7:35 AM",
               "arrival_time": "12:06 AM",
               "duration": "17h 31m",
-              "stops": "2 stops",
-              "price_original": "BRL 2853",
-              "price_usd": 542.4,
-              "currency": "BRL",
-              "location": "BR",
-              "location_name": "Brazil",
-              "source": "google_flights",
-              "layovers": [
-                "LIM",
-                "ATL"
-              ]
-            },
-            {
-              "airline": "LATAM, Delta",
-              "departure_time": "7:35 AM",
-              "arrival_time": "1:04 AM",
-              "duration": "18h 29m",
               "stops": "2 stops",
               "price_original": "BRL 2853",
               "price_usd": 542.4,
@@ -2260,8 +2260,8 @@
           "location": "US",
           "location_name": "United States",
           "status": "success",
-          "flights_found": 129,
-          "search_time_seconds": 0.05,
+          "flights_found": 131,
+          "search_time_seconds": 0.26,
           "error_message": null,
           "best_price_usd": 226.0,
           "flights": [
@@ -3072,6 +3072,40 @@
               ]
             },
             {
+              "airline": "American",
+              "departure_time": "12:15 AM",
+              "arrival_time": "12:34 AM",
+              "duration": "25h 19m",
+              "stops": "2 stops",
+              "price_original": "$281",
+              "price_usd": 281.0,
+              "currency": "USD",
+              "location": "US",
+              "location_name": "United States",
+              "source": "google_flights",
+              "layovers": [
+                "MIA",
+                "CLT"
+              ]
+            },
+            {
+              "airline": "American",
+              "departure_time": "12:15 AM",
+              "arrival_time": "12:34 AM",
+              "duration": "25h 19m",
+              "stops": "2 stops",
+              "price_original": "$281",
+              "price_usd": 281.0,
+              "currency": "USD",
+              "location": "US",
+              "location_name": "United States",
+              "source": "google_flights",
+              "layovers": [
+                "MIA",
+                "CLT"
+              ]
+            },
+            {
               "airline": "Delta",
               "departure_time": "10:40 AM",
               "arrival_time": "11:02 PM",
@@ -3524,6 +3558,40 @@
               "source": "google_flights",
               "layovers": [
                 "MIA"
+              ]
+            },
+            {
+              "airline": "American",
+              "departure_time": "12:15 AM",
+              "arrival_time": "12:34 AM",
+              "duration": "25h 19m",
+              "stops": "2 stops",
+              "price_original": "$287",
+              "price_usd": 287.0,
+              "currency": "USD",
+              "location": "US",
+              "location_name": "United States",
+              "source": "google_flights",
+              "layovers": [
+                "MIA",
+                "CLT"
+              ]
+            },
+            {
+              "airline": "American",
+              "departure_time": "12:15 AM",
+              "arrival_time": "12:34 AM",
+              "duration": "25h 19m",
+              "stops": "2 stops",
+              "price_original": "$287",
+              "price_usd": 287.0,
+              "currency": "USD",
+              "location": "US",
+              "location_name": "United States",
+              "source": "google_flights",
+              "layovers": [
+                "MIA",
+                "CLT"
               ]
             },
             {
@@ -4076,6 +4144,22 @@
               ]
             },
             {
+              "airline": "United",
+              "departure_time": "9:45 PM",
+              "arrival_time": "11:52 AM",
+              "duration": "15h 7m",
+              "stops": "1 stop",
+              "price_original": "$438",
+              "price_usd": 438.0,
+              "currency": "USD",
+              "location": "US",
+              "location_name": "United States",
+              "source": "google_flights",
+              "layovers": [
+                "IAH"
+              ]
+            },
+            {
               "airline": "Azul",
               "departure_time": "7:25 PM",
               "arrival_time": "8:30 PM",
@@ -4105,22 +4189,6 @@
               "source": "google_flights",
               "layovers": [
                 "CNF"
-              ]
-            },
-            {
-              "airline": "United",
-              "departure_time": "9:45 PM",
-              "arrival_time": "11:52 AM",
-              "duration": "15h 7m",
-              "stops": "1 stop",
-              "price_original": "$454",
-              "price_usd": 454.0,
-              "currency": "USD",
-              "location": "US",
-              "location_name": "United States",
-              "source": "google_flights",
-              "layovers": [
-                "IAH"
               ]
             },
             {
@@ -4188,43 +4256,9 @@
             },
             {
               "airline": "LATAM, Delta",
-              "departure_time": "8:15 AM",
-              "arrival_time": "1:04 AM",
-              "duration": "17h 49m",
-              "stops": "2 stops",
-              "price_original": "$543",
-              "price_usd": 543.0,
-              "currency": "USD",
-              "location": "US",
-              "location_name": "United States",
-              "source": "google_flights",
-              "layovers": [
-                "BOG",
-                "ATL"
-              ]
-            },
-            {
-              "airline": "LATAM, Delta",
               "departure_time": "7:35 AM",
               "arrival_time": "12:06 AM",
               "duration": "17h 31m",
-              "stops": "2 stops",
-              "price_original": "$547",
-              "price_usd": 547.0,
-              "currency": "USD",
-              "location": "US",
-              "location_name": "United States",
-              "source": "google_flights",
-              "layovers": [
-                "LIM",
-                "ATL"
-              ]
-            },
-            {
-              "airline": "LATAM, Delta",
-              "departure_time": "7:35 AM",
-              "arrival_time": "1:04 AM",
-              "duration": "18h 29m",
               "stops": "2 stops",
               "price_original": "$547",
               "price_usd": 547.0,
@@ -4356,7 +4390,7 @@
           "location_name": "Colombia",
           "status": "success",
           "flights_found": 131,
-          "search_time_seconds": 0.05,
+          "search_time_seconds": 1.3,
           "error_message": null,
           "best_price_usd": 229.56,
           "flights": [
@@ -5167,6 +5201,40 @@
               ]
             },
             {
+              "airline": "American",
+              "departure_time": "12:15 AM",
+              "arrival_time": "12:34 AM",
+              "duration": "25h 19m",
+              "stops": "2 stops",
+              "price_original": "COP 1037403",
+              "price_usd": 284.96,
+              "currency": "COP",
+              "location": "CO",
+              "location_name": "Colombia",
+              "source": "google_flights",
+              "layovers": [
+                "MIA",
+                "CLT"
+              ]
+            },
+            {
+              "airline": "American",
+              "departure_time": "12:15 AM",
+              "arrival_time": "12:34 AM",
+              "duration": "25h 19m",
+              "stops": "2 stops",
+              "price_original": "COP 1037403",
+              "price_usd": 284.96,
+              "currency": "COP",
+              "location": "CO",
+              "location_name": "Colombia",
+              "source": "google_flights",
+              "layovers": [
+                "MIA",
+                "CLT"
+              ]
+            },
+            {
               "airline": "Delta",
               "departure_time": "10:40 AM",
               "arrival_time": "11:02 PM",
@@ -5622,37 +5690,37 @@
               ]
             },
             {
-              "airline": "Gol, Delta",
-              "departure_time": "2:00 PM",
-              "arrival_time": "9:46 AM",
-              "duration": "20h 46m",
+              "airline": "American",
+              "departure_time": "12:15 AM",
+              "arrival_time": "12:34 AM",
+              "duration": "25h 19m",
               "stops": "2 stops",
-              "price_original": "COP 1058311",
-              "price_usd": 290.71,
+              "price_original": "COP 1058184",
+              "price_usd": 290.67,
               "currency": "COP",
               "location": "CO",
               "location_name": "Colombia",
               "source": "google_flights",
               "layovers": [
-                "GIG",
-                "ATL"
+                "MIA",
+                "CLT"
               ]
             },
             {
-              "airline": "Gol, Delta",
-              "departure_time": "2:00 PM",
-              "arrival_time": "10:18 AM",
-              "duration": "21h 18m",
+              "airline": "American",
+              "departure_time": "12:15 AM",
+              "arrival_time": "12:34 AM",
+              "duration": "25h 19m",
               "stops": "2 stops",
-              "price_original": "COP 1058311",
-              "price_usd": 290.71,
+              "price_original": "COP 1058184",
+              "price_usd": 290.67,
               "currency": "COP",
               "location": "CO",
               "location_name": "Colombia",
               "source": "google_flights",
               "layovers": [
-                "GIG",
-                "ATL"
+                "MIA",
+                "CLT"
               ]
             },
             {
@@ -5711,40 +5779,6 @@
               "departure_time": "6:00 PM",
               "arrival_time": "12:01 PM",
               "duration": "19h 1m",
-              "stops": "2 stops",
-              "price_original": "COP 1058311",
-              "price_usd": 290.71,
-              "currency": "COP",
-              "location": "CO",
-              "location_name": "Colombia",
-              "source": "google_flights",
-              "layovers": [
-                "GIG",
-                "ATL"
-              ]
-            },
-            {
-              "airline": "Gol, Delta",
-              "departure_time": "6:00 PM",
-              "arrival_time": "1:01 PM",
-              "duration": "20h 1m",
-              "stops": "2 stops",
-              "price_original": "COP 1058311",
-              "price_usd": 290.71,
-              "currency": "COP",
-              "location": "CO",
-              "location_name": "Colombia",
-              "source": "google_flights",
-              "layovers": [
-                "GIG",
-                "ATL"
-              ]
-            },
-            {
-              "airline": "Gol, Delta",
-              "departure_time": "6:00 PM",
-              "arrival_time": "2:04 PM",
-              "duration": "21h 4m",
               "stops": "2 stops",
               "price_original": "COP 1058311",
               "price_usd": 290.71,
@@ -6142,6 +6176,23 @@
               ]
             },
             {
+              "airline": "LATAM",
+              "departure_time": "4:30 PM",
+              "arrival_time": "1:40 PM",
+              "duration": "22h 10m",
+              "stops": "2 stops",
+              "price_original": "COP 1268964",
+              "price_usd": 348.57,
+              "currency": "COP",
+              "location": "CO",
+              "location_name": "Colombia",
+              "source": "google_flights",
+              "layovers": [
+                "LIM",
+                "BOG"
+              ]
+            },
+            {
               "airline": "Avianca",
               "departure_time": "5:25 PM",
               "arrival_time": "1:10 PM",
@@ -6211,8 +6262,8 @@
               "arrival_time": "12:05 PM",
               "duration": "14h 40m",
               "stops": "1 stop",
-              "price_original": "COP 1523524",
-              "price_usd": 418.5,
+              "price_original": "COP 1512393",
+              "price_usd": 415.44,
               "currency": "COP",
               "location": "CO",
               "location_name": "Colombia",
@@ -6286,6 +6337,23 @@
               ]
             },
             {
+              "airline": "LATAM, Delta",
+              "departure_time": "4:40 PM",
+              "arrival_time": "9:46 AM",
+              "duration": "18h 6m",
+              "stops": "2 stops",
+              "price_original": "COP 1698436",
+              "price_usd": 466.54,
+              "currency": "COP",
+              "location": "CO",
+              "location_name": "Colombia",
+              "source": "google_flights",
+              "layovers": [
+                "GIG",
+                "ATL"
+              ]
+            },
+            {
               "airline": "LATAM",
               "departure_time": "11:45 AM",
               "arrival_time": "7:30 PM",
@@ -6317,43 +6385,9 @@
             },
             {
               "airline": "LATAM, Delta",
-              "departure_time": "8:15 AM",
-              "arrival_time": "1:04 AM",
-              "duration": "17h 49m",
-              "stops": "2 stops",
-              "price_original": "COP 2005943",
-              "price_usd": 551.01,
-              "currency": "COP",
-              "location": "CO",
-              "location_name": "Colombia",
-              "source": "google_flights",
-              "layovers": [
-                "BOG",
-                "ATL"
-              ]
-            },
-            {
-              "airline": "LATAM, Delta",
               "departure_time": "7:35 AM",
               "arrival_time": "12:06 AM",
               "duration": "17h 31m",
-              "stops": "2 stops",
-              "price_original": "COP 2022640",
-              "price_usd": 555.6,
-              "currency": "COP",
-              "location": "CO",
-              "location_name": "Colombia",
-              "source": "google_flights",
-              "layovers": [
-                "LIM",
-                "ATL"
-              ]
-            },
-            {
-              "airline": "LATAM, Delta",
-              "departure_time": "7:35 AM",
-              "arrival_time": "1:04 AM",
-              "duration": "18h 29m",
               "stops": "2 stops",
               "price_original": "COP 2022640",
               "price_usd": 555.6,
