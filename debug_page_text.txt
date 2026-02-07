@@ -7,38 +7,58 @@ Hotels
 Vacation rentals
 Change appearance
 Sign in
-Loading results
-Flight search
-One way
+Page loaded.
+Flights
+Round trip
 1
 Economy
-São Paulo GRU
-Orlando MCO
-Filters
-All filters
-Stops
-Airlines
-Bags
-Price
-Times
-Emissions
-Connecting airports
-Duration
-Search results
-No results returned.
-
-Oops, something went wrong.
-
-Reload
-
+Search
+Flexible? Discover the best flight deals with AI NEW
+Describe your ideal trip, and let Google Flights find the best deals for you
+Explore deals
+Find cheap flights to anywhere
+Explore destinations
+Useful tools to help you find the best flight deals
+Find the cheapest days to fly
+The Date grid and Price graph make it easy to find the best flight deals
+Know when to book with price insights
+Price history and trend data show you the best time to book your airline ticket to get the cheapest price for your flight
+Track flight prices for a trip
+Not ready to book yet? Observe price changes for a route or flight and get notified when prices drop.
+Insightful tools help you choose your trip dates
+If your travel plans are flexible, use the form above to start searching for a specific trip. Then, play around with the Date grid and Price graph options on the Search page to find the cheapest days to fly and book your tickets.
+Find cheap flights on popular routes
+Flights from popular destinations
+Flights to popular destinations
+Popular flights routes
+Flights from New York
+Flights from Paris
+Flights from London
+Flights from Toronto
+Flights from Rome
+Flights from Milan
+Flights from Madrid
+Flights from Chicago
+Flights from Sao Paulo
+Flights from Berlin
+Flights from Los Angeles
+Flights from Bangkok
+Flights from Marrakech
+Flights from Orlando
+Flights from Montreal
 Language​English (United States)
 Location​United States
 CurrencyUSD
+
+Current language and currency options applied: English (United States) - United States - USD
+
+Displayed currencies may differ from the currencies used to purchase flights. Learn more
+
 About
 Privacy
 Terms
 Join user studies
 Feedback
 Help Center
-
-Displayed currencies may differ from the currencies used to purchase flights. Learn more
+International sites
+Explore flights
