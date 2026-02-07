@@ -243,37 +243,18 @@ class GoogleFlightsScraper:
         return_date: str = None
     ) -> list[dict]:
         """
-        Search for flights on Google Flights.
+        Search for flights on Google Flights using JavaScript-based form interaction.
 
-        Steps:
-        1. Open Google Flights
-        2. Set one-way if no return date (MUST be before date selection!)
-        3. Click the "from" field and type origin
-        4. Click the "to" field and type destination
-        5. Click date field, select date, click Done
-        6. Click Search
+        This approach uses JavaScript to directly interact with form elements,
+        which is more reliable than CSS selectors or URL parameters.
         """
         print(f"\nSearching flights: {origin} → {destination}")
         print(f"Departure: {departure_date}" + (f", Return: {return_date}" if return_date else " (one-way)"))
 
-        # Build search URL directly instead of filling form
-        # Format: https://www.google.com/travel/flights?q=Flights+to+MCO+from+GRU+on+2026-03-08+oneway&hl=en
-        query_parts = [
-            f"Flights to {destination}",
-            f"from {origin}",
-            f"on {departure_date}",
-        ]
-        if not return_date:
-            query_parts.append("oneway")
-        else:
-            query_parts.append(f"return {return_date}")
+        # Navigate to Google Flights home page
+        search_url = "https://www.google.com/travel/flights?hl=en&curr=USD"
 
-        query = " ".join(query_parts)
-        from urllib.parse import quote
-        search_url = f"https://www.google.com/travel/flights?q={quote(query)}&hl=en"
-
-        print(f"\n[Step 1] Opening Google Flights search URL...")
-        print(f"  URL: {search_url[:80]}...")
+        print(f"\n[Step 1] Opening Google Flights...")
 
         max_retries = 4
         retry_delays = [2, 4, 8, 16]
@@ -297,17 +278,66 @@ class GoogleFlightsScraper:
         # Handle cookie consent if needed
         await self.handle_cookie_consent()
 
-        # URL-based search - Google Flights processes the query and shows results directly
-        # No need to fill form fields manually
-        print("[Step 2] Waiting for Google to process search query...")
-        await self.page.wait_for_timeout(self.wait_long * 2)
+        # Step 2: Set one-way if no return date
+        if not return_date:
+            print("[Step 2] Setting one-way trip...")
+            one_way_set = await self.page.evaluate('''
+                () => {
+                    // Find and click the trip type dropdown
+                    const buttons = document.querySelectorAll('button, div[role="button"]');
+                    for (const btn of buttons) {
+                        const text = btn.textContent.toLowerCase();
+                        if (text.includes('round trip') || text.includes('round-trip')) {
+                            btn.click();
+                            return 'clicked_dropdown';
+                        }
+                    }
+                    return 'no_dropdown_found';
+                }
+            ''')
+            print(f"  Dropdown: {one_way_set}")
+            await self.page.wait_for_timeout(self.wait_medium)
+
+            # Now click "One way" option
+            one_way_clicked = await self.page.evaluate('''
+                () => {
+                    const items = document.querySelectorAll('li, div[role="option"], div[role="menuitem"]');
+                    for (const item of items) {
+                        const text = item.textContent.toLowerCase().trim();
+                        if (text === 'one way' || text === 'one-way') {
+                            item.click();
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+            ''')
+            if one_way_clicked:
+                print("  ✓ Selected one-way")
+            await self.page.wait_for_timeout(self.wait_medium)
+
+        # Step 3: Fill origin using JavaScript
+        print(f"[Step 3] Entering origin: {origin}...")
+        await self._js_fill_airport_field(is_origin=True, airport_code=origin)
+
+        # Step 4: Fill destination using JavaScript
+        print(f"[Step 4] Entering destination: {destination}...")
+        await self._js_fill_airport_field(is_origin=False, airport_code=destination)
+
+        # Step 5: Set departure date
+        print(f"[Step 5] Setting departure date: {departure_date}...")
+        await self._js_set_date(departure_date)
+
+        # Step 6: Click search button
+        print("[Step 6] Clicking search...")
+        await self._js_click_search()
 
         # Take debug screenshot
         await self.page.screenshot(path='debug_screenshot.png')
 
-        # Skip directly to Step 7 - waiting for results
+        # Step 7: Wait for results
         print("[Step 7] Waiting for results to load...")
-        await self.page.wait_for_timeout(self.wait_long * 2 if not self.fast_mode else self.wait_long)
+        await self.page.wait_for_timeout(self.wait_long * 3)
         await self.page.screenshot(path='debug_step7_results.png')
 
         # Save page text for debugging
@@ -389,6 +419,249 @@ class GoogleFlightsScraper:
 
         except Exception as e:
             print(f"  ⚠ Error loading more flights: {e}")
+
+    async def _js_fill_airport_field(self, is_origin: bool, airport_code: str):
+        """
+        Fill airport field using JavaScript for more reliable interaction.
+
+        This method:
+        1. Finds the correct input field (origin or destination)
+        2. Clicks to focus it
+        3. Types the airport code
+        4. Selects the first suggestion
+        """
+        field_type = "origin" if is_origin else "destination"
+
+        # Step 1: Click the correct field to open input
+        clicked = await self.page.evaluate(f'''
+            () => {{
+                // Google Flights uses combobox inputs
+                const inputs = document.querySelectorAll('input[type="text"], input:not([type])');
+                const placeholders = {'{"origin": ["Where from", "Origin", "From"], "destination": ["Where to", "Destination", "To"]}'};
+                const searchTerms = placeholders["{field_type}"];
+
+                for (const input of inputs) {{
+                    const placeholder = input.placeholder || '';
+                    const ariaLabel = input.getAttribute('aria-label') || '';
+                    const combined = (placeholder + ' ' + ariaLabel).toLowerCase();
+
+                    for (const term of searchTerms) {{
+                        if (combined.includes(term.toLowerCase())) {{
+                            input.click();
+                            input.focus();
+                            return 'found_input';
+                        }}
+                    }}
+                }}
+
+                // Try clicking by index - first combobox is origin, second is destination
+                const comboboxes = document.querySelectorAll('[role="combobox"], input[aria-autocomplete]');
+                const index = "{field_type}" === "origin" ? 0 : 1;
+                if (comboboxes[index]) {{
+                    comboboxes[index].click();
+                    return 'clicked_combobox_' + index;
+                }}
+
+                return 'not_found';
+            }}
+        ''')
+        print(f"  Field click: {clicked}")
+        await self.page.wait_for_timeout(self.wait_medium)
+
+        # Step 2: Clear any existing text and type the airport code
+        await self.page.keyboard.press('Control+a')
+        await self.page.wait_for_timeout(50)
+        await self.page.keyboard.type(airport_code, delay=100)
+        print(f"  Typed: {airport_code}")
+        await self.page.wait_for_timeout(self.wait_long)
+
+        # Step 3: Select the first suggestion
+        suggestion_selected = await self.page.evaluate('''
+            () => {
+                // Find suggestion list
+                const options = document.querySelectorAll('[role="option"], li[data-value], ul li');
+                for (const opt of options) {
+                    // Skip if it's just text, look for airport-like content
+                    const text = opt.textContent || '';
+                    if (text.length > 0 && text.length < 200) {
+                        opt.click();
+                        return 'clicked_option';
+                    }
+                }
+                return 'no_option';
+            }
+        ''')
+
+        if suggestion_selected == 'no_option':
+            # Press Enter as fallback
+            await self.page.keyboard.press('Enter')
+            print(f"  ✓ Pressed Enter for: {airport_code}")
+        else:
+            print(f"  ✓ Selected suggestion for: {airport_code}")
+
+        await self.page.wait_for_timeout(self.wait_medium)
+
+    async def _js_set_date(self, date_str: str):
+        """
+        Set the departure date using JavaScript.
+
+        Args:
+            date_str: Date in YYYY-MM-DD format
+        """
+        from datetime import datetime
+        target_date = datetime.strptime(date_str, '%Y-%m-%d')
+        day = target_date.day
+        month = target_date.month
+        year = target_date.year
+        month_name = target_date.strftime('%B')  # e.g., "March"
+
+        # Click on date field to open calendar
+        date_clicked = await self.page.evaluate('''
+            () => {
+                // Find date input/button
+                const elements = document.querySelectorAll('[data-placeholder="Departure"], [aria-label*="Departure"], input[placeholder*="Departure"], button, div[role="button"]');
+                for (const el of elements) {
+                    const text = (el.textContent || '').toLowerCase();
+                    const aria = (el.getAttribute('aria-label') || '').toLowerCase();
+                    const placeholder = (el.getAttribute('placeholder') || '').toLowerCase();
+
+                    if (text.includes('departure') || aria.includes('departure') || placeholder.includes('departure')) {
+                        el.click();
+                        return 'clicked_departure';
+                    }
+                }
+                // Try clicking on any date-looking field
+                const dateInputs = document.querySelectorAll('[role="textbox"][aria-label*="date" i], input[type="date"]');
+                if (dateInputs[0]) {
+                    dateInputs[0].click();
+                    return 'clicked_date_input';
+                }
+                return 'not_found';
+            }
+        ''')
+        print(f"  Date field: {date_clicked}")
+        await self.page.wait_for_timeout(self.wait_medium)
+
+        # Navigate to correct month if needed and click the date
+        date_selected = await self.page.evaluate(f'''
+            () => {{
+                const targetDay = {day};
+                const targetMonth = "{month_name}";
+                const targetYear = {year};
+
+                // Find calendar and navigate to correct month
+                // Google Flights shows month names in the calendar header
+                let attempts = 0;
+                const maxAttempts = 12;
+
+                while (attempts < maxAttempts) {{
+                    // Check if current month matches
+                    const monthHeaders = document.querySelectorAll('[role="heading"], h2, h3, div');
+                    let monthFound = false;
+                    for (const header of monthHeaders) {{
+                        const text = header.textContent || '';
+                        if (text.includes(targetMonth) && text.includes(String(targetYear))) {{
+                            monthFound = true;
+                            break;
+                        }}
+                    }}
+
+                    if (monthFound) {{
+                        break;
+                    }}
+
+                    // Click next month button
+                    const nextButtons = document.querySelectorAll('button[aria-label*="Next"], [aria-label*="next month"], button svg');
+                    for (const btn of nextButtons) {{
+                        const label = btn.getAttribute('aria-label') || '';
+                        if (label.toLowerCase().includes('next')) {{
+                            btn.click();
+                            break;
+                        }}
+                    }}
+                    attempts++;
+                }}
+
+                // Find and click the day
+                const dayElements = document.querySelectorAll('[role="gridcell"], td, [data-day], button');
+                for (const el of dayElements) {{
+                    const text = el.textContent.trim();
+                    const ariaLabel = el.getAttribute('aria-label') || '';
+
+                    // Check if this is our target day
+                    if (text === String(targetDay) || ariaLabel.includes(targetMonth + ' ' + targetDay)) {{
+                        // Make sure it's a clickable date cell
+                        const parent = el.closest('[role="gridcell"], td, button');
+                        if (parent) {{
+                            parent.click();
+                            return 'clicked_day';
+                        }}
+                        el.click();
+                        return 'clicked_day_direct';
+                    }}
+                }}
+
+                return 'day_not_found';
+            }}
+        ''')
+        print(f"  Date selection: {date_selected}")
+        await self.page.wait_for_timeout(self.wait_medium)
+
+        # Click Done button if present
+        done_clicked = await self.page.evaluate('''
+            () => {
+                const buttons = document.querySelectorAll('button');
+                for (const btn of buttons) {
+                    const text = btn.textContent.toLowerCase().trim();
+                    if (text === 'done' || text === 'ok' || text === 'apply') {
+                        btn.click();
+                        return true;
+                    }
+                }
+                return false;
+            }
+        ''')
+        if done_clicked:
+            print("  ✓ Clicked Done")
+        await self.page.wait_for_timeout(self.wait_medium)
+
+    async def _js_click_search(self):
+        """Click the search/explore button using JavaScript."""
+        await self.page.screenshot(path='debug_before_search.png')
+
+        search_clicked = await self.page.evaluate('''
+            () => {
+                // Find search button
+                const buttons = document.querySelectorAll('button');
+                for (const btn of buttons) {
+                    const text = btn.textContent.toLowerCase().trim();
+                    const ariaLabel = (btn.getAttribute('aria-label') || '').toLowerCase();
+
+                    if (text.includes('search') || text.includes('explore') ||
+                        ariaLabel.includes('search') || text === 'search') {
+                        btn.click();
+                        return 'clicked_search';
+                    }
+                }
+
+                // Try submitting form
+                const forms = document.querySelectorAll('form');
+                if (forms[0]) {
+                    forms[0].submit();
+                    return 'submitted_form';
+                }
+
+                return 'not_found';
+            }
+        ''')
+        print(f"  Search: {search_clicked}")
+
+        if search_clicked == 'not_found':
+            # Press Enter as fallback
+            await self.page.keyboard.press('Enter')
+            print("  ✓ Pressed Enter to search")
+
+        await self.page.wait_for_timeout(self.wait_long)
 
     async def _fill_location_field(self, is_origin: bool, location: str):
         """
