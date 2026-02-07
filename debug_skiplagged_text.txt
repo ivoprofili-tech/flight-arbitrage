@@ -40,7 +40,7 @@ FLIGHT DURATION
 10h 45m
 LAYOVER DURATION
 None
-25h 36m
+23h 44m
 AIRLINES
 Aeromexico
 only
@@ -137,6 +137,8 @@ PTY - Tocumen
 only
 YYZ - Toronto
 only
+YTZ - Toronto
+only
 DCA - Washington
 only
 Automatic protection on every flight.
@@ -207,86 +209,6 @@ PTY
 6:09pm
 3h 31m
 10:40pm
-MCO
-
-$246
-
-27h
-1 stop
-Copa
-11:10am
-GRU
-6h 51m
-4:01pm
-16h 15m
-PTY
-8:16am
-3h 30m
-12:46pm
-MCO
-
-$246
-
-28h
-1 stop
-Copa
-11:10am
-GRU
-6h 51m
-4:01pm
-17h 29m
-PTY
-9:30am
-3h 30m
-2:00pm
-MCO
-
-$246
-
-28h
-1 stop
-Copa
-11:10am
-GRU
-6h 51m
-4:01pm
-17h 39m
-PTY
-9:40am
-3h 30m
-2:10pm
-MCO
-
-$246
-
-30h
-1 stop
-Copa
-11:10am
-GRU
-6h 51m
-4:01pm
-20h 3m
-PTY
-12:04pm
-3h 31m
-4:35pm
-MCO
-
-$246
-
-32h
-1 stop
-Copa
-5:25am
-GRU
-6h 47m
-10:12am
-22h 4m
-PTY
-8:16am
-3h 30m
-12:46pm
 MCO
 
 $246
@@ -413,69 +335,164 @@ MCO
 
 $276
 
-22h
-1 stop
-United
-10:15pm
+15h
+2 stops
+LATAM
+10:15am
 GRU
-10h 45m
-7:00am
-8h 38m
-ORD
-3:38pm
-2h 50m
-7:28pm
+8h 30m
+5:45pm
+1h 48m
+MIA
+7:33pm
+2h 21m
+9:54pm
+46m
+ATL
+10:40pm
+1h 26m
+12:06am
 MCO
 
-$276
+$277
 
-23h
+12h
 1 stop
-United
-9:30pm
+Avianca
+2:40am
 GRU
-10h 10m
-6:40am
-10h 30m
-IAD
-5:10pm
-2h 30m
-7:40pm
+5h 55m
+6:35am
+1h 25m
+BOG
+8:00am
+4h 10m
+1:10pm
 MCO
 
-$276
+$279
 
-24h
-1 stop
-United
-9:30pm
+15h
+2 stops
+Multiple
+10:15am
 GRU
-10h 10m
-6:40am
-11h 15m
-IAD
-5:55pm
-2h 30m
-8:25pm
+8h 30m
+5:45pm
+1h 48m
+MIA
+7:33pm
+2h 21m
+9:54pm
+46m
+ATL
+10:40pm
+1h 26m
+12:06am
 MCO
 
-$276
+$279
 
-24h
-1 stop
-United
-10:15pm
+16h
+2 stops
+Multiple
+10:15am
 GRU
-10h 45m
-7:00am
-10h 50m
-ORD
-5:50pm
-2h 50m
-9:40pm
+8h 30m
+5:45pm
+1h 48m
+MIA
+7:33pm
+2h 21m
+9:54pm
+1h 46m
+ATL
+11:40pm
+1h 24m
+1:04am
 MCO
 
-$276
+$279
+
+13h
+1 stop
+LATAM
+10:40am
+GRU
+9h 50m
+7:30pm
+2h 5m
+ATL
+9:35pm
+1h 27m
+11:02pm
+MCO
+
+$280
+
+16h
+1 stop
+LATAM
+9:00pm
+GRU
+9h 55m
+5:55am
+3h 5m
+JFK
+9:00am
+2h 57m
+11:57am
+MCO
+
+$280
+
+13h
+1 stop
+Delta
+10:40am
+GRU
+9h 50m
+7:30pm
+2h 5m
+ATL
+9:35pm
+1h 27m
+11:02pm
+MCO
+
+$281
+
+14h
+1 stop
+Delta
+10:40am
+GRU
+9h 50m
+7:30pm
+3h 10m
+ATL
+10:40pm
+1h 26m
+12:06am
+MCO
+
+$281
+
+15h
+1 stop
+Delta
+10:40am
+GRU
+9h 50m
+7:30pm
+4h 10m
+ATL
+11:40pm
+1h 24m
+1:04am
+MCO
+
+$281
 
   skiplagged
 Company

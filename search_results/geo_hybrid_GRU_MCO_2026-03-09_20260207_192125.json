@@ -4,33 +4,33 @@
     "primary_destination": "MCO",
     "departure_date": "2026-03-09"
   },
-  "timestamp": "2026-02-07T19:11:24.950807",
-  "total_search_time_seconds": 19.5,
-  "initial_search_time_seconds": 19.38,
+  "timestamp": "2026-02-07T19:21:25.990437",
+  "total_search_time_seconds": 19.48,
+  "initial_search_time_seconds": 19.37,
   "summary": {
     "direct_route_best_price": 485,
     "hidden_city_routes_found": 0,
     "total_routes_searched": 1,
-    "total_potential_savings_usd": 226.0
+    "total_potential_savings_usd": 5.42
   },
   "hidden_city_routes": [],
   "best_direct_deal": {
     "route": "GRU-MCO",
     "best_location": "BR",
-    "best_price_usd": 0.0,
+    "best_price_usd": 224.14,
     "original_currency": "BRL",
-    "original_price": "BRL 0",
+    "original_price": "BRL 1179",
     "airline": "COPA",
     "stops": "1 stop",
     "layovers": [
       "PTY"
     ],
-    "potential_savings_usd": 226.0,
-    "potential_savings_pct": 100.0,
+    "potential_savings_usd": 5.42,
+    "potential_savings_pct": 2.4,
     "prices_by_location": {
-      "BR": 0.0,
+      "BR": 224.14,
       "US": 226.0,
-      "CO": 0.0
+      "CO": 229.56
     }
   },
   "best_hidden_city_deals": [],
@@ -42,7 +42,7 @@
         "departure_date": "2026-03-09",
         "return_date": null
       },
-      "timestamp": "2026-02-07T19:11:24.950671",
+      "timestamp": "2026-02-07T19:21:25.990314",
       "total_search_time_seconds": 0.1,
       "summary": {
         "locations_searched": [
@@ -51,23 +51,23 @@
           "CO"
         ],
         "best_location": "BR",
-        "best_price_usd": 0.0,
-        "potential_savings_usd": 226.0,
-        "potential_savings_pct": 100.0,
+        "best_price_usd": 224.14,
+        "potential_savings_usd": 5.42,
+        "potential_savings_pct": 2.4,
         "price_by_location": {
-          "BR": 0.0,
+          "BR": 224.14,
           "US": 226.0,
-          "CO": 0.0
+          "CO": 229.56
         }
       },
       "best_overall": {
         "airline": "COPA",
-        "departure_time": "5:25 AM",
+        "departure_time": "3:10 AM",
         "arrival_time": "2:00 PM",
-        "duration": "33h 35m",
+        "duration": "11h 50m",
         "stops": "1 stop",
-        "price_original": "BRL 0",
-        "price_usd": 0.0,
+        "price_original": "BRL 1179",
+        "price_usd": 224.14,
         "currency": "BRL",
         "location": "BR",
         "location_name": "Brazil",
@@ -79,12 +79,12 @@
       "best_by_location": {
         "BR": {
           "airline": "COPA",
-          "departure_time": "5:25 AM",
+          "departure_time": "3:10 AM",
           "arrival_time": "2:00 PM",
-          "duration": "33h 35m",
+          "duration": "11h 50m",
           "stops": "1 stop",
-          "price_original": "BRL 0",
-          "price_usd": 0.0,
+          "price_original": "BRL 1179",
+          "price_usd": 224.14,
           "currency": "BRL",
           "location": "BR",
           "location_name": "Brazil",
@@ -111,12 +111,12 @@
         },
         "CO": {
           "airline": "COPA",
-          "departure_time": "5:25 AM",
+          "departure_time": "3:10 AM",
           "arrival_time": "2:00 PM",
-          "duration": "33h 35m",
+          "duration": "11h 50m",
           "stops": "1 stop",
-          "price_original": "COP 0",
-          "price_usd": 0.0,
+          "price_original": "COP 835712",
+          "price_usd": 229.56,
           "currency": "COP",
           "location": "CO",
           "location_name": "Colombia",
@@ -131,10 +131,10 @@
           "location": "BR",
           "location_name": "Brazil",
           "status": "success",
-          "flights_found": 133,
-          "search_time_seconds": 0.04,
+          "flights_found": 131,
+          "search_time_seconds": 0.06,
           "error_message": null,
-          "best_price_usd": null,
+          "best_price_usd": 224.14,
           "flights": [
             {
               "airline": "COPA",
@@ -2253,38 +2253,6 @@
               "layovers": [
                 "YYZ"
               ]
-            },
-            {
-              "airline": "COPA",
-              "departure_time": "5:25 AM",
-              "arrival_time": "2:00 PM",
-              "duration": "33h 35m",
-              "stops": "1 stop",
-              "price_original": "BRL 0",
-              "price_usd": 0.0,
-              "currency": "BRL",
-              "location": "BR",
-              "location_name": "Brazil",
-              "source": "google_flights",
-              "layovers": [
-                "PTY"
-              ]
-            },
-            {
-              "airline": "COPA",
-              "departure_time": "5:25 AM",
-              "arrival_time": "2:10 PM",
-              "duration": "33h 45m",
-              "stops": "1 stop",
-              "price_original": "BRL 0",
-              "price_usd": 0.0,
-              "currency": "BRL",
-              "location": "BR",
-              "location_name": "Brazil",
-              "source": "google_flights",
-              "layovers": [
-                "PTY"
-              ]
             }
           ]
         },
@@ -4387,10 +4355,10 @@
           "location": "CO",
           "location_name": "Colombia",
           "status": "success",
-          "flights_found": 133,
-          "search_time_seconds": 0.06,
+          "flights_found": 131,
+          "search_time_seconds": 0.05,
           "error_message": null,
-          "best_price_usd": null,
+          "best_price_usd": 229.56,
           "flights": [
             {
               "airline": "COPA",
@@ -6508,38 +6476,6 @@
               "source": "google_flights",
               "layovers": [
                 "YYZ"
-              ]
-            },
-            {
-              "airline": "COPA",
-              "departure_time": "5:25 AM",
-              "arrival_time": "2:00 PM",
-              "duration": "33h 35m",
-              "stops": "1 stop",
-              "price_original": "COP 0",
-              "price_usd": 0.0,
-              "currency": "COP",
-              "location": "CO",
-              "location_name": "Colombia",
-              "source": "google_flights",
-              "layovers": [
-                "PTY"
-              ]
-            },
-            {
-              "airline": "COPA",
-              "departure_time": "5:25 AM",
-              "arrival_time": "2:10 PM",
-              "duration": "33h 45m",
-              "stops": "1 stop",
-              "price_original": "COP 0",
-              "price_usd": 0.0,
-              "currency": "COP",
-              "location": "CO",
-              "location_name": "Colombia",
-              "source": "google_flights",
-              "layovers": [
-                "PTY"
               ]
             }
           ]
