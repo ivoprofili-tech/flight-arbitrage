@@ -10,7 +10,7 @@ Guarulhos - Governador André Franco Montoro Intl, São Paulo, Brazil
 Orlando Intl, Orlando, Florida
 Search Flights
 LINE GRAPH PRICES ARE NOT REAL-TIME
-$227
+$226
 Mon, Mar 9
 Share
 New
@@ -18,9 +18,9 @@ Discover our
 Skiplagged Guarantee
 If issues arise with your travels, we've got your back.  See details
 Price History  
-$227
+$226
  
-Now
+14 hours ago
 Create a Price Alert
 Off
 TYPE
@@ -64,6 +64,8 @@ GOL Linhas Aereas
 only
 JetBlue Airways
 only
+KLM
+only
 LATAM Airlines
 only
 Porter Airlines
@@ -87,8 +89,6 @@ BEL - Belém
 only
 BOG - Bogota
 only
-BOS - Boston
-only
 BSB - Brasília
 only
 CLT - Charlotte
@@ -100,6 +100,8 @@ only
 DFW - Dallas-Fort Worth
 only
 IAD - Dulles
+only
+FLN - Florianópolis
 only
 FLL - Fort Lauderdale
 only
@@ -126,6 +128,8 @@ only
 PUJ - Punta Cana
 only
 RDU - Raleigh/Durham
+only
+REC - Recife
 only
 GIG - Rio De Janeiro
 only
@@ -158,38 +162,6 @@ Copa
 GRU
 6h 44m
 6:24am
-11h 27m
-PTY
-5:51pm
-3h 31m
-10:22pm
-MCO
-
-$248
-
-22h
-1 stop
-Copa
-1:30am
-GRU
-6h 45m
-6:15am
-11h 36m
-PTY
-5:51pm
-3h 31m
-10:22pm
-MCO
-
-$248
-
-22h
-1 stop
-Copa
-1:40am
-GRU
-6h 44m
-6:24am
 11h 45m
 PTY
 6:09pm
@@ -197,7 +169,7 @@ PTY
 10:40pm
 MCO
 
-$248
+$246
 
 22h
 1 stop
@@ -213,7 +185,7 @@ PTY
 10:40pm
 MCO
 
-$248
+$246
 
 27h
 1 stop
@@ -229,7 +201,7 @@ PTY
 12:46pm
 MCO
 
-$248
+$246
 
 28h
 1 stop
@@ -245,7 +217,7 @@ PTY
 2:00pm
 MCO
 
-$248
+$246
 
 28h
 1 stop
@@ -261,7 +233,7 @@ PTY
 2:10pm
 MCO
 
-$248
+$246
 
 30h
 1 stop
@@ -277,7 +249,7 @@ PTY
 4:35pm
 MCO
 
-$248
+$246
 
 32h
 1 stop
@@ -293,23 +265,7 @@ PTY
 12:46pm
 MCO
 
-$248
-
-12h
-1 stop
-Avianca
-2:40am
-GRU
-5h 55m
-6:35am
-1h 25m
-BOG
-8:00am
-4h 10m
-1:10pm
-MCO
-
-$273
+$246
 
 19h
 2 stops
@@ -385,26 +341,69 @@ MCO
 
 $273
 
-15h
-2 stops
-LATAM
-10:15am
+17h
+1 stop
+United
+10:15pm
 GRU
-8h 30m
-5:45pm
-1h 48m
-MIA
-7:33pm
-2h 21m
-9:54pm
-46m
-ATL
-10:40pm
-1h 26m
-12:06am
+10h 45m
+7:00am
+3h 45m
+ORD
+10:45am
+2h 51m
+2:36pm
 MCO
 
-$277
+$276
+
+20h
+1 stop
+United
+10:15pm
+GRU
+10h 45m
+7:00am
+6h 2m
+ORD
+1:02pm
+2h 52m
+4:54pm
+MCO
+
+$276
+
+21h
+1 stop
+United
+10:15pm
+GRU
+10h 45m
+7:00am
+7h 25m
+ORD
+2:25pm
+2h 51m
+6:16pm
+MCO
+
+$276
+
+22h
+1 stop
+United
+10:15pm
+GRU
+10h 45m
+7:00am
+8h 38m
+ORD
+3:38pm
+2h 50m
+7:28pm
+MCO
+
+$276
 
 23h
 1 stop
@@ -420,7 +419,7 @@ IAD
 7:40pm
 MCO
 
-$277
+$276
 
 24h
 1 stop
@@ -436,7 +435,39 @@ IAD
 8:25pm
 MCO
 
-$277
+$276
+
+24h
+1 stop
+United
+10:15pm
+GRU
+10h 45m
+7:00am
+10h 50m
+ORD
+5:50pm
+2h 50m
+9:40pm
+MCO
+
+$276
+
+27h
+1 stop
+United
+10:15pm
+GRU
+10h 45m
+7:00am
+13h 6m
+ORD
+8:06pm
+2h 53m
+11:59pm
+MCO
+
+$276
 
 28h
 1 stop
@@ -452,44 +483,7 @@ IAD
 12:33am
 MCO
 
-$277
-
-13h
-1 stop
-LATAM
-10:40am
-GRU
-9h 50m
-7:30pm
-2h 5m
-ATL
-9:35pm
-1h 27m
-11:02pm
-MCO
-
-$280
-
-15h
-2 stops
-Multiple
-10:15am
-GRU
-8h 30m
-5:45pm
-1h 48m
-MIA
-7:33pm
-2h 21m
-9:54pm
-46m
-ATL
-10:40pm
-1h 26m
-12:06am
-MCO
-
-$280
+$276
 
   skiplagged
 Company
