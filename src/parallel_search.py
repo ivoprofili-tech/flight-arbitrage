@@ -26,7 +26,7 @@ from src.models import (
 )
 
 # Import the actual scrapers
-from src.scraper.google_flights import search_google_flights
+from src.scraper.google_flights_serpapi import search_google_flights
 from src.scraper.skiplagged import search_skiplagged_flights
 from src.data.route_database import get_target_routes
 

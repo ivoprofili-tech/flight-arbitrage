@@ -17,7 +17,7 @@ import asyncio
 from typing import Optional
 from datetime import datetime
 
-from .scraper.google_flights import search_google_flights
+from .scraper.google_flights_serpapi import search_google_flights
 from .utils.layover_detection import (
     get_city_variants,
     check_layovers_list,

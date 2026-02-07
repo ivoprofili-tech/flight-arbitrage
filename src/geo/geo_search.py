@@ -46,7 +46,7 @@ from src.geo.currency import (
     ensure_rates_loaded,
     parse_price,
 )
-from src.scraper.google_flights import search_google_flights
+from src.scraper.google_flights_serpapi import search_google_flights
 from src.scraper.skiplagged import search_skiplagged_flights
 
 logger = logging.getLogger(__name__)
@@ -291,12 +291,10 @@ class GeoArbitrageSearch:
                 error_message=f"Unknown location: {location}",
             )
 
-        # Get proxy for this location
+        # SerpApi uses the gl parameter for geo-targeting -- no proxy needed
+        # for Google Flights. Proxy is only needed for Skiplagged.
         proxy_config = get_proxy_for_location(location)
         proxy_dict = proxy_config.to_playwright_proxy() if proxy_config else None
-
-        if not proxy_dict:
-            logger.warning(f"No proxy configured for {location}, searching without geo-targeting")
 
         flights: List[GeoFlightResult] = []
 
@@ -308,11 +306,8 @@ class GeoArbitrageSearch:
                     destination=destination,
                     departure_date=departure_date,
                     return_date=return_date,
-                    headless=self.headless,
-                    proxy=proxy_dict,
-                    locale=location_config.locale,
-                    language=location_config.language,
                     geo_location=location,
+                    currency=location_config.currency,
                 )
 
                 # Convert to GeoFlightResult

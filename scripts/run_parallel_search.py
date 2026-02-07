@@ -37,9 +37,9 @@ Usage:
     python scripts/run_parallel_search.py --geo --quick            # Quick mode (3 HC routes)
     python scripts/run_parallel_search.py --geo --push             # Push results to GitHub
 
-    # Geo with proxy (required for actual geo-targeting):
-    python scripts/run_parallel_search.py --geo --proxy-provider brightdata \\
-        --proxy-user YOUR_USER --proxy-pass YOUR_PASS
+    # Geo arbitrage (uses SerpApi gl parameter -- no proxy needed for Google Flights):
+    # Just set SERPAPI_KEY in .env and run:
+    python scripts/run_parallel_search.py --geo
 """
 
 import asyncio
@@ -733,17 +733,17 @@ Examples:
     parser.add_argument(
         "--proxy-provider",
         type=str,
-        help="Proxy provider: brightdata, oxylabs, smartproxy (or set PROXY_PROVIDER env var)"
+        help="Proxy provider for Skiplagged (brightdata, oxylabs, smartproxy). Not needed for Google Flights (uses SerpApi gl param)."
     )
     parser.add_argument(
         "--proxy-user",
         type=str,
-        help="Proxy username (or set PROXY_USERNAME env var)"
+        help="Proxy username for Skiplagged (or set PROXY_USERNAME env var)"
     )
     parser.add_argument(
         "--proxy-pass",
         type=str,
-        help="Proxy password (or set PROXY_PASSWORD env var)"
+        help="Proxy password for Skiplagged (or set PROXY_PASSWORD env var)"
     )
 
     args = parser.parse_args()
@@ -765,8 +765,15 @@ Examples:
     # Get date
     departure_date = args.date or get_default_date()
 
-    # Initialize proxy provider (from args or environment variables)
-    # Environment variables: PROXY_PROVIDER, PROXY_USERNAME, PROXY_PASSWORD
+    # Check SerpApi key (required for all Google Flights searches)
+    serpapi_key = os.environ.get("SERPAPI_KEY", "")
+    if not serpapi_key:
+        print("WARNING: SERPAPI_KEY not set. Google Flights searches will fail.")
+        print("  Set it in your .env file or export SERPAPI_KEY=your_key")
+        print()
+
+    # Initialize proxy provider for Skiplagged (from args or environment variables)
+    # Note: Google Flights no longer needs proxies (uses SerpApi gl parameter)
     if args.geo:
         init_proxy_provider(
             provider=args.proxy_provider,

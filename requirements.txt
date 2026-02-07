@@ -1,3 +1,4 @@
+aiohttp
 playwright
 streamlit
 pandas
