@@ -294,8 +294,12 @@ async def search_google_flights(
     # Convert each flight to the expected dict format
     flights = []
     for raw in all_raw:
+        # Skip flights with no price (SerpApi returns price=0 or missing for unpriced flights)
+        raw_price = raw.get("price", 0)
+        if not raw_price or (isinstance(raw_price, (int, float)) and raw_price <= 0):
+            continue
         parsed = _parse_flight(raw, currency)
-        if parsed and not parsed["price"].endswith(" 0") and parsed["price"] != "$0":
+        if parsed:
             flights.append(parsed)
 
     logger.info(f"SerpApi returned {len(flights)} flights for {origin} → {destination}")

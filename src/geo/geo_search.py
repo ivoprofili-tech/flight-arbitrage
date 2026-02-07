@@ -326,6 +326,10 @@ class GeoArbitrageSearch:
 
                     price_usd = self.converter.to_usd(amount, currency)
 
+                    # Skip flights with zero/missing prices
+                    if amount <= 0 or price_usd <= 0:
+                        continue
+
                     flights.append(GeoFlightResult(
                         airline=f.get("airline", "Unknown"),
                         departure_time=f.get("departure_time", ""),
