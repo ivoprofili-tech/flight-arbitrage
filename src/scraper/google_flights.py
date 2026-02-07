@@ -57,15 +57,15 @@ class GoogleFlightsScraper:
             fast_mode: If True, use shorter wait times for faster execution.
                        Target: ~30 seconds total. Default is True.
             proxy: Playwright proxy config dict with 'server', 'username', 'password'
-            locale: Browser locale (e.g., 'pt-BR', 'en-US', 'es-CO')
+            locale: Browser locale (e.g., 'pt-BR', 'en-US')
             language: Accept-Language header value
             geo_location: Country code for tracking (e.g., 'BR', 'US')
         """
         self.headless = headless
         self.fast_mode = fast_mode
         self.proxy = proxy
-        self.locale = locale or "en-US"
-        self.language = language or "en-US,en;q=0.9"
+        self.locale = locale
+        self.language = language
         self.geo_location = geo_location
         self.browser = None
         self.page = None
@@ -87,43 +87,30 @@ class GoogleFlightsScraper:
 
         We use Chromium (Chrome's open-source base) because it works well
         with Playwright and is what most people use for scraping.
-
-        If proxy settings are provided, the browser will route traffic
-        through the specified proxy server for geo-location arbitrage.
         """
         # Create a Playwright instance
         self.playwright = await async_playwright().start()
 
-        # Browser launch arguments
-        launch_args = ['--disable-blink-features=AutomationControlled']
-
-        # Add proxy to browser launch if provided
-        launch_kwargs = {
-            "headless": self.headless,
-            "args": launch_args,
-        }
-
         # Launch the browser
-        self.browser = await self.playwright.chromium.launch(**launch_kwargs)
+        self.browser = await self.playwright.chromium.launch(
+            headless=self.headless,
+            args=['--disable-blink-features=AutomationControlled']
+        )
 
-        # Build context options
-        # Always use English locale/language - we use ?hl=en in the URL
-        # This ensures consistent UI regardless of proxy location
+        # Build context options - force English for consistent UI
         context_options = {
             'viewport': {'width': 1280, 'height': 800},
-            'locale': 'en-US',  # Force English regardless of self.locale
+            'locale': 'en-US',
             'extra_http_headers': {
-                'Accept-Language': 'en-US,en;q=0.9',  # Force English
+                'Accept-Language': 'en-US,en;q=0.9',
             },
         }
 
-        # Add proxy to context if provided
+        # Add proxy if provided
         if self.proxy:
             context_options['proxy'] = self.proxy
-            # BrightData and other proxies use SSL interception - ignore cert errors
             context_options['ignore_https_errors'] = True
 
-        # Create a browser context with geo settings
         self.context = await self.browser.new_context(**context_options)
 
         # Create a new page (like a browser tab)
@@ -149,22 +136,14 @@ class GoogleFlightsScraper:
 
         Google shows different popups depending on your location.
         We try to find and click common "Accept" or "Reject" buttons.
-        Multi-language support: English, Portuguese, Spanish
         """
         try:
             # Try different selectors for cookie buttons (no initial wait needed)
-            # Multi-language support
             cookie_selectors = [
                 'button:has-text("Accept all")',      # English
                 'button:has-text("Accept")',          # Shorter version
                 'button:has-text("Reject all")',      # Privacy-friendly option
                 'button:has-text("I agree")',         # Alternative text
-                'button:has-text("Aceitar tudo")',    # Portuguese
-                'button:has-text("Aceitar")',         # Portuguese short
-                'button:has-text("Rejeitar tudo")',   # Portuguese reject
-                'button:has-text("Aceptar todo")',    # Spanish
-                'button:has-text("Aceptar")',         # Spanish short
-                'button:has-text("Rechazar todo")',   # Spanish reject
                 '[aria-label="Accept all"]',          # Using aria-label attribute
             ]
 
@@ -194,25 +173,27 @@ class GoogleFlightsScraper:
         return_date: str = None
     ) -> list[dict]:
         """
-        Search for flights on Google Flights using JavaScript-based form interaction.
+        Search for flights on Google Flights.
 
-        This approach uses JavaScript to directly interact with form elements,
-        which is more reliable than CSS selectors or URL parameters.
+        Steps:
+        1. Open Google Flights
+        2. Set one-way if no return date (MUST be before date selection!)
+        3. Click the "from" field and type origin
+        4. Click the "to" field and type destination
+        5. Click date field, select date, click Done
+        6. Click Search
         """
         print(f"\nSearching flights: {origin} → {destination}")
         print(f"Departure: {departure_date}" + (f", Return: {return_date}" if return_date else " (one-way)"))
 
-        # Navigate to Google Flights home page
-        search_url = "https://www.google.com/travel/flights?hl=en&curr=USD"
-
-        print(f"\n[Step 1] Opening Google Flights...")
-
+        # Step 1: Open Google Flights with retry logic
+        print("\n[Step 1] Opening Google Flights...")
         max_retries = 4
-        retry_delays = [2, 4, 8, 16]
+        retry_delays = [2, 4, 8, 16]  # Exponential backoff in seconds
 
         for attempt in range(max_retries):
             try:
-                await self.page.goto(search_url, wait_until='domcontentloaded', timeout=60000)
+                await self.page.goto('https://www.google.com/travel/flights?hl=en', wait_until='domcontentloaded', timeout=60000)
                 print("  ✓ Page loaded successfully")
                 break
             except PlaywrightTimeout as e:
@@ -230,63 +211,320 @@ class GoogleFlightsScraper:
         await self.handle_cookie_consent()
 
         # Step 2: Set one-way if no return date
+        # IMPORTANT: Must set trip type BEFORE selecting dates!
+        # Round trip mode expects 2 dates before showing "Done" button
         if not return_date:
-            print("[Step 2] Setting one-way trip...")
+            print("[Step 2] Setting trip type to one-way...")
             try:
-                # Click the "Round trip" dropdown using Playwright locator
-                round_trip_btn = self.page.get_by_role("button").filter(has_text="Round trip")
-                if await round_trip_btn.count() > 0:
-                    await round_trip_btn.first.click()
-                    print("  Dropdown: clicked Round trip button")
-                else:
-                    # Try alternative - look for any element with "Round trip" text
-                    await self.page.get_by_text("Round trip", exact=False).first.click()
-                    print("  Dropdown: clicked via text")
+                # Use locator to find and click "Round trip" text directly
+                # This is more reliable than complex CSS selectors
+                round_trip_locator = self.page.locator('text="Round trip"').first
+                await round_trip_locator.click(timeout=2000)
+                print("  ✓ Clicked Round trip dropdown")
 
-                await self.page.wait_for_timeout(self.wait_medium)
+                await self.page.wait_for_timeout(self.wait_short)
 
-                # Click "One way" option
-                one_way = self.page.get_by_text("One way", exact=True)
-                if await one_way.count() > 0:
-                    await one_way.first.click()
-                    print("  ✓ Selected one-way")
-                else:
-                    # Try role=option
-                    await self.page.get_by_role("option", name="One way").click()
-                    print("  ✓ Selected one-way via role")
+                # Now click "One way" from the dropdown menu
+                one_way_locator = self.page.locator('text="One way"').first
+                await one_way_locator.click(timeout=2000)
+                print("  ✓ Selected One way")
 
+                await self.page.wait_for_timeout(self.wait_short)
             except Exception as e:
-                print(f"  ⚠ One-way selection error: {e}")
+                print(f"  ⚠ Could not set one-way via locator: {e}")
+                # Fallback: try JavaScript
+                try:
+                    await self.page.evaluate('''
+                        () => {
+                            // Find and click "Round trip" text
+                            const elements = document.querySelectorAll('*');
+                            for (const el of elements) {
+                                if (el.textContent === 'Round trip' && el.offsetParent !== null) {
+                                    el.click();
+                                    return true;
+                                }
+                            }
+                            return false;
+                        }
+                    ''')
+                    await self.page.wait_for_timeout(self.wait_short)
+                    await self.page.evaluate('''
+                        () => {
+                            const elements = document.querySelectorAll('li, [role="option"]');
+                            for (const el of elements) {
+                                if (el.textContent.includes('One way')) {
+                                    el.click();
+                                    return true;
+                                }
+                            }
+                            return false;
+                        }
+                    ''')
+                    print("  ✓ Set one-way via JavaScript")
+                except Exception as e2:
+                    print(f"  ⚠ JavaScript fallback also failed: {e2}")
+
+        # Step 3: Click the "from" field and enter origin
+        print(f"[Step 3] Clicking 'from' field and entering {origin}...")
+        try:
+            # The origin field shows the auto-detected city (e.g., "San Francisco")
+            # We need to click on it - it's the first input/combobox area
+            from_field = await self.page.query_selector('input[aria-label*="Where from"], input[placeholder*="Where from"]')
+            if from_field:
+                await from_field.click()
+            else:
+                # Try clicking on the displayed city text in the first combobox
+                await self.page.click('div[role="combobox"]:first-of-type')
+
+            await self.page.wait_for_timeout(self.wait_short)
+
+            # Clear existing text and type new origin
+            await self.page.keyboard.press('Control+a')
+            await self.page.keyboard.type(origin, delay=50)
+            await self.page.wait_for_timeout(self.wait_long)
+
+            # Select from dropdown - click first suggestion or press Enter
+            try:
+                suggestion = await self.page.wait_for_selector('ul[role="listbox"] li:first-child', timeout=1500)
+                if suggestion:
+                    await suggestion.click()
+                    print(f"  ✓ Selected {origin} from dropdown")
+            except:
+                await self.page.keyboard.press('Enter')
+                print(f"  ✓ Pressed Enter for {origin}")
+
+            await self.page.wait_for_timeout(self.wait_short)
+        except Exception as e:
+            print(f"  ⚠ Error setting origin: {e}")
+
+        # Step 4: Click the "to" field and enter destination
+        print(f"[Step 4] Clicking 'to' field and entering {destination}...")
+        try:
+            # The destination field shows "Where to?"
+            to_field = await self.page.query_selector('input[aria-label*="Where to"], input[placeholder*="Where to"]')
+            if to_field:
+                await to_field.click()
+            else:
+                # Try clicking on "Where to?" text
+                await self.page.click('text="Where to?"')
+
+            await self.page.wait_for_timeout(self.wait_short)
+
+            # Type destination
+            await self.page.keyboard.type(destination, delay=50)
+            await self.page.wait_for_timeout(self.wait_long)
+
+            # Select from dropdown
+            try:
+                suggestion = await self.page.wait_for_selector('ul[role="listbox"] li:first-child', timeout=1500)
+                if suggestion:
+                    await suggestion.click()
+                    print(f"  ✓ Selected {destination} from dropdown")
+            except:
+                await self.page.keyboard.press('Enter')
+                print(f"  ✓ Pressed Enter for {destination}")
+
+            await self.page.wait_for_timeout(self.wait_short)
+        except Exception as e:
+            print(f"  ⚠ Error setting destination: {e}")
+
+        # Step 5: Click date field, select date, click Done
+        print(f"[Step 5] Setting departure date: {departure_date}...")
+        try:
+            # Click on the departure date field
+            date_field = await self.page.query_selector('input[aria-label*="Departure"], div[data-placeholder="Departure"]')
+            if date_field:
+                await date_field.click()
+            else:
+                await self.page.click('text="Departure"')
 
             await self.page.wait_for_timeout(self.wait_medium)
 
-        # Step 3: Fill origin using JavaScript
-        print(f"[Step 3] Entering origin: {origin}...")
-        await self._js_fill_airport_field(is_origin=True, airport_code=origin)
+            # Parse date
+            target_date = datetime.strptime(departure_date, '%Y-%m-%d')
+            day = target_date.day
+            month_name = target_date.strftime('%B')
+            target_year = target_date.year
 
-        # Step 4: Fill destination using JavaScript
-        print(f"[Step 4] Entering destination: {destination}...")
-        await self._js_fill_airport_field(is_origin=False, airport_code=destination)
+            # Navigate to the correct month using Python loop (allows proper waits)
+            for attempt in range(12):
+                # Check if target month is visible
+                month_visible = await self.page.evaluate('''
+                    (args) => {
+                        const targetMonth = args.monthName;
+                        const targetYear = args.year;
+                        const targetDay = args.day;
 
-        # Step 5: Set departure date
-        print(f"[Step 5] Setting departure date: {departure_date}...")
-        await self._js_set_date(departure_date)
+                        // Check headings for month/year
+                        const headings = document.querySelectorAll('h2, [role="heading"], div[class*="header"]');
+                        for (const h of headings) {
+                            const text = h.textContent || '';
+                            if (text.includes(targetMonth) && text.includes(String(targetYear))) {
+                                return true;
+                            }
+                        }
+                        // Check if date cell exists
+                        const selector = '[aria-label*="' + targetMonth + ' ' + targetDay + '"]';
+                        if (document.querySelector(selector)) return true;
+                        return false;
+                    }
+                ''', {"monthName": month_name, "year": target_year, "day": day})
 
-        # Step 6: Click search button
-        print("[Step 6] Clicking search...")
-        await self._js_click_search()
+                if month_visible:
+                    print(f"  ✓ Found {month_name} {target_year} in calendar")
+                    break
 
-        # Step 7: Wait for results with error recovery
-        print("[Step 7] Waiting for results to load...")
-        await self._wait_for_results_with_retry()
+                # Click next month button
+                clicked = await self.page.evaluate('''
+                    () => {
+                        // Try aria-label
+                        const nextByLabel = document.querySelector('[aria-label*="Next"]');
+                        if (nextByLabel) {
+                            nextByLabel.click();
+                            return true;
+                        }
+                        // Try SVG buttons
+                        const allButtons = Array.from(document.querySelectorAll('button'));
+                        const svgButtons = allButtons.filter(b => b.querySelector('svg'));
+                        if (svgButtons.length >= 2) {
+                            svgButtons[1].click();
+                            return true;
+                        } else if (svgButtons.length === 1) {
+                            svgButtons[0].click();
+                            return true;
+                        }
+                        return false;
+                    }
+                ''')
 
-        # Take debug screenshot
-        await self.page.screenshot(path='debug_screenshot.png')
+                if clicked:
+                    print(f"  → Navigating to next month...")
+                    await self.page.wait_for_timeout(self.wait_medium)
+                else:
+                    print(f"  ⚠ Could not find next month button")
+                    break
 
-        # Save page text for debugging
-        page_text = await self.page.evaluate('() => document.body.innerText')
-        with open('debug_page_text.txt', 'w') as f:
-            f.write(page_text)
+            await self.page.wait_for_timeout(self.wait_short)
+
+            # Now click the date
+            date_result = await self.page.evaluate('''
+                (args) => {
+                    const targetDay = args.day;
+                    const targetMonth = args.monthName;
+                    const isoDate = args.isoDate;
+
+                    // Strategy 1: aria-label with month and day
+                    const labelSelector = '[aria-label*="' + targetMonth + ' ' + targetDay + '"]';
+                    const dateByLabel = document.querySelector(labelSelector);
+                    if (dateByLabel) {
+                        dateByLabel.click();
+                        return { success: true, method: 'aria-label' };
+                    }
+
+                    // Strategy 2: data-iso attribute
+                    const isoSelector = '[data-iso="' + isoDate + '"]';
+                    const dateByIso = document.querySelector(isoSelector);
+                    if (dateByIso) {
+                        dateByIso.click();
+                        return { success: true, method: 'data-iso' };
+                    }
+
+                    // Strategy 3: Find by day number in calendar grid
+                    const allCells = document.querySelectorAll('[role="gridcell"], td, [role="button"]');
+                    for (const cell of allCells) {
+                        const text = cell.textContent.trim();
+                        if (text === String(targetDay) || text.startsWith(targetDay + '$') || text.startsWith(targetDay + '\\n')) {
+                            cell.click();
+                            return { success: true, method: 'grid-cell' };
+                        }
+                    }
+
+                    return { success: false, error: 'Could not find date cell' };
+                }
+            ''', {"day": day, "monthName": month_name, "isoDate": departure_date})
+
+            if date_result.get('success'):
+                print(f"  ✓ Selected date {departure_date} via {date_result.get('method')}")
+            else:
+                print(f"  ⚠ Date selection issue: {date_result.get('error')}")
+
+            await self.page.wait_for_timeout(self.wait_short)
+
+            # Click Done button - use JavaScript directly (faster and more reliable)
+            done_clicked = False
+            try:
+                result = await self.page.evaluate('''
+                    () => {
+                        // Find all buttons with "Done" text
+                        const buttons = document.querySelectorAll('button');
+                        for (const btn of buttons) {
+                            const text = btn.textContent.trim();
+                            const innerText = btn.innerText.trim();
+                            const spanText = btn.querySelector('span')?.textContent?.trim();
+                            if (text === 'Done' || innerText === 'Done' || spanText === 'Done') {
+                                btn.scrollIntoView({ behavior: 'instant', block: 'center' });
+                                btn.click();
+                                return 'clicked_button';
+                            }
+                        }
+                        // Try finding span with Done text
+                        const spans = document.querySelectorAll('span');
+                        for (const span of spans) {
+                            if (span.textContent.trim() === 'Done') {
+                                const btn = span.closest('button');
+                                if (btn) {
+                                    btn.scrollIntoView({ behavior: 'instant', block: 'center' });
+                                    btn.click();
+                                    return 'clicked_span_parent';
+                                }
+                                // Click span directly
+                                span.click();
+                                return 'clicked_span';
+                            }
+                        }
+                        return 'not_found';
+                    }
+                ''')
+                if result != 'not_found':
+                    done_clicked = True
+                    print(f"  ✓ Clicked Done button ({result})")
+                else:
+                    print("  ⚠ Done button not found via JavaScript")
+            except Exception as e:
+                print(f"  ⚠ JavaScript Done click failed: {e}")
+
+            # Fallback: press Escape to close the date picker
+            if not done_clicked:
+                print("  → Pressing Escape to close calendar...")
+                await self.page.keyboard.press('Escape')
+
+            await self.page.wait_for_timeout(self.wait_short)
+        except Exception as e:
+            print(f"  ⚠ Error setting date: {e}")
+
+        # Step 6: Click Search
+        print("[Step 6] Clicking Search...")
+        try:
+            search_btn = await self.page.query_selector('button:has-text("Search")')
+            if search_btn:
+                await search_btn.click()
+                print("  ✓ Clicked Search button")
+            else:
+                # Try Explore button as fallback
+                explore_btn = await self.page.query_selector('button:has-text("Explore")')
+                if explore_btn:
+                    await explore_btn.click()
+                    print("  ✓ Clicked Explore button")
+                else:
+                    await self.page.keyboard.press('Enter')
+                    print("  ✓ Pressed Enter")
+        except Exception as e:
+            print(f"  ⚠ Error clicking search: {e}")
+
+        # Wait for results to load
+        print("[Step 7] Waiting for results...")
+        await self.page.wait_for_timeout(self.wait_long * 2 if not self.fast_mode else self.wait_long)
+        await self.page.screenshot(path='debug_step7_results.png')
 
         current_url = self.page.url
         print(f"  Current URL: {current_url[:80]}...")
@@ -362,268 +600,6 @@ class GoogleFlightsScraper:
 
         except Exception as e:
             print(f"  ⚠ Error loading more flights: {e}")
-
-    async def _js_fill_airport_field(self, is_origin: bool, airport_code: str):
-        """
-        Fill airport field using Playwright's native locators.
-        """
-        field_type = "origin" if is_origin else "destination"
-
-        try:
-            if is_origin:
-                # Click on "Where from?" area
-                try:
-                    # Try multiple approaches
-                    locator = self.page.get_by_placeholder("Where from?")
-                    if await locator.count() > 0:
-                        await locator.first.click()
-                        print(f"  Field click: found via placeholder")
-                    else:
-                        # Try the combobox approach
-                        comboboxes = self.page.locator('[role="combobox"]')
-                        if await comboboxes.count() > 0:
-                            await comboboxes.first.click()
-                            print(f"  Field click: found via combobox")
-                        else:
-                            # Last resort - click by visible text
-                            await self.page.get_by_text("Where from?").click()
-                            print(f"  Field click: found via text")
-                except Exception as e:
-                    print(f"  Field click error: {e}")
-            else:
-                # Click on "Where to?" area
-                try:
-                    locator = self.page.get_by_placeholder("Where to?")
-                    if await locator.count() > 0:
-                        await locator.first.click()
-                        print(f"  Field click: found via placeholder")
-                    else:
-                        # Try the second combobox
-                        comboboxes = self.page.locator('[role="combobox"]')
-                        if await comboboxes.count() > 1:
-                            await comboboxes.nth(1).click()
-                            print(f"  Field click: found via combobox[1]")
-                        else:
-                            await self.page.get_by_text("Where to?").click()
-                            print(f"  Field click: found via text")
-                except Exception as e:
-                    print(f"  Field click error: {e}")
-
-            await self.page.wait_for_timeout(self.wait_medium)
-
-            # Type the airport code
-            await self.page.keyboard.type(airport_code, delay=100)
-            print(f"  Typed: {airport_code}")
-            await self.page.wait_for_timeout(self.wait_long)
-
-            # Select first suggestion - try clicking the first option in dropdown
-            try:
-                options = self.page.locator('[role="option"]')
-                if await options.count() > 0:
-                    await options.first.click()
-                    print(f"  ✓ Selected suggestion for: {airport_code}")
-                else:
-                    # Press Enter as fallback
-                    await self.page.keyboard.press('Enter')
-                    print(f"  ✓ Pressed Enter for: {airport_code}")
-            except Exception as e:
-                await self.page.keyboard.press('Enter')
-                print(f"  ✓ Pressed Enter (fallback) for: {airport_code}")
-
-            await self.page.wait_for_timeout(self.wait_medium)
-
-        except Exception as e:
-            print(f"  ⚠ Error filling {field_type}: {e}")
-
-    async def _js_set_date(self, date_str: str):
-        """
-        Set the departure date using JavaScript.
-
-        Args:
-            date_str: Date in YYYY-MM-DD format
-        """
-        from datetime import datetime
-        target_date = datetime.strptime(date_str, '%Y-%m-%d')
-        day = target_date.day
-        month_name = target_date.strftime('%B')  # e.g., "March"
-
-        # Click on date field to open calendar - use Playwright click for reliability
-        try:
-            # Try clicking the Departure field directly
-            date_field = await self.page.query_selector('[aria-label*="Departure"], [placeholder*="Departure"], [data-placeholder="Departure"]')
-            if date_field:
-                await date_field.click()
-                print("  Date field: clicked via selector")
-            else:
-                # Fallback: click by text content
-                await self.page.click('text=Departure', timeout=3000)
-                print("  Date field: clicked via text")
-        except Exception as e:
-            print(f"  Date field: error - {e}")
-
-        await self.page.wait_for_timeout(self.wait_long)
-
-        # Take screenshot to see calendar state
-        await self.page.screenshot(path='debug_calendar.png')
-
-        # Navigate to correct month using arrow button if needed
-        for _ in range(6):  # Max 6 months forward
-            page_text = await self.page.inner_text('body')
-            if month_name in page_text:
-                break
-            # Click next month arrow
-            try:
-                next_btn = await self.page.query_selector('[aria-label*="Next"]')
-                if next_btn:
-                    await next_btn.click()
-                    await self.page.wait_for_timeout(self.wait_short)
-            except:
-                break
-
-        # Click on the target day - use aria-label which Google uses
-        # Format: "Monday, March 9, 2026"
-        day_clicked = False
-        try:
-            # Try clicking by aria-label containing the date
-            day_selector = f'[aria-label*="{month_name} {day},"], [aria-label*="{month_name} {day} "], [data-iso="{date_str}"]'
-            day_el = await self.page.query_selector(day_selector)
-            if day_el:
-                await day_el.click()
-                day_clicked = True
-                print(f"  ✓ Clicked day via aria-label: {month_name} {day}")
-        except Exception as e:
-            print(f"  Day click error: {e}")
-
-        if not day_clicked:
-            # Fallback: find by text content in calendar grid
-            try:
-                # Google calendar days are in divs inside the calendar
-                cells = await self.page.query_selector_all('[role="gridcell"], [role="button"]')
-                for cell in cells:
-                    text = await cell.inner_text()
-                    if text.strip() == str(day):
-                        await cell.click()
-                        day_clicked = True
-                        print(f"  ✓ Clicked day via text: {day}")
-                        break
-            except Exception as e:
-                print(f"  Day text search error: {e}")
-
-        if not day_clicked:
-            print(f"  ⚠ Could not click day {day}")
-
-        await self.page.wait_for_timeout(self.wait_medium)
-
-        # Click Done button
-        try:
-            done_btn = await self.page.query_selector('button:has-text("Done")')
-            if done_btn:
-                await done_btn.click()
-                print("  ✓ Clicked Done")
-            else:
-                # Try by exact text
-                await self.page.click('text=Done', timeout=2000)
-                print("  ✓ Clicked Done via text")
-        except:
-            print("  → No Done button found")
-
-        await self.page.wait_for_timeout(self.wait_medium)
-
-    async def _wait_for_results_with_retry(self, max_retries: int = 3):
-        """
-        Wait for flight results with error recovery.
-
-        Google Flights sometimes shows "Oops, something went wrong" temporarily.
-        This method detects that error and clicks "Reload" to retry.
-        """
-        for attempt in range(max_retries):
-            # Wait for page to settle
-            await self.page.wait_for_timeout(self.wait_long * 2)
-
-            # Check if error message is showing
-            page_text = await self.page.evaluate('() => document.body.innerText')
-
-            if 'something went wrong' in page_text.lower():
-                print(f"  ⚠ Error detected (attempt {attempt + 1}/{max_retries}), clicking Reload...")
-
-                # Take screenshot of error state
-                await self.page.screenshot(path=f'debug_error_attempt_{attempt + 1}.png')
-
-                # Click Reload button
-                reload_clicked = await self.page.evaluate('''
-                    () => {
-                        const buttons = document.querySelectorAll('button');
-                        for (const btn of buttons) {
-                            const text = btn.textContent.toLowerCase().trim();
-                            if (text === 'reload' || text === 'try again' || text === 'retry') {
-                                btn.click();
-                                return true;
-                            }
-                        }
-                        return false;
-                    }
-                ''')
-
-                if reload_clicked:
-                    print("  → Clicked Reload, waiting for results...")
-                    await self.page.wait_for_timeout(self.wait_long * 3)
-                else:
-                    print("  → Reload button not found, waiting...")
-                    await self.page.wait_for_timeout(self.wait_long * 2)
-
-            elif '$' in page_text and ('flight' in page_text.lower() or 'stop' in page_text.lower()):
-                # Results appear to be showing
-                print("  ✓ Results detected")
-                await self.page.screenshot(path='debug_step7_results.png')
-                return
-
-            else:
-                # Still loading, wait more
-                print(f"  → Still loading (attempt {attempt + 1})...")
-                await self.page.wait_for_timeout(self.wait_long * 2)
-
-        # Final wait and screenshot
-        await self.page.wait_for_timeout(self.wait_long)
-        await self.page.screenshot(path='debug_step7_results.png')
-        print("  → Max retries reached, proceeding with extraction")
-
-    async def _js_click_search(self):
-        """Click the search/explore button using JavaScript."""
-        await self.page.screenshot(path='debug_before_search.png')
-
-        search_clicked = await self.page.evaluate('''
-            () => {
-                // Find search button
-                const buttons = document.querySelectorAll('button');
-                for (const btn of buttons) {
-                    const text = btn.textContent.toLowerCase().trim();
-                    const ariaLabel = (btn.getAttribute('aria-label') || '').toLowerCase();
-
-                    if (text.includes('search') || text.includes('explore') ||
-                        ariaLabel.includes('search') || text === 'search') {
-                        btn.click();
-                        return 'clicked_search';
-                    }
-                }
-
-                // Try submitting form
-                const forms = document.querySelectorAll('form');
-                if (forms[0]) {
-                    forms[0].submit();
-                    return 'submitted_form';
-                }
-
-                return 'not_found';
-            }
-        ''')
-        print(f"  Search: {search_clicked}")
-
-        if search_clicked == 'not_found':
-            # Press Enter as fallback
-            await self.page.keyboard.press('Enter')
-            print("  ✓ Pressed Enter to search")
-
-        await self.page.wait_for_timeout(self.wait_long)
 
     async def _fill_location_field(self, is_origin: bool, location: str):
         """
@@ -1396,7 +1372,7 @@ async def search_google_flights(
         headless: Run browser invisibly (default True)
         fast_mode: Use shorter wait times for ~30s execution (default True)
         proxy: Playwright proxy config dict with 'server', 'username', 'password'
-        locale: Browser locale (e.g., 'pt-BR', 'en-US', 'es-CO')
+        locale: Browser locale (e.g., 'pt-BR', 'en-US')
         language: Accept-Language header value
         geo_location: Country code for tracking (e.g., 'BR', 'US')
 
@@ -1405,16 +1381,6 @@ async def search_google_flights(
             origin="New York",
             destination="Los Angeles",
             departure_date="2025-02-15"
-        )
-
-        # With geo-location settings
-        flights = await search_google_flights(
-            origin="GRU",
-            destination="MCO",
-            departure_date="2025-03-15",
-            proxy={"server": "http://proxy:8080", "username": "user", "password": "pass"},
-            locale="pt-BR",
-            geo_location="BR"
         )
     """
     scraper = GoogleFlightsScraper(
