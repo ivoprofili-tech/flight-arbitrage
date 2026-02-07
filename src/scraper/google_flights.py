@@ -232,39 +232,32 @@ class GoogleFlightsScraper:
         # Step 2: Set one-way if no return date
         if not return_date:
             print("[Step 2] Setting one-way trip...")
-            one_way_set = await self.page.evaluate('''
-                () => {
-                    // Find and click the trip type dropdown
-                    const buttons = document.querySelectorAll('button, div[role="button"]');
-                    for (const btn of buttons) {
-                        const text = btn.textContent.toLowerCase();
-                        if (text.includes('round trip') || text.includes('round-trip')) {
-                            btn.click();
-                            return 'clicked_dropdown';
-                        }
-                    }
-                    return 'no_dropdown_found';
-                }
-            ''')
-            print(f"  Dropdown: {one_way_set}")
-            await self.page.wait_for_timeout(self.wait_medium)
+            try:
+                # Click the "Round trip" dropdown using Playwright locator
+                round_trip_btn = self.page.get_by_role("button").filter(has_text="Round trip")
+                if await round_trip_btn.count() > 0:
+                    await round_trip_btn.first.click()
+                    print("  Dropdown: clicked Round trip button")
+                else:
+                    # Try alternative - look for any element with "Round trip" text
+                    await self.page.get_by_text("Round trip", exact=False).first.click()
+                    print("  Dropdown: clicked via text")
 
-            # Now click "One way" option
-            one_way_clicked = await self.page.evaluate('''
-                () => {
-                    const items = document.querySelectorAll('li, div[role="option"], div[role="menuitem"]');
-                    for (const item of items) {
-                        const text = item.textContent.toLowerCase().trim();
-                        if (text === 'one way' || text === 'one-way') {
-                            item.click();
-                            return true;
-                        }
-                    }
-                    return false;
-                }
-            ''')
-            if one_way_clicked:
-                print("  ✓ Selected one-way")
+                await self.page.wait_for_timeout(self.wait_medium)
+
+                # Click "One way" option
+                one_way = self.page.get_by_text("One way", exact=True)
+                if await one_way.count() > 0:
+                    await one_way.first.click()
+                    print("  ✓ Selected one-way")
+                else:
+                    # Try role=option
+                    await self.page.get_by_role("option", name="One way").click()
+                    print("  ✓ Selected one-way via role")
+
+            except Exception as e:
+                print(f"  ⚠ One-way selection error: {e}")
+
             await self.page.wait_for_timeout(self.wait_medium)
 
         # Step 3: Fill origin using JavaScript
@@ -372,84 +365,75 @@ class GoogleFlightsScraper:
 
     async def _js_fill_airport_field(self, is_origin: bool, airport_code: str):
         """
-        Fill airport field using JavaScript for more reliable interaction.
-
-        This method:
-        1. Finds the correct input field (origin or destination)
-        2. Clicks to focus it
-        3. Types the airport code
-        4. Selects the first suggestion
+        Fill airport field using Playwright's native locators.
         """
         field_type = "origin" if is_origin else "destination"
 
-        # Step 1: Click the correct field to open input
-        clicked = await self.page.evaluate(f'''
-            () => {{
-                // Google Flights uses combobox inputs
-                const inputs = document.querySelectorAll('input[type="text"], input:not([type])');
-                const placeholders = {'{"origin": ["Where from", "Origin", "From"], "destination": ["Where to", "Destination", "To"]}'};
-                const searchTerms = placeholders["{field_type}"];
+        try:
+            if is_origin:
+                # Click on "Where from?" area
+                try:
+                    # Try multiple approaches
+                    locator = self.page.get_by_placeholder("Where from?")
+                    if await locator.count() > 0:
+                        await locator.first.click()
+                        print(f"  Field click: found via placeholder")
+                    else:
+                        # Try the combobox approach
+                        comboboxes = self.page.locator('[role="combobox"]')
+                        if await comboboxes.count() > 0:
+                            await comboboxes.first.click()
+                            print(f"  Field click: found via combobox")
+                        else:
+                            # Last resort - click by visible text
+                            await self.page.get_by_text("Where from?").click()
+                            print(f"  Field click: found via text")
+                except Exception as e:
+                    print(f"  Field click error: {e}")
+            else:
+                # Click on "Where to?" area
+                try:
+                    locator = self.page.get_by_placeholder("Where to?")
+                    if await locator.count() > 0:
+                        await locator.first.click()
+                        print(f"  Field click: found via placeholder")
+                    else:
+                        # Try the second combobox
+                        comboboxes = self.page.locator('[role="combobox"]')
+                        if await comboboxes.count() > 1:
+                            await comboboxes.nth(1).click()
+                            print(f"  Field click: found via combobox[1]")
+                        else:
+                            await self.page.get_by_text("Where to?").click()
+                            print(f"  Field click: found via text")
+                except Exception as e:
+                    print(f"  Field click error: {e}")
 
-                for (const input of inputs) {{
-                    const placeholder = input.placeholder || '';
-                    const ariaLabel = input.getAttribute('aria-label') || '';
-                    const combined = (placeholder + ' ' + ariaLabel).toLowerCase();
+            await self.page.wait_for_timeout(self.wait_medium)
 
-                    for (const term of searchTerms) {{
-                        if (combined.includes(term.toLowerCase())) {{
-                            input.click();
-                            input.focus();
-                            return 'found_input';
-                        }}
-                    }}
-                }}
+            # Type the airport code
+            await self.page.keyboard.type(airport_code, delay=100)
+            print(f"  Typed: {airport_code}")
+            await self.page.wait_for_timeout(self.wait_long)
 
-                // Try clicking by index - first combobox is origin, second is destination
-                const comboboxes = document.querySelectorAll('[role="combobox"], input[aria-autocomplete]');
-                const index = "{field_type}" === "origin" ? 0 : 1;
-                if (comboboxes[index]) {{
-                    comboboxes[index].click();
-                    return 'clicked_combobox_' + index;
-                }}
+            # Select first suggestion - try clicking the first option in dropdown
+            try:
+                options = self.page.locator('[role="option"]')
+                if await options.count() > 0:
+                    await options.first.click()
+                    print(f"  ✓ Selected suggestion for: {airport_code}")
+                else:
+                    # Press Enter as fallback
+                    await self.page.keyboard.press('Enter')
+                    print(f"  ✓ Pressed Enter for: {airport_code}")
+            except Exception as e:
+                await self.page.keyboard.press('Enter')
+                print(f"  ✓ Pressed Enter (fallback) for: {airport_code}")
 
-                return 'not_found';
-            }}
-        ''')
-        print(f"  Field click: {clicked}")
-        await self.page.wait_for_timeout(self.wait_medium)
+            await self.page.wait_for_timeout(self.wait_medium)
 
-        # Step 2: Clear any existing text and type the airport code
-        await self.page.keyboard.press('Control+a')
-        await self.page.wait_for_timeout(50)
-        await self.page.keyboard.type(airport_code, delay=100)
-        print(f"  Typed: {airport_code}")
-        await self.page.wait_for_timeout(self.wait_long)
-
-        # Step 3: Select the first suggestion
-        suggestion_selected = await self.page.evaluate('''
-            () => {
-                // Find suggestion list
-                const options = document.querySelectorAll('[role="option"], li[data-value], ul li');
-                for (const opt of options) {
-                    // Skip if it's just text, look for airport-like content
-                    const text = opt.textContent || '';
-                    if (text.length > 0 && text.length < 200) {
-                        opt.click();
-                        return 'clicked_option';
-                    }
-                }
-                return 'no_option';
-            }
-        ''')
-
-        if suggestion_selected == 'no_option':
-            # Press Enter as fallback
-            await self.page.keyboard.press('Enter')
-            print(f"  ✓ Pressed Enter for: {airport_code}")
-        else:
-            print(f"  ✓ Selected suggestion for: {airport_code}")
-
-        await self.page.wait_for_timeout(self.wait_medium)
+        except Exception as e:
+            print(f"  ⚠ Error filling {field_type}: {e}")
 
     async def _js_set_date(self, date_str: str):
         """
