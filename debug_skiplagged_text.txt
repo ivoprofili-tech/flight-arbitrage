@@ -37,7 +37,7 @@ LANDING
 11:59pm
 FLIGHT DURATION
 3h 55m
-11h
+10h 45m
 LAYOVER DURATION
 None
 25h 36m
@@ -58,7 +58,7 @@ Copa Airlines
 only
 Delta Air Lines
 only
-Flair Airlines
+Frontier Airlines
 only
 GOL Linhas Aereas
 only
@@ -68,17 +68,13 @@ KLM
 only
 LATAM Airlines
 only
-Porter Airlines
+Sky Airline
 only
 Spirit Airlines
 only
 United Airlines
 only
-Volaris
-only
 Volaris Costa Rica
-only
-WestJet
 only
 LAYOVER CITIES
 ATL - Atlanta
@@ -103,11 +99,7 @@ DFW - Dallas-Fort Worth
 only
 IAD - Dulles
 only
-FLN - Florianópolis
-only
 FLL - Fort Lauderdale
-only
-FOR - Fortaleza
 only
 IAH - Houston
 only
@@ -122,8 +114,6 @@ only
 JFK - New York
 only
 EWR - Newark
-only
-PHL - Philadelphia
 only
 POA - Porto Alegre
 only
