@@ -445,6 +445,9 @@ async def run_geo_search(
         print(f" Best location: {dd['best_location']} ({LOCATIONS.get(dd['best_location'], type('obj', (object,), {'name': dd['best_location']})()).name})")
         print(f" Best price: ${dd['best_price_usd']:.2f} ({dd['original_price']})")
         print(f" Airline: {dd['airline']}")
+        if dd.get('stops'):
+            layover_str = f" via {', '.join(dd['layovers'])}" if dd.get('layovers') else ""
+            print(f" Flight type: {dd['stops']}{layover_str}")
 
         if dd['potential_savings_usd'] > 0:
             print(f" Geo savings: ${dd['potential_savings_usd']:.2f} ({dd['potential_savings_pct']:.1f}%)")
@@ -468,6 +471,9 @@ async def run_geo_search(
             if hc.get('original_price_usd'):
                 print(f"    Original (US): ${hc['original_price_usd']:.2f}")
             print(f"    Airline: {hc['airline']}")
+            if hc.get('stops'):
+                layover_str = f" via {', '.join(hc['layovers'])}" if hc.get('layovers') else ""
+                print(f"    Flight type: {hc['stops']}{layover_str}")
 
             if hc['potential_savings_usd'] > 0:
                 print(f"    Geo savings: ${hc['potential_savings_usd']:.2f}")
@@ -486,12 +492,13 @@ async def run_geo_search(
     # Add direct route
     if results.best_direct_deal:
         best_deals.append({
-            'type': 'Direct',
+            'type': 'Direct route',
             'route': results.best_direct_deal['route'],
             'exit': None,
             'price': results.best_direct_deal['best_price_usd'],
             'location': results.best_direct_deal['best_location'],
             'airline': results.best_direct_deal['airline'],
+            'stops': results.best_direct_deal.get('stops', ''),
         })
 
     # Add hidden city routes
@@ -503,6 +510,7 @@ async def run_geo_search(
             'price': hc['best_price_usd'],
             'location': hc['best_location'],
             'airline': hc['airline'],
+            'stops': hc.get('stops', ''),
         })
 
     # Sort by price
@@ -510,10 +518,11 @@ async def run_geo_search(
 
     for i, deal in enumerate(best_deals[:5], 1):
         loc_name = LOCATIONS.get(deal['location'], type('obj', (object,), {'name': deal['location']})()).name
+        stops_info = f" ({deal['stops']})" if deal.get('stops') else ""
         if deal['exit']:
-            print(f" {i}. ${deal['price']:.2f} | {deal['type']} | {deal['route']} exit@{deal['exit']} | {deal['location']} ({loc_name})")
+            print(f" {i}. ${deal['price']:.2f} | {deal['type']} | {deal['route']} exit@{deal['exit']} | {deal['airline']}{stops_info} | {deal['location']} ({loc_name})")
         else:
-            print(f" {i}. ${deal['price']:.2f} | {deal['type']} | {deal['route']} | {deal['location']} ({loc_name})")
+            print(f" {i}. ${deal['price']:.2f} | {deal['type']} | {deal['route']} | {deal['airline']}{stops_info} | {deal['location']} ({loc_name})")
 
     # Total savings
     if results.total_potential_savings_usd > 0:

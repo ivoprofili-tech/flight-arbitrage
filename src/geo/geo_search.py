@@ -318,11 +318,11 @@ class GeoArbitrageSearch:
                     price_str = f.get("price", "$0")
                     amount, currency = parse_price(price_str)
 
-                    # Use expected currency from location if price looks like USD but location uses different
+                    # SerpApi returns prices in the requested currency but the
+                    # price string may still have "$" for some currencies.
+                    # Override with the location's expected currency.
                     if currency == "USD" and location_config.currency != "USD":
-                        # Check if price might actually be in local currency
-                        # (Google sometimes shows $ for other currencies)
-                        pass  # Keep detected currency for now
+                        currency = location_config.currency
 
                     price_usd = self.converter.to_usd(amount, currency)
 
@@ -779,6 +779,8 @@ async def run_hybrid_geo_search(
                 "original_currency": direct_result.best_overall.currency,
                 "original_price": direct_result.best_overall.price_original,
                 "airline": direct_result.best_overall.airline,
+                "stops": direct_result.best_overall.stops,
+                "layovers": direct_result.best_overall.layovers,
                 "potential_savings_usd": round(direct_result.potential_savings_usd, 2),
                 "potential_savings_pct": round(direct_result.potential_savings_pct, 1),
                 "prices_by_location": {
@@ -801,6 +803,8 @@ async def run_hybrid_geo_search(
                     "best_price_usd": round(hc_result.best_overall.price_usd, 2),
                     "original_price_usd": route.original_price,
                     "airline": hc_result.best_overall.airline,
+                    "stops": hc_result.best_overall.stops,
+                    "layovers": hc_result.best_overall.layovers,
                     "potential_savings_usd": round(hc_result.potential_savings_usd, 2),
                     "prices_by_location": {
                         loc: round(price, 2)

@@ -177,9 +177,13 @@ def _parse_flight(flight_data: dict, currency: str) -> dict:
     # Layover airport codes
     layover_codes = [lay.get("id", "") for lay in layovers if lay.get("id")]
 
-    # Price
+    # Price — include actual currency code so downstream parse_price()
+    # correctly identifies BRL, COP, etc. instead of assuming USD
     price_val = flight_data.get("price", 0)
-    price_str = f"${price_val}" if price_val else "$0"
+    if currency and currency.upper() != "USD":
+        price_str = f"{currency.upper()} {price_val}" if price_val else f"{currency.upper()} 0"
+    else:
+        price_str = f"${price_val}" if price_val else "$0"
 
     return {
         "airline": airline,
