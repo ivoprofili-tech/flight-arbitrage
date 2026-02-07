@@ -510,118 +510,88 @@ class GoogleFlightsScraper:
         from datetime import datetime
         target_date = datetime.strptime(date_str, '%Y-%m-%d')
         day = target_date.day
-        month = target_date.month
-        year = target_date.year
         month_name = target_date.strftime('%B')  # e.g., "March"
 
-        # Click on date field to open calendar
-        date_clicked = await self.page.evaluate('''
-            () => {
-                // Find date input/button
-                const elements = document.querySelectorAll('[data-placeholder="Departure"], [aria-label*="Departure"], input[placeholder*="Departure"], button, div[role="button"]');
-                for (const el of elements) {
-                    const text = (el.textContent || '').toLowerCase();
-                    const aria = (el.getAttribute('aria-label') || '').toLowerCase();
-                    const placeholder = (el.getAttribute('placeholder') || '').toLowerCase();
+        # Click on date field to open calendar - use Playwright click for reliability
+        try:
+            # Try clicking the Departure field directly
+            date_field = await self.page.query_selector('[aria-label*="Departure"], [placeholder*="Departure"], [data-placeholder="Departure"]')
+            if date_field:
+                await date_field.click()
+                print("  Date field: clicked via selector")
+            else:
+                # Fallback: click by text content
+                await self.page.click('text=Departure', timeout=3000)
+                print("  Date field: clicked via text")
+        except Exception as e:
+            print(f"  Date field: error - {e}")
 
-                    if (text.includes('departure') || aria.includes('departure') || placeholder.includes('departure')) {
-                        el.click();
-                        return 'clicked_departure';
-                    }
-                }
-                // Try clicking on any date-looking field
-                const dateInputs = document.querySelectorAll('[role="textbox"][aria-label*="date" i], input[type="date"]');
-                if (dateInputs[0]) {
-                    dateInputs[0].click();
-                    return 'clicked_date_input';
-                }
-                return 'not_found';
-            }
-        ''')
-        print(f"  Date field: {date_clicked}")
+        await self.page.wait_for_timeout(self.wait_long)
+
+        # Take screenshot to see calendar state
+        await self.page.screenshot(path='debug_calendar.png')
+
+        # Navigate to correct month using arrow button if needed
+        for _ in range(6):  # Max 6 months forward
+            page_text = await self.page.inner_text('body')
+            if month_name in page_text:
+                break
+            # Click next month arrow
+            try:
+                next_btn = await self.page.query_selector('[aria-label*="Next"]')
+                if next_btn:
+                    await next_btn.click()
+                    await self.page.wait_for_timeout(self.wait_short)
+            except:
+                break
+
+        # Click on the target day - use aria-label which Google uses
+        # Format: "Monday, March 9, 2026"
+        day_clicked = False
+        try:
+            # Try clicking by aria-label containing the date
+            day_selector = f'[aria-label*="{month_name} {day},"], [aria-label*="{month_name} {day} "], [data-iso="{date_str}"]'
+            day_el = await self.page.query_selector(day_selector)
+            if day_el:
+                await day_el.click()
+                day_clicked = True
+                print(f"  ✓ Clicked day via aria-label: {month_name} {day}")
+        except Exception as e:
+            print(f"  Day click error: {e}")
+
+        if not day_clicked:
+            # Fallback: find by text content in calendar grid
+            try:
+                # Google calendar days are in divs inside the calendar
+                cells = await self.page.query_selector_all('[role="gridcell"], [role="button"]')
+                for cell in cells:
+                    text = await cell.inner_text()
+                    if text.strip() == str(day):
+                        await cell.click()
+                        day_clicked = True
+                        print(f"  ✓ Clicked day via text: {day}")
+                        break
+            except Exception as e:
+                print(f"  Day text search error: {e}")
+
+        if not day_clicked:
+            print(f"  ⚠ Could not click day {day}")
+
         await self.page.wait_for_timeout(self.wait_medium)
 
-        # Navigate to correct month if needed and click the date
-        date_selected = await self.page.evaluate(f'''
-            () => {{
-                const targetDay = {day};
-                const targetMonth = "{month_name}";
-                const targetYear = {year};
+        # Click Done button
+        try:
+            done_btn = await self.page.query_selector('button:has-text("Done")')
+            if done_btn:
+                await done_btn.click()
+                print("  ✓ Clicked Done")
+            else:
+                # Try by exact text
+                await self.page.click('text=Done', timeout=2000)
+                print("  ✓ Clicked Done via text")
+        except:
+            print("  → No Done button found")
 
-                // Find calendar and navigate to correct month
-                // Google Flights shows month names in the calendar header
-                let attempts = 0;
-                const maxAttempts = 12;
-
-                while (attempts < maxAttempts) {{
-                    // Check if current month matches
-                    const monthHeaders = document.querySelectorAll('[role="heading"], h2, h3, div');
-                    let monthFound = false;
-                    for (const header of monthHeaders) {{
-                        const text = header.textContent || '';
-                        if (text.includes(targetMonth) && text.includes(String(targetYear))) {{
-                            monthFound = true;
-                            break;
-                        }}
-                    }}
-
-                    if (monthFound) {{
-                        break;
-                    }}
-
-                    // Click next month button
-                    const nextButtons = document.querySelectorAll('button[aria-label*="Next"], [aria-label*="next month"], button svg');
-                    for (const btn of nextButtons) {{
-                        const label = btn.getAttribute('aria-label') || '';
-                        if (label.toLowerCase().includes('next')) {{
-                            btn.click();
-                            break;
-                        }}
-                    }}
-                    attempts++;
-                }}
-
-                // Find and click the day
-                const dayElements = document.querySelectorAll('[role="gridcell"], td, [data-day], button');
-                for (const el of dayElements) {{
-                    const text = el.textContent.trim();
-                    const ariaLabel = el.getAttribute('aria-label') || '';
-
-                    // Check if this is our target day
-                    if (text === String(targetDay) || ariaLabel.includes(targetMonth + ' ' + targetDay)) {{
-                        // Make sure it's a clickable date cell
-                        const parent = el.closest('[role="gridcell"], td, button');
-                        if (parent) {{
-                            parent.click();
-                            return 'clicked_day';
-                        }}
-                        el.click();
-                        return 'clicked_day_direct';
-                    }}
-                }}
-
-                return 'day_not_found';
-            }}
-        ''')
-        print(f"  Date selection: {date_selected}")
-        await self.page.wait_for_timeout(self.wait_medium)
-
-        # Click Done button if present
-        done_clicked = await self.page.evaluate('''
-            () => {
-                const buttons = document.querySelectorAll('button');
-                for (const btn of buttons) {
-                    const text = btn.textContent.toLowerCase().trim();
-                    if (text === 'done' || text === 'ok' || text === 'apply') {
-                        btn.click();
-                        return true;
-                    }
-                }
-                return false;
-            }
-        ''')
-        if done_clicked:
-            print("  ✓ Clicked Done")
         await self.page.wait_for_timeout(self.wait_medium)
 
     async def _wait_for_results_with_retry(self, max_retries: int = 3):
