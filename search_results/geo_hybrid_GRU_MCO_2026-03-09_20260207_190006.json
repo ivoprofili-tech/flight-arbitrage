@@ -4,9 +4,9 @@
     "primary_destination": "MCO",
     "departure_date": "2026-03-09"
   },
-  "timestamp": "2026-02-07T18:25:45.263901",
-  "total_search_time_seconds": 24.27,
-  "initial_search_time_seconds": 23.24,
+  "timestamp": "2026-02-07T19:00:06.682160",
+  "total_search_time_seconds": 20.53,
+  "initial_search_time_seconds": 20.42,
   "summary": {
     "direct_route_best_price": 485,
     "hidden_city_routes_found": 0,
@@ -38,8 +38,8 @@
         "departure_date": "2026-03-09",
         "return_date": null
       },
-      "timestamp": "2026-02-07T18:25:45.263806",
-      "total_search_time_seconds": 1.01,
+      "timestamp": "2026-02-07T19:00:06.682017",
+      "total_search_time_seconds": 0.1,
       "summary": {
         "locations_searched": [
           "BR",
@@ -128,7 +128,7 @@
           "location_name": "Brazil",
           "status": "success",
           "flights_found": 131,
-          "search_time_seconds": 0.94,
+          "search_time_seconds": 0.05,
           "error_message": null,
           "best_price_usd": 1179.0,
           "flights": [
@@ -2257,7 +2257,7 @@
           "location_name": "United States",
           "status": "success",
           "flights_found": 129,
-          "search_time_seconds": 0.2,
+          "search_time_seconds": 0.06,
           "error_message": null,
           "best_price_usd": 226.0,
           "flights": [
@@ -4352,7 +4352,7 @@
           "location_name": "Colombia",
           "status": "success",
           "flights_found": 131,
-          "search_time_seconds": 0.81,
+          "search_time_seconds": 0.04,
           "error_message": null,
           "best_price_usd": 835712.0,
           "flights": [

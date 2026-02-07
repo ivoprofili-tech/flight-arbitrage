@@ -20,7 +20,7 @@ If issues arise with your travels, we've got your back.  See details
 Price History  
 $226
  
-14 hours ago
+Now
 Create a Price Alert
 Off
 TYPE
@@ -37,7 +37,7 @@ LANDING
 11:59pm
 FLIGHT DURATION
 3h 55m
-10h 45m
+11h
 LAYOVER DURATION
 None
 25h 36m
@@ -88,6 +88,8 @@ only
 BEL - Belém
 only
 BOG - Bogota
+only
+BOS - Boston
 only
 BSB - Brasília
 only
@@ -155,6 +157,38 @@ Price
 Duration
 Value
 Total Cost
+22h
+1 stop
+Copa
+1:40am
+GRU
+6h 44m
+6:24am
+11h 27m
+PTY
+5:51pm
+3h 31m
+10:22pm
+MCO
+
+$246
+
+22h
+1 stop
+Copa
+1:30am
+GRU
+6h 45m
+6:15am
+11h 36m
+PTY
+5:51pm
+3h 31m
+10:22pm
+MCO
+
+$246
+
 22h
 1 stop
 Copa
@@ -449,38 +483,6 @@ ORD
 5:50pm
 2h 50m
 9:40pm
-MCO
-
-$276
-
-27h
-1 stop
-United
-10:15pm
-GRU
-10h 45m
-7:00am
-13h 6m
-ORD
-8:06pm
-2h 53m
-11:59pm
-MCO
-
-$276
-
-28h
-1 stop
-United
-9:30pm
-GRU
-10h 10m
-6:40am
-15h 25m
-IAD
-10:05pm
-2h 28m
-12:33am
 MCO
 
 $276
