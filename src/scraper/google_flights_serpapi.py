@@ -161,11 +161,16 @@ def _parse_flight(flight_data: dict, currency: str) -> dict:
 
     # Airline: use first segment's airline, or join multiple if different
     airlines = []
+    flight_numbers = []
     for seg in segments:
         name = seg.get("airline", "")
         if name and name not in airlines:
             airlines.append(name)
+        fn = seg.get("flight_number", "")
+        if fn:
+            flight_numbers.append(fn)
     airline = ", ".join(airlines) if airlines else "Unknown"
+    flight_numbers_str = ", ".join(flight_numbers) if flight_numbers else ""
 
     # Duration
     total_duration = flight_data.get("total_duration", 0)
@@ -187,6 +192,7 @@ def _parse_flight(flight_data: dict, currency: str) -> dict:
 
     return {
         "airline": airline,
+        "flight_numbers": flight_numbers_str,
         "departure_time": _format_time(dep_time),
         "arrival_time": _format_time(arr_time),
         "duration": duration_str,

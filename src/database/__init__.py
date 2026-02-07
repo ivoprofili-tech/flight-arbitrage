@@ -1,28 +1,17 @@
 """
 Database module for storing flight data.
 
-This module provides functions to save and query flight search results
-using SQLite - a simple file-based database that requires no server setup.
+Provides functions to save and query flight search results
+using SQLite - a simple file-based database (no server needed).
 """
 
 from .flights_db import (
-    init_database,
-    save_flight_search,
-    save_flights,
-    get_all_searches,
-    get_flights_by_search,
-    get_cheapest_flights,
-    get_price_history,
-    FlightDatabase
+    FlightDatabase,
+    save_geo_search,
+    _get_db,
 )
 
 __all__ = [
-    'init_database',
-    'save_flight_search',
-    'save_flights',
-    'get_all_searches',
-    'get_flights_by_search',
-    'get_cheapest_flights',
-    'get_price_history',
-    'FlightDatabase'
+    'FlightDatabase',
+    'save_geo_search',
 ]

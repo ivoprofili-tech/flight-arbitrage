@@ -77,10 +77,12 @@ class GeoFlightResult:
 
     # Additional details
     layovers: List[str] = field(default_factory=list)
+    flight_numbers: str = ""
 
     def to_dict(self) -> Dict[str, Any]:
         return {
             "airline": self.airline,
+            "flight_numbers": self.flight_numbers,
             "departure_time": self.departure_time,
             "arrival_time": self.arrival_time,
             "duration": self.duration,
@@ -343,6 +345,7 @@ class GeoArbitrageSearch:
                         location_name=location_config.name,
                         source=SearchSource.GOOGLE_FLIGHTS,
                         layovers=f.get("layovers", []),
+                        flight_numbers=f.get("flight_numbers", ""),
                     ))
 
             # Search Skiplagged if enabled
@@ -764,6 +767,21 @@ async def run_hybrid_geo_search(
                 )
         except Exception as e:
             logger.error(f"Geo search failed for {route_key}: {e}")
+
+    # ==========================================================================
+    # Save all geo results to database
+    # ==========================================================================
+    try:
+        from src.database.flights_db import save_geo_search
+        for route_key, result in route_results.items():
+            save_geo_search(
+                origin=route_key.split("-")[0],
+                destination=route_key.split("-")[1],
+                departure_date=departure_date,
+                location_results=result.location_results,
+            )
+    except Exception as e:
+        logger.warning(f"Failed to save to database: {e}")
 
     # ==========================================================================
     # PHASE 3: Analyze and compile results

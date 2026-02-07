@@ -1,82 +1,49 @@
 """
 Flight Database Module
 ======================
-This module handles all database operations for storing flight search results.
-
-DATABASE CONCEPTS:
-- SQLite: A lightweight database stored in a single file
-- Tables: Like spreadsheets, they store related data in rows and columns
-- Primary Key: A unique identifier for each row (like an ID number)
-- Foreign Key: Links data between tables (search_id links flights to searches)
+Stores all flight search results in a local SQLite database for
+historical tracking and cross-location price analysis.
 
 TABLES:
-1. searches - Records each search you perform
-2. flights - Stores individual flight results linked to searches
+1. searches  - One row per search invocation (route + date + timestamp)
+2. flights   - Individual flight results linked to a search, including
+               geo-location, currency, and flight numbers
 """
 
 import sqlite3
+import logging
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List, Dict, Any
 
+logger = logging.getLogger(__name__)
 
 # Default database file location
 DEFAULT_DB_PATH = Path(__file__).parent.parent.parent / "data" / "flights.db"
 
 
 class FlightDatabase:
-    """
-    A class to manage the flight database.
-
-    Using a class allows us to:
-    - Keep the database connection open for multiple operations
-    - Ensure proper cleanup when we're done
-    - Organize related functions together
-    """
+    """Manages the SQLite flight results database."""
 
     def __init__(self, db_path: Optional[str] = None):
-        """
-        Initialize the database connection.
-
-        Args:
-            db_path: Path to the SQLite database file.
-                     If not provided, uses default location.
-        """
         if db_path is None:
             db_path = DEFAULT_DB_PATH
 
         self.db_path = Path(db_path)
-
-        # Create the data directory if it doesn't exist
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # Connect to the database (creates file if it doesn't exist)
         self.conn = sqlite3.connect(str(self.db_path))
-
-        # Enable foreign key support
         self.conn.execute("PRAGMA foreign_keys = ON")
-
-        # Return rows as dictionaries instead of tuples (easier to work with)
         self.conn.row_factory = sqlite3.Row
 
-        # Create tables if they don't exist
         self._create_tables()
-
-        print(f"Database initialized at: {self.db_path}")
+        logger.info(f"Database initialized at: {self.db_path}")
 
     def _create_tables(self):
-        """
-        Create the database tables if they don't exist.
-
-        SQL CREATE TABLE syntax:
-        - Column definitions: name TYPE constraints
-        - PRIMARY KEY: Unique identifier for each row
-        - NOT NULL: Value cannot be empty
-        - DEFAULT: Automatic value if not provided
-        """
+        """Create tables if they don't exist, and migrate if needed."""
         cursor = self.conn.cursor()
 
-        # Table 1: searches - Records each search performed
+        # Table 1: searches - one row per search invocation
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS searches (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -84,44 +51,63 @@ class FlightDatabase:
                 destination TEXT NOT NULL,
                 departure_date TEXT NOT NULL,
                 return_date TEXT,
+                search_type TEXT NOT NULL DEFAULT 'standard',
                 search_timestamp TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 flights_found INTEGER DEFAULT 0
             )
         ''')
 
-        # Table 2: flights - Individual flight results
+        # Table 2: flights - individual results with geo + currency context
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS flights (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 search_id INTEGER NOT NULL,
                 airline TEXT,
+                flight_numbers TEXT,
                 departure_time TEXT,
                 arrival_time TEXT,
                 duration TEXT,
                 stops TEXT,
-                price TEXT NOT NULL,
-                price_numeric INTEGER,
+                layovers TEXT,
+                source TEXT,
+                location TEXT,
+                location_name TEXT,
+                currency TEXT,
+                price_local REAL,
+                price_local_str TEXT,
+                price_usd REAL,
                 created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (search_id) REFERENCES searches(id)
             )
         ''')
 
-        # Create indexes for faster queries
-        # Indexes are like a book's index - they help find data quickly
+        # Indexes
         cursor.execute('''
             CREATE INDEX IF NOT EXISTS idx_flights_search_id
             ON flights(search_id)
         ''')
         cursor.execute('''
-            CREATE INDEX IF NOT EXISTS idx_flights_price
-            ON flights(price_numeric)
+            CREATE INDEX IF NOT EXISTS idx_flights_price_usd
+            ON flights(price_usd)
         ''')
         cursor.execute('''
             CREATE INDEX IF NOT EXISTS idx_searches_route
             ON searches(origin, destination)
         ''')
+        cursor.execute('''
+            CREATE INDEX IF NOT EXISTS idx_flights_location
+            ON flights(location)
+        ''')
+        cursor.execute('''
+            CREATE INDEX IF NOT EXISTS idx_flights_airline_time
+            ON flights(airline, departure_time)
+        ''')
 
         self.conn.commit()
+
+    # ------------------------------------------------------------------
+    # Save methods
+    # ------------------------------------------------------------------
 
     def save_search(
         self,
@@ -129,172 +115,178 @@ class FlightDatabase:
         destination: str,
         departure_date: str,
         return_date: Optional[str] = None,
-        flights_found: int = 0
+        search_type: str = "standard",
+        flights_found: int = 0,
     ) -> int:
-        """
-        Save a search record and return its ID.
-
-        Args:
-            origin: Departure city/airport
-            destination: Arrival city/airport
-            departure_date: Date of departure (YYYY-MM-DD)
-            return_date: Optional return date
-            flights_found: Number of flights found
-
-        Returns:
-            The ID of the newly created search record
-        """
+        """Save a search record and return its ID."""
         cursor = self.conn.cursor()
         cursor.execute('''
-            INSERT INTO searches (origin, destination, departure_date, return_date, flights_found)
-            VALUES (?, ?, ?, ?, ?)
-        ''', (origin, destination, departure_date, return_date, flights_found))
-
+            INSERT INTO searches
+                (origin, destination, departure_date, return_date, search_type, flights_found)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', (origin, destination, departure_date, return_date, search_type, flights_found))
         self.conn.commit()
         return cursor.lastrowid
 
-    def save_flights(self, search_id: int, flights: list[dict]) -> int:
+    def save_geo_flights(
+        self,
+        search_id: int,
+        flights: list,
+    ) -> int:
         """
-        Save multiple flight records linked to a search.
+        Save GeoFlightResult objects (or dicts with equivalent keys) to the database.
 
-        Args:
-            search_id: The ID of the search these flights belong to
-            flights: List of flight dictionaries from the scraper
-
-        Returns:
-            Number of flights saved
+        Accepts either GeoFlightResult dataclass instances or plain dicts
+        with keys: airline, flight_numbers, departure_time, arrival_time,
+        duration, stops, layovers, source, location, location_name,
+        currency, price_original, price_usd.
         """
         cursor = self.conn.cursor()
-        saved_count = 0
+        saved = 0
 
-        for flight in flights:
-            # Extract numeric price for sorting/filtering
-            price_str = flight.get('price', '')
-            price_numeric = self._extract_price_number(price_str)
+        for f in flights:
+            # Support both dataclass and dict
+            if hasattr(f, "to_dict"):
+                d = f.to_dict()
+            elif isinstance(f, dict):
+                d = f
+            else:
+                continue
+
+            # Parse numeric local price from price_original string
+            price_local = self._extract_price_float(d.get("price_original", ""))
+
+            layovers_str = ", ".join(d.get("layovers", []))
 
             cursor.execute('''
                 INSERT INTO flights (
-                    search_id, airline, departure_time, arrival_time,
-                    duration, stops, price, price_numeric
+                    search_id, airline, flight_numbers,
+                    departure_time, arrival_time, duration,
+                    stops, layovers, source,
+                    location, location_name, currency,
+                    price_local, price_local_str, price_usd
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 search_id,
-                flight.get('airline'),
-                flight.get('departure_time'),
-                flight.get('arrival_time'),
-                flight.get('duration'),
-                flight.get('stops'),
-                price_str,
-                price_numeric
+                d.get("airline"),
+                d.get("flight_numbers", ""),
+                d.get("departure_time"),
+                d.get("arrival_time"),
+                d.get("duration"),
+                d.get("stops"),
+                layovers_str,
+                d.get("source", ""),
+                d.get("location", ""),
+                d.get("location_name", ""),
+                d.get("currency", "USD"),
+                price_local,
+                d.get("price_original", ""),
+                d.get("price_usd"),
             ))
-            saved_count += 1
+            saved += 1
 
-        # Update the flights_found count in the search record
-        cursor.execute('''
-            UPDATE searches SET flights_found = ? WHERE id = ?
-        ''', (saved_count, search_id))
-
+        # Update flights_found count
+        cursor.execute(
+            'UPDATE searches SET flights_found = ? WHERE id = ?',
+            (saved, search_id),
+        )
         self.conn.commit()
-        return saved_count
+        return saved
 
-    def _extract_price_number(self, price_str: str) -> Optional[int]:
-        """
-        Extract numeric value from price string.
-
-        Examples:
-            "$95" -> 95
-            "$1,234" -> 1234
-            "US$ 500" -> 500
-        """
-        if not price_str:
-            return None
-
-        # Remove everything except digits
-        digits = ''.join(c for c in price_str if c.isdigit())
-
-        return int(digits) if digits else None
+    # ------------------------------------------------------------------
+    # Query methods
+    # ------------------------------------------------------------------
 
     def get_all_searches(self, limit: int = 50) -> list[dict]:
-        """
-        Get all search records, most recent first.
-
-        Args:
-            limit: Maximum number of records to return
-
-        Returns:
-            List of search records as dictionaries
-        """
+        """Get all search records, most recent first."""
         cursor = self.conn.cursor()
         cursor.execute('''
             SELECT * FROM searches
             ORDER BY search_timestamp DESC
             LIMIT ?
         ''', (limit,))
-
         return [dict(row) for row in cursor.fetchall()]
 
     def get_flights_by_search(self, search_id: int) -> list[dict]:
-        """
-        Get all flights for a specific search.
-
-        Args:
-            search_id: The ID of the search
-
-        Returns:
-            List of flight records as dictionaries
-        """
+        """Get all flights for a specific search, cheapest first."""
         cursor = self.conn.cursor()
         cursor.execute('''
             SELECT * FROM flights
             WHERE search_id = ?
-            ORDER BY price_numeric ASC
+            ORDER BY price_usd ASC
         ''', (search_id,))
-
         return [dict(row) for row in cursor.fetchall()]
 
-    def get_cheapest_flights(
+    def get_cheapest_by_route(
         self,
-        origin: Optional[str] = None,
-        destination: Optional[str] = None,
-        limit: int = 20
+        origin: str,
+        destination: str,
+        location: Optional[str] = None,
+        limit: int = 20,
     ) -> list[dict]:
-        """
-        Get the cheapest flights, optionally filtered by route.
-
-        Args:
-            origin: Filter by departure city (optional)
-            destination: Filter by arrival city (optional)
-            limit: Maximum number of results
-
-        Returns:
-            List of cheapest flights with search info
-        """
+        """Get cheapest flights for a route, optionally filtered by location."""
         cursor = self.conn.cursor()
-
         query = '''
-            SELECT
-                f.*,
-                s.origin,
-                s.destination,
-                s.departure_date,
-                s.search_timestamp
+            SELECT f.*, s.origin, s.destination, s.departure_date,
+                   s.search_timestamp, s.search_type
             FROM flights f
             JOIN searches s ON f.search_id = s.id
-            WHERE f.price_numeric IS NOT NULL
+            WHERE s.origin = ? AND s.destination = ?
+              AND f.price_usd IS NOT NULL AND f.price_usd > 0
         '''
-        params = []
+        params: list = [origin.upper(), destination.upper()]
 
-        if origin:
-            query += ' AND LOWER(s.origin) LIKE LOWER(?)'
-            params.append(f'%{origin}%')
+        if location:
+            query += ' AND f.location = ?'
+            params.append(location.upper())
 
-        if destination:
-            query += ' AND LOWER(s.destination) LIKE LOWER(?)'
-            params.append(f'%{destination}%')
-
-        query += ' ORDER BY f.price_numeric ASC LIMIT ?'
+        query += ' ORDER BY f.price_usd ASC LIMIT ?'
         params.append(limit)
+
+        cursor.execute(query, params)
+        return [dict(row) for row in cursor.fetchall()]
+
+    def get_price_comparison(
+        self,
+        origin: str,
+        destination: str,
+        departure_date: Optional[str] = None,
+    ) -> list[dict]:
+        """
+        Get price comparison across locations for a route.
+
+        Returns one row per (location, search_timestamp) with min/avg/max prices.
+        """
+        cursor = self.conn.cursor()
+        query = '''
+            SELECT
+                f.location,
+                f.location_name,
+                f.currency,
+                s.departure_date,
+                s.search_timestamp,
+                COUNT(f.id) as flight_count,
+                MIN(f.price_usd) as min_price_usd,
+                AVG(f.price_usd) as avg_price_usd,
+                MAX(f.price_usd) as max_price_usd,
+                MIN(f.price_local) as min_price_local,
+                AVG(f.price_local) as avg_price_local
+            FROM flights f
+            JOIN searches s ON f.search_id = s.id
+            WHERE s.origin = ? AND s.destination = ?
+              AND f.price_usd IS NOT NULL AND f.price_usd > 0
+        '''
+        params: list = [origin.upper(), destination.upper()]
+
+        if departure_date:
+            query += ' AND s.departure_date = ?'
+            params.append(departure_date)
+
+        query += '''
+            GROUP BY f.location, s.search_timestamp
+            ORDER BY s.search_timestamp DESC, min_price_usd ASC
+        '''
 
         cursor.execute(query, params)
         return [dict(row) for row in cursor.fetchall()]
@@ -303,87 +295,73 @@ class FlightDatabase:
         self,
         origin: str,
         destination: str,
-        departure_date: Optional[str] = None
+        departure_date: Optional[str] = None,
     ) -> list[dict]:
-        """
-        Get price history for a specific route.
-
-        Useful for tracking how prices change over time.
-
-        Args:
-            origin: Departure city
-            destination: Arrival city
-            departure_date: Optional specific date to track
-
-        Returns:
-            List of historical price data
-        """
+        """Get price history for a route across all searches."""
         cursor = self.conn.cursor()
-
         query = '''
             SELECT
                 s.search_timestamp,
                 s.departure_date,
-                MIN(f.price_numeric) as min_price,
-                MAX(f.price_numeric) as max_price,
-                AVG(f.price_numeric) as avg_price,
+                f.location,
+                MIN(f.price_usd) as min_price,
+                AVG(f.price_usd) as avg_price,
                 COUNT(f.id) as flight_count
             FROM searches s
             JOIN flights f ON f.search_id = s.id
-            WHERE LOWER(s.origin) LIKE LOWER(?)
-              AND LOWER(s.destination) LIKE LOWER(?)
-              AND f.price_numeric IS NOT NULL
+            WHERE s.origin = ? AND s.destination = ?
+              AND f.price_usd IS NOT NULL AND f.price_usd > 0
         '''
-        params = [f'%{origin}%', f'%{destination}%']
+        params: list = [origin.upper(), destination.upper()]
 
         if departure_date:
             query += ' AND s.departure_date = ?'
             params.append(departure_date)
 
         query += '''
-            GROUP BY s.id
+            GROUP BY s.id, f.location
             ORDER BY s.search_timestamp DESC
         '''
 
         cursor.execute(query, params)
         return [dict(row) for row in cursor.fetchall()]
 
+    # ------------------------------------------------------------------
+    # Helpers
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _extract_price_float(price_str: str) -> Optional[float]:
+        """Extract numeric value from a price string like '$226' or 'BRL 1179'."""
+        if not price_str:
+            return None
+        import re
+        match = re.search(r'[\d,.]+', price_str)
+        if match:
+            num_str = match.group().replace(',', '')
+            try:
+                return float(num_str)
+            except ValueError:
+                return None
+        return None
+
     def close(self):
         """Close the database connection."""
         if self.conn:
             self.conn.close()
-            print("Database connection closed.")
 
     def __enter__(self):
-        """Support 'with' statement for automatic cleanup."""
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        """Automatically close connection when exiting 'with' block."""
         self.close()
 
 
 # ============================================================================
 # CONVENIENCE FUNCTIONS
 # ============================================================================
-# These functions provide a simpler interface without managing the class
 
 _default_db: Optional[FlightDatabase] = None
-
-
-def init_database(db_path: Optional[str] = None) -> FlightDatabase:
-    """
-    Initialize the default database connection.
-
-    Args:
-        db_path: Optional custom path for the database file
-
-    Returns:
-        The FlightDatabase instance
-    """
-    global _default_db
-    _default_db = FlightDatabase(db_path)
-    return _default_db
 
 
 def _get_db() -> FlightDatabase:
@@ -394,145 +372,49 @@ def _get_db() -> FlightDatabase:
     return _default_db
 
 
-def save_flight_search(
+def save_geo_search(
     origin: str,
     destination: str,
     departure_date: str,
+    location_results: dict,
     return_date: Optional[str] = None,
-    flights: Optional[list[dict]] = None
 ) -> int:
     """
-    Save a complete flight search with all results.
-
-    This is the main function you'll use to save scraper results.
+    Save a complete geo arbitrage search to the database.
 
     Args:
-        origin: Departure city
-        destination: Arrival city
-        departure_date: Departure date (YYYY-MM-DD)
+        origin: Origin airport code
+        destination: Destination airport code
+        departure_date: Departure date
+        location_results: Dict of {location: LocationSearchResult}
         return_date: Optional return date
-        flights: List of flight dictionaries from the scraper
 
     Returns:
         The search ID
-
-    Example:
-        search_id = save_flight_search(
-            origin="New York",
-            destination="Los Angeles",
-            departure_date="2025-03-01",
-            flights=scraper_results
-        )
     """
     db = _get_db()
 
-    # Save the search record
+    # Count total flights across all locations
+    total_flights = sum(
+        len(lr.flights) for lr in location_results.values() if hasattr(lr, 'flights')
+    )
+
     search_id = db.save_search(
         origin=origin,
         destination=destination,
         departure_date=departure_date,
         return_date=return_date,
-        flights_found=len(flights) if flights else 0
+        search_type="geo_arbitrage",
+        flights_found=total_flights,
     )
 
-    # Save the flights if provided
-    if flights:
-        db.save_flights(search_id, flights)
+    # Save flights from each location
+    all_flights = []
+    for loc, lr in location_results.items():
+        if hasattr(lr, 'flights'):
+            all_flights.extend(lr.flights)
 
-    print(f"Saved search #{search_id} with {len(flights) if flights else 0} flights")
+    saved = db.save_geo_flights(search_id, all_flights)
+    logger.info(f"Saved search #{search_id}: {saved} flights across {len(location_results)} locations")
+
     return search_id
-
-
-def save_flights(search_id: int, flights: list[dict]) -> int:
-    """Save flights for an existing search."""
-    return _get_db().save_flights(search_id, flights)
-
-
-def get_all_searches(limit: int = 50) -> list[dict]:
-    """Get all search records."""
-    return _get_db().get_all_searches(limit)
-
-
-def get_flights_by_search(search_id: int) -> list[dict]:
-    """Get flights for a specific search."""
-    return _get_db().get_flights_by_search(search_id)
-
-
-def get_cheapest_flights(
-    origin: Optional[str] = None,
-    destination: Optional[str] = None,
-    limit: int = 20
-) -> list[dict]:
-    """Get cheapest flights, optionally filtered by route."""
-    return _get_db().get_cheapest_flights(origin, destination, limit)
-
-
-def get_price_history(
-    origin: str,
-    destination: str,
-    departure_date: Optional[str] = None
-) -> list[dict]:
-    """Get price history for a route."""
-    return _get_db().get_price_history(origin, destination, departure_date)
-
-
-# ============================================================================
-# TEST CODE
-# ============================================================================
-if __name__ == "__main__":
-    # Test the database functionality
-    print("=" * 60)
-    print("FLIGHT DATABASE TEST")
-    print("=" * 60)
-
-    # Use a test database
-    with FlightDatabase("test_flights.db") as db:
-        # Save a test search
-        search_id = db.save_search(
-            origin="New York",
-            destination="Los Angeles",
-            departure_date="2025-03-01"
-        )
-        print(f"\nCreated search with ID: {search_id}")
-
-        # Save some test flights
-        test_flights = [
-            {
-                'airline': 'Spirit',
-                'departure_time': '6:00 AM',
-                'arrival_time': '9:28 AM',
-                'duration': '6h 28m',
-                'stops': 'Nonstop',
-                'price': '$95'
-            },
-            {
-                'airline': 'United',
-                'departure_time': '8:00 AM',
-                'arrival_time': '11:15 AM',
-                'duration': '6h 15m',
-                'stops': 'Nonstop',
-                'price': '$150'
-            }
-        ]
-
-        saved = db.save_flights(search_id, test_flights)
-        print(f"Saved {saved} flights")
-
-        # Query the data
-        print("\nAll searches:")
-        for search in db.get_all_searches():
-            print(f"  #{search['id']}: {search['origin']} -> {search['destination']} ({search['flights_found']} flights)")
-
-        print("\nFlights for search #1:")
-        for flight in db.get_flights_by_search(search_id):
-            print(f"  {flight['airline']}: {flight['price']} ({flight['departure_time']} - {flight['arrival_time']})")
-
-        print("\nCheapest flights:")
-        for flight in db.get_cheapest_flights(limit=5):
-            print(f"  {flight['price']} - {flight['origin']} to {flight['destination']}")
-
-    # Clean up test database
-    import os
-    os.remove("test_flights.db")
-    print("\nTest database cleaned up.")
-    print("Database module is working correctly!")
