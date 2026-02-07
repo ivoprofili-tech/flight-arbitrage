@@ -115,31 +115,14 @@ def sync_with_remote():
         print(f" ⚠ Fetch failed (offline?): {fetch_result.stderr.decode()[:100]}")
         return False
 
-    # Check if we have local changes
-    status_result = subprocess.run(
-        "git status --porcelain",
-        shell=True, capture_output=True, text=True
+    # Ensure we're on a local branch with the correct name.
+    # Without this, git reset --hard leaves us on a different branch
+    # (or detached HEAD), and later `git push origin {GIT_BRANCH}` fails
+    # with "src refspec does not match any".
+    subprocess.run(
+        f"git checkout -B {GIT_BRANCH} origin/{GIT_BRANCH}",
+        shell=True, capture_output=True
     )
-
-    if status_result.stdout.strip():
-        # Has local changes - reset to remote
-        print(" Resetting to match remote...")
-        subprocess.run(
-            f"git reset --hard origin/{GIT_BRANCH}",
-            shell=True, capture_output=True
-        )
-    else:
-        # No local changes - just pull
-        pull_result = subprocess.run(
-            f"git pull origin {GIT_BRANCH} --ff-only",
-            shell=True, capture_output=True
-        )
-        if pull_result.returncode != 0:
-            # Fast-forward failed, reset instead
-            subprocess.run(
-                f"git reset --hard origin/{GIT_BRANCH}",
-                shell=True, capture_output=True
-            )
 
     print(" ✓ Synced with remote")
     return True
@@ -615,10 +598,11 @@ def push_results_to_github():
             # Try to just push anyway - maybe we're ahead
             pass
 
-        # Push
+        # Push using explicit refspec HEAD:<branch> so it works even if
+        # the local branch name doesn't exactly match GIT_BRANCH
         print(" Pushing to GitHub...")
         result = subprocess.run(
-            f"git push origin {GIT_BRANCH}",
+            f"git push origin HEAD:refs/heads/{GIT_BRANCH}",
             shell=True, capture_output=True
         )
 
