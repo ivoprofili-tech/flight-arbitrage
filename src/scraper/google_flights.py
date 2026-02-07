@@ -332,13 +332,12 @@ class GoogleFlightsScraper:
         print("[Step 6] Clicking search...")
         await self._js_click_search()
 
+        # Step 7: Wait for results with error recovery
+        print("[Step 7] Waiting for results to load...")
+        await self._wait_for_results_with_retry()
+
         # Take debug screenshot
         await self.page.screenshot(path='debug_screenshot.png')
-
-        # Step 7: Wait for results
-        print("[Step 7] Waiting for results to load...")
-        await self.page.wait_for_timeout(self.wait_long * 3)
-        await self.page.screenshot(path='debug_step7_results.png')
 
         # Save page text for debugging
         page_text = await self.page.evaluate('() => document.body.innerText')
@@ -624,6 +623,64 @@ class GoogleFlightsScraper:
         if done_clicked:
             print("  ✓ Clicked Done")
         await self.page.wait_for_timeout(self.wait_medium)
+
+    async def _wait_for_results_with_retry(self, max_retries: int = 3):
+        """
+        Wait for flight results with error recovery.
+
+        Google Flights sometimes shows "Oops, something went wrong" temporarily.
+        This method detects that error and clicks "Reload" to retry.
+        """
+        for attempt in range(max_retries):
+            # Wait for page to settle
+            await self.page.wait_for_timeout(self.wait_long * 2)
+
+            # Check if error message is showing
+            page_text = await self.page.evaluate('() => document.body.innerText')
+
+            if 'something went wrong' in page_text.lower():
+                print(f"  ⚠ Error detected (attempt {attempt + 1}/{max_retries}), clicking Reload...")
+
+                # Take screenshot of error state
+                await self.page.screenshot(path=f'debug_error_attempt_{attempt + 1}.png')
+
+                # Click Reload button
+                reload_clicked = await self.page.evaluate('''
+                    () => {
+                        const buttons = document.querySelectorAll('button');
+                        for (const btn of buttons) {
+                            const text = btn.textContent.toLowerCase().trim();
+                            if (text === 'reload' || text === 'try again' || text === 'retry') {
+                                btn.click();
+                                return true;
+                            }
+                        }
+                        return false;
+                    }
+                ''')
+
+                if reload_clicked:
+                    print("  → Clicked Reload, waiting for results...")
+                    await self.page.wait_for_timeout(self.wait_long * 3)
+                else:
+                    print("  → Reload button not found, waiting...")
+                    await self.page.wait_for_timeout(self.wait_long * 2)
+
+            elif '$' in page_text and ('flight' in page_text.lower() or 'stop' in page_text.lower()):
+                # Results appear to be showing
+                print("  ✓ Results detected")
+                await self.page.screenshot(path='debug_step7_results.png')
+                return
+
+            else:
+                # Still loading, wait more
+                print(f"  → Still loading (attempt {attempt + 1})...")
+                await self.page.wait_for_timeout(self.wait_long * 2)
+
+        # Final wait and screenshot
+        await self.page.wait_for_timeout(self.wait_long)
+        await self.page.screenshot(path='debug_step7_results.png')
+        print("  → Max retries reached, proceeding with extraction")
 
     async def _js_click_search(self):
         """Click the search/explore button using JavaScript."""
