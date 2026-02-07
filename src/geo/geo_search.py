@@ -741,10 +741,11 @@ async def run_hybrid_geo_search(
     )
     geo_search.converter = converter
 
-    # Search each route across all locations
+    # Search all routes across all locations IN PARALLEL
     route_results: Dict[str, GeoArbitrageResult] = {}
 
-    for route in routes_to_search:
+    async def geo_search_route(route: RouteInfo) -> Tuple[str, Optional[GeoArbitrageResult]]:
+        """Geo-search a single route across all locations."""
         route_key = f"{route.origin}-{route.destination}"
         route_label = f"{route.origin}→{route.destination}"
         if route.route_type == "hidden_city":
@@ -758,15 +759,26 @@ async def run_hybrid_geo_search(
                 destination=route.destination,
                 departure_date=departure_date,
             )
-            route_results[route_key] = result
 
             if result.best_location and result.best_overall:
                 logger.info(
                     f"  Best: ${result.best_overall.price_usd:.2f} from {result.best_location} "
                     f"(saves ${result.potential_savings_usd:.2f})"
                 )
+            return route_key, result
         except Exception as e:
             logger.error(f"Geo search failed for {route_key}: {e}")
+            return route_key, None
+
+    # Run all route geo-searches concurrently
+    route_tasks = [geo_search_route(route) for route in routes_to_search]
+    route_task_results = await asyncio.gather(*route_tasks, return_exceptions=True)
+
+    for result in route_task_results:
+        if isinstance(result, Exception):
+            logger.error(f"Route geo-search task failed: {result}")
+        elif result[1] is not None:
+            route_results[result[0]] = result[1]
 
     # ==========================================================================
     # Save all geo results to database
