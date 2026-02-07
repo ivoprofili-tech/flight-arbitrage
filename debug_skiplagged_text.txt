@@ -37,7 +37,7 @@ LANDING
 11:59pm
 FLIGHT DURATION
 3h 55m
-11h
+10h 45m
 LAYOVER DURATION
 None
 25h 36m
@@ -45,8 +45,6 @@ AIRLINES
 Aeromexico
 only
 Air Canada
-only
-Air Transat
 only
 American Airlines
 only
@@ -73,6 +71,8 @@ only
 Spirit Airlines
 only
 United Airlines
+only
+Volaris
 only
 Volaris Costa Rica
 only
@@ -151,6 +151,54 @@ Price
 Duration
 Value
 Total Cost
+22h
+1 stop
+Copa
+1:40am
+GRU
+6h 44m
+6:24am
+11h 27m
+PTY
+5:51pm
+3h 31m
+10:22pm
+MCO
+
+$248
+
+22h
+1 stop
+Copa
+1:30am
+GRU
+6h 45m
+6:15am
+11h 36m
+PTY
+5:51pm
+3h 31m
+10:22pm
+MCO
+
+$248
+
+22h
+1 stop
+Copa
+1:40am
+GRU
+6h 44m
+6:24am
+11h 45m
+PTY
+6:09pm
+3h 31m
+10:40pm
+MCO
+
+$248
+
 22h
 1 stop
 Copa
@@ -442,59 +490,6 @@ ATL
 MCO
 
 $280
-
-16h
-2 stops
-Multiple
-10:15am
-GRU
-8h 30m
-5:45pm
-1h 48m
-MIA
-7:33pm
-2h 21m
-9:54pm
-1h 46m
-ATL
-11:40pm
-1h 24m
-1:04am
-MCO
-
-$280
-
-16h
-1 stop
-LATAM
-9:00pm
-GRU
-9h 55m
-5:55am
-3h 5m
-JFK
-9:00am
-2h 57m
-11:57am
-MCO
-
-$280
-
-36h
-1 stop
-Copa
-3:10am
-GRU
-6h 44m
-7:54am
-25h 36m
-PTY
-9:30am
-3h 30m
-2:00pm
-MCO
-
-$281
 
   skiplagged
 Company
