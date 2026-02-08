@@ -10,15 +10,15 @@ Guarulhos - Governador André Franco Montoro Intl, São Paulo, Brazil
 Orlando Intl, Orlando, Florida
 Search Flights
 LINE GRAPH PRICES ARE NOT REAL-TIME
-$226
-Mon, Mar 9
+$225
+Tue, Mar 10
 Share
 New
 Discover our
 Skiplagged Guarantee
 If issues arise with your travels, we've got your back.  See details
 Price History  
-$226
+$221
  
 Now
 Create a Price Alert
@@ -36,11 +36,11 @@ LANDING
 12:00am
 11:59pm
 FLIGHT DURATION
-3h 55m
+5h
 10h 45m
 LAYOVER DURATION
 None
-23h 44m
+25h 40m
 AIRLINES
 Aeromexico
 only
@@ -58,7 +58,7 @@ Copa Airlines
 only
 Delta Air Lines
 only
-Frontier Airlines
+Flair Airlines
 only
 GOL Linhas Aereas
 only
@@ -67,8 +67,6 @@ only
 KLM
 only
 LATAM Airlines
-only
-Sky Airline
 only
 Spirit Airlines
 only
@@ -89,23 +87,33 @@ BOS - Boston
 only
 BSB - Brasília
 only
+EZE - Buenos Aires Ezeiza
+only
 CLT - Charlotte
 only
 ORD - Chicago
 only
+CVG - Cincinnati / Covington
+only
 MEX - Ciudad de México
+only
+CWB - Curitiba
 only
 DFW - Dallas-Fort Worth
 only
 IAD - Dulles
 only
+FLN - Florianópolis
+only
 FLL - Fort Lauderdale
+only
+FOR - Fortaleza
 only
 IAH - Houston
 only
 LIM - Lima
 only
-MAO - Manaus
+MDE - Medellín
 only
 MIA - Miami
 only
@@ -114,6 +122,8 @@ only
 JFK - New York
 only
 EWR - Newark
+only
+PHL - Philadelphia
 only
 POA - Porto Alegre
 only
@@ -137,8 +147,6 @@ PTY - Tocumen
 only
 YYZ - Toronto
 only
-YTZ - Toronto
-only
 DCA - Washington
 only
 Automatic protection on every flight.
@@ -149,120 +157,174 @@ Price
 Duration
 Value
 Total Cost
-22h
+12h
 1 stop
 Copa
 1:40am
 GRU
 6h 44m
 6:24am
-11h 27m
+1h 52m
 PTY
-5:51pm
-3h 31m
-10:22pm
+8:16am
+3h 30m
+12:46pm
 MCO
 
-$246
+$241
 
-22h
+12h
+1 stop
+Copa
+5:25am
+GRU
+6h 47m
+10:12am
+1h 52m
+PTY
+12:04pm
+3h 31m
+4:35pm
+MCO
+
+$241
+
+12h
 1 stop
 Copa
 1:30am
 GRU
 6h 45m
 6:15am
-11h 36m
+2h 1m
 PTY
-5:51pm
-3h 31m
-10:22pm
+8:16am
+3h 30m
+12:46pm
 MCO
 
-$246
+$241
 
-22h
+14h
+1 stop
+Copa
+3:10am
+GRU
+6h 44m
+7:54am
+4h 10m
+PTY
+12:04pm
+3h 31m
+4:35pm
+MCO
+
+$241
+
+16h
 1 stop
 Copa
 1:40am
 GRU
 6h 44m
 6:24am
-11h 45m
+5h 40m
 PTY
-6:09pm
+12:04pm
 3h 31m
-10:40pm
+4:35pm
 MCO
 
-$246
+$241
 
-22h
+16h
 1 stop
 Copa
 1:30am
 GRU
 6h 45m
 6:15am
-11h 54m
+5h 49m
 PTY
-6:09pm
+12:04pm
 3h 31m
-10:40pm
+4:35pm
+MCO
+
+$241
+
+27h
+1 stop
+Copa
+11:10am
+GRU
+6h 51m
+4:01pm
+16h 15m
+PTY
+8:16am
+3h 30m
+12:46pm
 MCO
 
 $246
 
-19h
-2 stops
-LATAM
-7:45pm
+30h
+1 stop
+Copa
+11:10am
 GRU
-5h
-10:45pm
-1h 20m
-LIM
-12:05am
-3h 10m
-3:15am
-5h 20m
-BOG
-8:35am
-4h 5m
-1:40pm
+6h 51m
+4:01pm
+20h 3m
+PTY
+12:04pm
+3h 31m
+4:35pm
 MCO
 
-$273
+$246
 
-21h
+32h
+1 stop
+Copa
+5:25am
+GRU
+6h 47m
+10:12am
+22h 4m
+PTY
+8:16am
+3h 30m
+12:46pm
+MCO
+
+$246
+
+33h
 1 stop
 LATAM
-7:45pm
+7:30am
 GRU
 5h
-10:45pm
-9h 15m
+10:30am
+21h 30m
 LIM
 8:00am
 6h 23m
 3:23pm
 MCO
 
-$273
+$270
 
-22h
-2 stops
+15h
+1 stop
 LATAM
-4:30pm
+11:55pm
 GRU
-5h
-7:30pm
-4h 35m
-LIM
-12:05am
-3h 10m
-3:15am
-5h 20m
+6h 15m
+4:10am
+4h 25m
 BOG
 8:35am
 4h 5m
@@ -287,38 +349,6 @@ MCO
 
 $273
 
-17h
-1 stop
-United
-10:15pm
-GRU
-10h 45m
-7:00am
-3h 45m
-ORD
-10:45am
-2h 51m
-2:36pm
-MCO
-
-$276
-
-20h
-1 stop
-United
-10:15pm
-GRU
-10h 45m
-7:00am
-6h 2m
-ORD
-1:02pm
-2h 52m
-4:54pm
-MCO
-
-$276
-
 21h
 1 stop
 United
@@ -335,26 +365,37 @@ MCO
 
 $276
 
-15h
-2 stops
-LATAM
-10:15am
+22h
+1 stop
+United
+10:15pm
 GRU
-8h 30m
-5:45pm
-1h 48m
-MIA
-7:33pm
-2h 21m
-9:54pm
-46m
-ATL
-10:40pm
-1h 26m
-12:06am
+10h 45m
+7:00am
+8h 38m
+ORD
+3:38pm
+2h 50m
+7:28pm
 MCO
 
-$277
+$276
+
+27h
+1 stop
+United
+10:15pm
+GRU
+10h 45m
+7:00am
+13h 6m
+ORD
+8:06pm
+2h 53m
+11:59pm
+MCO
+
+$276
 
 12h
 1 stop
@@ -372,76 +413,34 @@ MCO
 
 $279
 
-15h
-2 stops
-Multiple
-10:15am
-GRU
-8h 30m
-5:45pm
-1h 48m
-MIA
-7:33pm
-2h 21m
-9:54pm
-46m
-ATL
-10:40pm
-1h 26m
-12:06am
-MCO
-
-$279
-
-16h
-2 stops
-Multiple
-10:15am
-GRU
-8h 30m
-5:45pm
-1h 48m
-MIA
-7:33pm
-2h 21m
-9:54pm
-1h 46m
-ATL
-11:40pm
-1h 24m
-1:04am
-MCO
-
-$279
-
-13h
+12h
 1 stop
-LATAM
-10:40am
+Avianca
+2:40am
 GRU
-9h 50m
-7:30pm
+5h 55m
+6:35am
 2h 5m
-ATL
-9:35pm
-1h 27m
-11:02pm
+BOG
+8:40am
+4h 15m
+1:55pm
 MCO
 
-$280
+$279
 
-16h
+34h
 1 stop
-LATAM
-9:00pm
+Copa
+1:40am
 GRU
-9h 55m
-5:55am
-3h 5m
-JFK
-9:00am
-2h 57m
-11:57am
+6h 44m
+6:24am
+24h 6m
+PTY
+6:30am
+3h 30m
+11:00am
 MCO
 
 $280
@@ -474,22 +473,6 @@ ATL
 10:40pm
 1h 26m
 12:06am
-MCO
-
-$281
-
-15h
-1 stop
-Delta
-10:40am
-GRU
-9h 50m
-7:30pm
-4h 10m
-ATL
-11:40pm
-1h 24m
-1:04am
 MCO
 
 $281
