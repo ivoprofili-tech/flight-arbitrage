@@ -6,477 +6,144 @@ Book with Miles
 beta
 One Way
 1 Traveler, Economy
-Guarulhos - Governador André Franco Montoro Intl, São Paulo, Brazil
-Orlando Intl, Orlando, Florida
+Miami Intl, Miami, Florida
+Anywhere
 Search Flights
-LINE GRAPH PRICES ARE NOT REAL-TIME
-$225
-Tue, Mar 10
-Share
-New
-Discover our
-Skiplagged Guarantee
-If issues arise with your travels, we've got your back.  See details
-Price History  
-$221
- 
-Now
-Create a Price Alert
-Off
-TYPE
-SELF-TRANSFER
-STOPS
-Nonstop
-Up to 1 stop
-Up to 2 stops
-TAKE OFF
-12:00am
-11:59pm
-LANDING
-12:00am
-11:59pm
-FLIGHT DURATION
-5h
-10h 45m
-LAYOVER DURATION
-None
-25h 40m
-AIRLINES
-Aeromexico
-only
-Air Canada
-only
-American Airlines
-only
-Arajet
-only
-Avianca
-only
-Azul Linhas Aereas
-only
-Copa Airlines
-only
-Delta Air Lines
-only
-Flair Airlines
-only
-GOL Linhas Aereas
-only
-JetBlue Airways
-only
-KLM
-only
-LATAM Airlines
-only
-Spirit Airlines
-only
-United Airlines
-only
-Volaris Costa Rica
-only
-LAYOVER CITIES
-ATL - Atlanta
-only
-CNF - Belo Horizonte
-only
-BEL - Belém
-only
-BOG - Bogota
-only
-BOS - Boston
-only
-BSB - Brasília
-only
-EZE - Buenos Aires Ezeiza
-only
-CLT - Charlotte
-only
-ORD - Chicago
-only
-CVG - Cincinnati / Covington
-only
-MEX - Ciudad de México
-only
-CWB - Curitiba
-only
-DFW - Dallas-Fort Worth
-only
-IAD - Dulles
-only
-FLN - Florianópolis
-only
-FLL - Fort Lauderdale
-only
-FOR - Fortaleza
-only
-IAH - Houston
-only
-LIM - Lima
-only
-MDE - Medellín
-only
-MIA - Miami
-only
-YUL - Montréal
-only
-JFK - New York
-only
-EWR - Newark
-only
-PHL - Philadelphia
-only
-POA - Porto Alegre
-only
-PUJ - Punta Cana
-only
-RDU - Raleigh/Durham
-only
-REC - Recife
-only
-GIG - Rio De Janeiro
-only
-SJO - San José Alajuela
-only
-SJU - San Juan
-only
-SCL - Santiago
-only
-THE - Teresina
-only
-PTY - Tocumen
-only
-YYZ - Toronto
-only
-DCA - Washington
-only
-Automatic protection on every flight.
-Discover the Skiplagged Guarantee.
-Learn More
-Please select your flight
-Price
-Duration
-Value
-Total Cost
-12h
-1 stop
-Copa
-1:40am
-GRU
-6h 44m
-6:24am
-1h 52m
-PTY
-8:16am
-3h 30m
-12:46pm
-MCO
-
-$241
-
-12h
-1 stop
-Copa
-5:25am
-GRU
-6h 47m
-10:12am
-1h 52m
-PTY
-12:04pm
-3h 31m
-4:35pm
-MCO
-
-$241
-
-12h
-1 stop
-Copa
-1:30am
-GRU
-6h 45m
-6:15am
-2h 1m
-PTY
-8:16am
-3h 30m
-12:46pm
-MCO
-
-$241
-
-14h
-1 stop
-Copa
-3:10am
-GRU
-6h 44m
-7:54am
-4h 10m
-PTY
-12:04pm
-3h 31m
-4:35pm
-MCO
-
-$241
-
-16h
-1 stop
-Copa
-1:40am
-GRU
-6h 44m
-6:24am
-5h 40m
-PTY
-12:04pm
-3h 31m
-4:35pm
-MCO
-
-$241
-
-16h
-1 stop
-Copa
-1:30am
-GRU
-6h 45m
-6:15am
-5h 49m
-PTY
-12:04pm
-3h 31m
-4:35pm
-MCO
-
-$241
-
-27h
-1 stop
-Copa
-11:10am
-GRU
-6h 51m
-4:01pm
-16h 15m
-PTY
-8:16am
-3h 30m
-12:46pm
-MCO
-
-$246
-
-30h
-1 stop
-Copa
-11:10am
-GRU
-6h 51m
-4:01pm
-20h 3m
-PTY
-12:04pm
-3h 31m
-4:35pm
-MCO
-
-$246
-
-32h
-1 stop
-Copa
-5:25am
-GRU
-6h 47m
-10:12am
-22h 4m
-PTY
-8:16am
-3h 30m
-12:46pm
-MCO
-
-$246
-
-33h
-1 stop
-LATAM
-7:30am
-GRU
-5h
-10:30am
-21h 30m
-LIM
-8:00am
-6h 23m
-3:23pm
-MCO
-
-$270
-
-15h
-1 stop
-LATAM
-11:55pm
-GRU
-6h 15m
-4:10am
-4h 25m
-BOG
-8:35am
-4h 5m
-1:40pm
-MCO
-
-$273
-
-24h
-1 stop
-LATAM
-4:30pm
-GRU
-5h
-7:30pm
-12h 30m
-LIM
-8:00am
-6h 23m
-3:23pm
-MCO
-
-$273
-
-21h
-1 stop
-United
-10:15pm
-GRU
-10h 45m
-7:00am
-7h 25m
-ORD
-2:25pm
-2h 51m
-6:16pm
-MCO
-
-$276
-
-22h
-1 stop
-United
-10:15pm
-GRU
-10h 45m
-7:00am
-8h 38m
-ORD
-3:38pm
-2h 50m
-7:28pm
-MCO
-
-$276
-
-27h
-1 stop
-United
-10:15pm
-GRU
-10h 45m
-7:00am
-13h 6m
-ORD
-8:06pm
-2h 53m
-11:59pm
-MCO
-
-$276
-
-12h
-1 stop
-Avianca
-2:40am
-GRU
-5h 55m
-6:35am
-1h 25m
-BOG
-8:00am
-4h 10m
-1:10pm
-MCO
-
-$279
-
-12h
-1 stop
-Avianca
-2:40am
-GRU
-5h 55m
-6:35am
-2h 5m
-BOG
-8:40am
-4h 15m
-1:55pm
-MCO
-
-$279
-
-34h
-1 stop
-Copa
-1:40am
-GRU
-6h 44m
-6:24am
-24h 6m
-PTY
-6:30am
-3h 30m
-11:00am
-MCO
-
+Cheap Flights from Miami
+List
+Map
+Dallas-Fort Worth
+United States
+$40
+Houston
+United States
+$55
+Atlanta
+United States
+$84
+New Orleans
+United States
+$86
+Tucson
+United States
+$95
+Chicago
+United States
+$96
+Denver
+United States
+$101
+Phoenix
+United States
+$101
+Las Vegas
+United States
+$106
+Austin
+United States
+$149
+Baltimore
+United States
+$157
+Unknown
+Unknown
+$164
+Charlotte
+United States
+$170
+Orlando
+United States
+$170
+Tampa
+United States
+$170
+Philadelphia
+United States
+$171
+Detroit
+United States
+$177
+San Antonio
+United States
+$177
+San José del Cabo
+Mexico
+$177
+Los Angeles
+United States
+$186
+Minneapolis
+United States
+$187
+Palm Springs
+United States
+$189
+San Diego
+United States
+$192
+San Francisco
+United States
+$192
+Salt Lake City
+United States
+$192
+Sacramento
+United States
+$192
+Newark
+United States
+$219
+Nashville
+United States
+$226
+Reno
+United States
+$257
+Montréal
+Canada
+$263
+Bozeman
+United States
+$271
+Boston
+United States
 $280
-
-13h
-1 stop
-Delta
-10:40am
-GRU
-9h 50m
-7:30pm
-2h 5m
-ATL
-9:35pm
-1h 27m
-11:02pm
-MCO
-
-$281
-
-14h
-1 stop
-Delta
-10:40am
-GRU
-9h 50m
-7:30pm
-3h 10m
-ATL
-10:40pm
-1h 26m
-12:06am
-MCO
-
-$281
-
+Portland
+United States
+$294
+Mazatlàn
+Mexico
+$309
+St Louis
+United States
+$309
+Rapid City
+United States
+$320
+Toronto
+Canada
+$330
+Valparaiso
+United States
+$336
+Charleston
+United States
+$353
+Savannah
+United States
+$379
+Seattle
+United States
+$415
+Loreto
+Mexico
+$475
+Bangor
+United States
+$482
+Kalispell
+United States
+$487
   skiplagged
 Company
 About

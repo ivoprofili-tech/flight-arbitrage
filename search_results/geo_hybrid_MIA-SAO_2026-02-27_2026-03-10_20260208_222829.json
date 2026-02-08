@@ -1,0 +1,99 @@
+{
+  "search_params": {
+    "primary_origin": "MIA-SAO",
+    "primary_destination": "2026-02-27",
+    "departure_date": "2026-03-10"
+  },
+  "timestamp": "2026-02-08T22:28:29.538301",
+  "total_search_time_seconds": 21.65,
+  "initial_search_time_seconds": 21.18,
+  "summary": {
+    "direct_route_best_price": null,
+    "hidden_city_routes_found": 0,
+    "total_routes_searched": 1,
+    "total_potential_savings_usd": 0
+  },
+  "hidden_city_routes": [],
+  "best_direct_deal": null,
+  "best_hidden_city_deals": [],
+  "route_results": {
+    "MIA-SAO-2026-02-27": {
+      "search_params": {
+        "origin": "MIA-SAO",
+        "destination": "2026-02-27",
+        "departure_date": "2026-03-10",
+        "return_date": null
+      },
+      "timestamp": "2026-02-08T22:28:29.529821",
+      "total_search_time_seconds": 0.45,
+      "summary": {
+        "locations_searched": [
+          "BR",
+          "US",
+          "CO",
+          "PA",
+          "AR"
+        ],
+        "best_location": null,
+        "best_price_usd": null,
+        "potential_savings_usd": 0.0,
+        "potential_savings_pct": 0.0,
+        "price_by_location": {}
+      },
+      "best_overall": null,
+      "best_by_location": {},
+      "location_results": {
+        "BR": {
+          "location": "BR",
+          "location_name": "Brazil",
+          "status": "no_flights",
+          "flights_found": 0,
+          "search_time_seconds": 0.11,
+          "error_message": null,
+          "best_price_usd": null,
+          "flights": []
+        },
+        "US": {
+          "location": "US",
+          "location_name": "United States",
+          "status": "no_flights",
+          "flights_found": 0,
+          "search_time_seconds": 0.11,
+          "error_message": null,
+          "best_price_usd": null,
+          "flights": []
+        },
+        "CO": {
+          "location": "CO",
+          "location_name": "Colombia",
+          "status": "no_flights",
+          "flights_found": 0,
+          "search_time_seconds": 0.11,
+          "error_message": null,
+          "best_price_usd": null,
+          "flights": []
+        },
+        "PA": {
+          "location": "PA",
+          "location_name": "Panama",
+          "status": "no_flights",
+          "flights_found": 0,
+          "search_time_seconds": 0.22,
+          "error_message": null,
+          "best_price_usd": null,
+          "flights": []
+        },
+        "AR": {
+          "location": "AR",
+          "location_name": "Argentina",
+          "status": "no_flights",
+          "flights_found": 0,
+          "search_time_seconds": 0.24,
+          "error_message": null,
+          "best_price_usd": null,
+          "flights": []
+        }
+      }
+    }
+  }
+}
