@@ -279,29 +279,6 @@ class ParallelFlightSearch:
         # Deduplicate flights
         deduplicated = self._deduplicate_flights(all_flights)
 
-        # Find best direct price to compare against hidden city deals
-        direct_flights = [f for f in deduplicated if f.source in (FlightSource.GOOGLE_FLIGHTS, FlightSource.SKIPLAGGED)]
-        best_direct_price = min((f.price_numeric for f in direct_flights), default=float('inf'))
-
-        # Filter out hidden city deals that don't beat the best direct price
-        # Only keep hidden city flights that offer actual savings
-        filtered = []
-        hidden_city_filtered_count = 0
-        for flight in deduplicated:
-            if flight.deal_type == DealType.HIDDEN_CITY:
-                if flight.price_numeric < best_direct_price:
-                    filtered.append(flight)
-                else:
-                    hidden_city_filtered_count += 1
-                    logger.debug(f"Filtered hidden city deal: {flight.price} >= direct {best_direct_price}")
-            else:
-                filtered.append(flight)
-
-        if hidden_city_filtered_count > 0:
-            logger.info(f"Filtered {hidden_city_filtered_count} hidden city deals that don't beat direct price ${best_direct_price}")
-
-        deduplicated = filtered
-
         # Sort by price
         deduplicated.sort(key=lambda f: f.price_numeric)
 
