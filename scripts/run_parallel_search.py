@@ -86,7 +86,7 @@ logging.getLogger('playwright').setLevel(logging.WARNING)
 logging.getLogger('asyncio').setLevel(logging.WARNING)
 
 # Git branch for this feature
-GIT_BRANCH = "claude/debug-flights-scraper-proxy-7BoCY"
+GIT_BRANCH = "claude/test-parallel-search-wFmxs"
 
 
 def sync_with_remote():
