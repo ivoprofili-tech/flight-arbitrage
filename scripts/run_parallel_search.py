@@ -85,8 +85,8 @@ logger = logging.getLogger(__name__)
 logging.getLogger('playwright').setLevel(logging.WARNING)
 logging.getLogger('asyncio').setLevel(logging.WARNING)
 
-# Git branch for this feature
-GIT_BRANCH = "claude/test-parallel-search-wFmxs"
+# Git branch for syncing code and results
+GIT_BRANCH = "main"
 
 
 def sync_with_remote():
